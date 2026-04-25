@@ -1,66 +1,109 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Multi-Store Order Tracking
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi berbasis web untuk manajemen produk, pesanan, dan transaksi untuk banyak toko (multi-store).
 
-## About Laravel
+## Persyaratan Sistem
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Sebelum memulai, pastikan sistem Anda sudah terinstal:
+- **PHP** (Versi >= 8.1 direkomendasikan)
+- **Composer** (Manajer dependensi PHP)
+- **Node.js & NPM** (Manajer dependensi JavaScript)
+- **MySQL / MariaDB** (Untuk database)
+- **Git** (Untuk version control)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🚀 Tata Cara Instalasi (Git Clone Sampai Berhasil)
 
-## Learning Laravel
+Ikuti langkah-langkah di bawah ini secara berurutan agar aplikasi dapat berjalan dengan baik di komputer lokal Anda.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 1. Clone Repository
+Buka terminal (Command Prompt, PowerShell, atau Git Bash), arahkan ke folder direktori web Anda (misal `c:\laragon\www` atau `htdocs`), lalu jalankan perintah berikut:
+```bash
+git clone <url-repository-github-anda> multi-store-order-tracking
+cd multi-store-order-tracking
+```
+*(Ganti `<url-repository-github-anda>` dengan URL repo git aplikasi ini, atau abaikan url jika sudah berada dalam folder proyek).*
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 2. Install Dependensi PHP (Composer)
+Unduh semua pustaka (library) PHP yang dibutuhkan oleh framework Laravel dengan menjalankan:
+```bash
+composer install
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 3. Install Dependensi Frontend (NPM)
+Unduh dan kompilasi semua aset frontend (seperti Tailwind CSS, Alpine.js, atau Bootstrap/JS lainnya):
+```bash
+npm install
+npm run build
+```
+*(Catatan: Anda juga bisa menggunakan `npm run dev` di tab terminal terpisah jika ingin mengaktifkan hot-reload saat sedang mendevelop frontend).*
 
-## Laravel Sponsors
+### 4. Konfigurasi Environment (`.env`)
+Laravel membutuhkan file konfigurasi lingkungan (environment variables). Salin file contoh yang sudah disediakan:
+- **Di Windows / Command Prompt:**
+  ```cmd
+  copy .env.example .env
+  ```
+- **Di Linux / Mac / Git Bash:**
+  ```bash
+  cp .env.example .env
+  ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 5. Konfigurasi Database
+1. Buka database manager favorit Anda (misal: phpMyAdmin, HeidiSQL, DBeaver, atau Laragon Database).
+2. **Buat database baru** yang masih kosong. Contoh beri nama database: `multi_store` atau `multi_store_order_tracking`.
+3. Buka file `.env` di teks editor (VS Code) dan ubah bagian konfigurasi database agar sesuai dengan database lokal Anda. Contoh bawaan Laragon/XAMPP:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=multi_store_order_tracking  # Sesuaikan dengan nama database yang baru Anda buat
+   DB_USERNAME=root
+   DB_PASSWORD=                            # Kosongkan jika root tidak memakai password
+   ```
 
-### Premium Partners
+### 6. Generate Application Key
+Buat kunci enkripsi keamanan aplikasi Laravel dengan perintah:
+```bash
+php artisan key:generate
+```
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+### 7. Migrasi Database dan Seeder (Membuat Tabel & Data Awal)
+Langkah ini sangat penting untuk membangun kerangka tabel di dalam database beserta mengisi data awal (seperti data Toko dan Kategori Produk) yang dibutuhkan agar aplikasi bisa berfungsi.
+Jalankan perintah berikut:
+```bash
+php artisan migrate --seed
+```
+*Perintah `--seed` akan secara otomatis menjalankan `DatabaseSeeder`, yang akan mengeksekusi `StoreSeeder` dan `ProductCategorySeeder`.*
 
-## Contributing
+### 8. Tautkan Storage (Storage Link)
+Aplikasi ini memiliki fitur upload foto (misal logo toko, gambar produk). Agar gambar tersebut bisa ditampilkan di browser, Anda wajib menjalankan perintah ini untuk membuat symlink folder `storage/app/public` ke folder `public/storage`:
+```bash
+php artisan storage:link
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 9. Jalankan Aplikasi
+Setelah semua pengaturan selesai, jalankan server pengembangan lokal Laravel:
+```bash
+php artisan serve
+```
+Aplikasi sekarang bisa diakses melalui browser di alamat:
+👉 **[http://localhost:8000](http://localhost:8000)**
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🛠️ Ringkasan Perintah (Cheat Sheet)
+Jika Anda membuka ulang proyek ini suatu saat dan hanya ingin memperbarui dependensi serta database, Anda cukup menjalankan:
+```bash
+composer install
+npm install && npm run build
+php artisan migrate
+php artisan serve
+```
 
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Fitur Utama Sistem
+- **Manajemen Multi-Toko**: Kelola banyak toko sekaligus.
+- **Kategori & Produk**: Data kategori dan produk bersifat dinamis sesuai toko yang dipilih (menggunakan pemfilteran relasional).
+- **Manajemen Stok**: Atur dan tambah/kurangi persediaan barang.
+- **Pelacakan Transaksi**: Kelola pesanan/transaksi pembeli di masing-masing toko.
