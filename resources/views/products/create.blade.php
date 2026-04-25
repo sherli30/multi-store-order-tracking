@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Tambah Produk Baru')
 
@@ -644,7 +644,7 @@
                                 <div class="field-group">
                                     <label class="field-label">Harga Jual (Rp) <span>*</span></label>
                                     <div style="position:relative;">
-                                        <span style="position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:14px; font-weight:700; color:var(--text-3);">Rp</span>
+                                        <span style="position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:14px; font-weight:700; color:var(--text-3); z-index:10; pointer-events:none;">Rp</span>
                                         <input type="text" inputmode="numeric" name="price" id="single_price" class="field-input price-input" style="padding-left:42px;" placeholder="0" value="{{ old('price') }}">
                                     </div>
                                 </div>
