@@ -20,7 +20,7 @@ Ikuti langkah-langkah di bawah ini secara berurutan agar aplikasi dapat berjalan
 ### 1. Clone Repository
 Buka terminal (Command Prompt, PowerShell, atau Git Bash), arahkan ke folder direktori web Anda (misal `c:\laragon\www` atau `htdocs`), lalu jalankan perintah berikut:
 ```bash
-git clone <url-repository-github-anda> multi-store-order-tracking
+git clone https://github.com/sherli30/multi-store-order-tracking.git
 cd multi-store-order-tracking
 ```
 *(Ganti `<url-repository-github-anda>` dengan URL repo git aplikasi ini, atau abaikan url jika sudah berada dalam folder proyek).*
