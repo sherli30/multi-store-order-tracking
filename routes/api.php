@@ -14,10 +14,15 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::post('/profile/update', [App\Http\Controllers\Api\AuthController::class, 'updateProfile']);
 });
 
 // API Untuk Aplikasi Flutter
+Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
+Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
 Route::get('/products', [App\Http\Controllers\Api\ProductController::class, 'index']);
 Route::post('/orders', [App\Http\Controllers\Api\OrderController::class, 'store']);
