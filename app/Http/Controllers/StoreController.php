@@ -90,7 +90,7 @@ class StoreController extends Controller
 
             $logoUploaded = $request->hasFile('logo');
             if ($logoUploaded) {
-                $data['logo'] = $request->file('logo')->store('stores/logos', 'public');
+                $data['logo'] = $request->file('logo')->store('avatars', 'public');
             }
 
             $store = Store::create($data);
@@ -150,7 +150,7 @@ class StoreController extends Controller
                 if ($store->logo && Storage::disk('public')->exists($store->logo)) {
                     Storage::disk('public')->delete($store->logo);
                 }
-                $data['logo'] = $request->file('logo')->store('stores/logos', 'public');
+                $data['logo'] = $request->file('logo')->store('avatars', 'public');
             }
 
             $store->update($data);
@@ -236,5 +236,18 @@ class StoreController extends Controller
         }
 
         return $slug;
+    }
+
+    /**
+     * Remove the store's logo permanently.
+     */
+    public function destroyLogo(Store $store): RedirectResponse
+    {
+        if ($store->logo && Storage::disk('public')->exists($store->logo)) {
+            Storage::disk('public')->delete($store->logo);
+            $store->update(['logo' => null]);
+            return back()->with('success', 'Logo toko berhasil dihapus.');
+        }
+        return back()->with('error', 'Logo tidak ditemukan atau sudah dihapus.');
     }
 }

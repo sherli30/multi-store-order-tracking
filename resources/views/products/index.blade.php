@@ -687,67 +687,7 @@
         </div>
     </div>
 
-    {{-- ═══════════════════════════════════════════════════════
-         STOCK ADJUSTMENT MODAL
-         Handles both ADD (type: in) and DEDUCT (type: out).
-         Opened by openStockModal() from the quick-action buttons
-         in _table_rows.blade.php, or from the Stock History page.
-    ═══════════════════════════════════════════════════════ --}}
-    <div class="modal-overlay" id="stockModal">
-        <div class="modal-box stock-modal-box">
 
-            {{-- Dynamic icon (green for add, red for deduct) --}}
-            <div class="modal-icon" id="stockModalIcon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19" id="stockModalIconLine2" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-            </div>
-
-            <div class="modal-title" id="stockModalTitle">Tambah Stok</div>
-            <div class="modal-desc" id="stockModalDesc"></div>
-
-            {{-- Current stock display --}}
-            <div class="stock-modal-info">
-                <div>
-                    <div class="stock-modal-info-label">Stok Saat Ini</div>
-                    <div class="stock-modal-info-value" id="stockModalCurrentQty">0</div>
-                </div>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
-                    stroke-linejoin="round" style="width:32px;height:32px;color:var(--text-4);">
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-                </svg>
-            </div>
-
-            <form id="stockForm" method="POST" onsubmit="return validateStockForm()" novalidate>
-                @csrf
-                <input type="hidden" id="stockMethodField" name="_method" value="POST">
-
-                {{-- Qty Input --}}
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label" for="stockQtyInput">
-                        Jumlah <span>*</span>
-                    </label>
-                    <input type="number" id="stockQtyInput" name="qty" class="stock-modal-input"
-                        placeholder="Masukkan jumlah unit..." min="1" max="999999" required>
-                    <div class="stock-field-error" id="stockQtyError"></div>
-                </div>
-
-                {{-- Note Input --}}
-                <div class="stock-modal-field">
-                    <label class="stock-modal-label" for="stockNoteInput">Catatan</label>
-                    <input type="text" id="stockNoteInput" name="note" class="stock-modal-input"
-                        placeholder="Opsional — alasan penyesuaian stok..." maxlength="500">
-                </div>
-
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel" onclick="closeStockModal()">Batal</button>
-                    <button type="submit" class="btn-success" id="stockModalSubmit">Tambah Stok</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
 @endsection
 
@@ -780,77 +720,7 @@
             if (e.target === this) closeDeleteModal();
         });
 
-        // Stock Modal Functions
-        let _stockType = 'add';
-        let _stockSlug = '';
-        let _stockCurrent = 0;
 
-        function openStockModal(type, productSlug, productName, currentStock) {
-            _stockType = type;
-            _stockSlug = productSlug;
-            _stockCurrent = currentStock;
-
-            const isAdd = type === 'add';
-            const modalIcon = document.getElementById('stockModalIcon');
-            const iconLine2 = document.getElementById('stockModalIconLine2');
-
-            modalIcon.className = 'modal-icon ' + (isAdd ? 'stock-modal-icon-green' : 'stock-modal-icon-red');
-            iconLine2.style.display = isAdd ? '' : 'none';
-
-            document.getElementById('stockModalTitle').textContent = isAdd ? 'Tambah Stok' : 'Kurangi Stok';
-            document.getElementById('stockModalDesc').textContent = `Produk: ${productName}`;
-            document.getElementById('stockModalCurrentQty').textContent = currentStock.toLocaleString('id-ID');
-
-            const btn = document.getElementById('stockModalSubmit');
-            btn.textContent = isAdd ? 'Tambah Stok' : 'Kurangi Stok';
-            btn.className = isAdd ? 'btn-success' : 'btn-danger';
-
-            document.getElementById('stockForm').action = `/products/${productSlug}/stock/${isAdd ? 'add' : 'deduct'}`;
-
-            document.getElementById('stockQtyInput').value = '';
-            document.getElementById('stockNoteInput').value = '';
-            document.getElementById('stockQtyInput').classList.remove('is-invalid');
-            document.getElementById('stockQtyError').style.display = 'none';
-
-            document.getElementById('stockModal').classList.add('open');
-            setTimeout(() => document.getElementById('stockQtyInput').focus(), 200);
-        }
-
-        function closeStockModal() {
-            document.getElementById('stockModal').classList.remove('open');
-        }
-
-        function validateStockForm() {
-            const qtyInput = document.getElementById('stockQtyInput');
-            const qtyError = document.getElementById('stockQtyError');
-            const qty = parseInt(qtyInput.value, 10);
-
-            qtyInput.classList.remove('is-invalid');
-            qtyError.style.display = 'none';
-
-            if (!qty || qty < 1) {
-                qtyInput.classList.add('is-invalid');
-                qtyError.textContent = 'Jumlah minimal 1 unit.';
-                qtyError.style.display = 'block';
-                qtyInput.focus();
-                return false;
-            }
-
-            if (_stockType === 'deduct' && qty > _stockCurrent) {
-                qtyInput.classList.add('is-invalid');
-                qtyError.textContent =
-                    `Tidak bisa mengurangi ${qty} unit — stok saat ini hanya ${_stockCurrent.toLocaleString('id-ID')} unit.`;
-                qtyError.style.display = 'block';
-                qtyInput.focus();
-                return false;
-            }
-
-            return true;
-        }
-
-        document.getElementById('stockModal').addEventListener('click', function(e) {
-            if (e.target === this) closeStockModal();
-        });
 
         let table;
 

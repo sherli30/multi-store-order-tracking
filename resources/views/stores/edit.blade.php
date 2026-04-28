@@ -80,6 +80,62 @@
     height: 16px;
     }
 
+    /* ── Delete Modal ────────────────────────────── */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px);
+        z-index: 2000; display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: all 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; visibility: visible; }
+    .modal-box {
+        background: var(--panel); border-radius: 16px; padding: 28px;
+        width: 420px; max-width: 90vw; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transform: scale(0.95) translateY(10px); transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+    .modal-icon {
+        width: 52px; height: 52px; background: var(--red-dim); border-radius: 14px;
+        display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    }
+    .modal-icon svg { width: 24px; height: 24px; color: var(--red); }
+    .modal-title { font-size: 16px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
+    .modal-desc { font-size: 13px; color: var(--text-2); margin-bottom: 22px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-cancel {
+        padding: 9px 18px; border: 1px solid var(--border); border-radius: 8px;
+        font-family: var(--font); font-size: 13px; font-weight: 600;
+        background: var(--surface); color: var(--text-2); cursor: pointer; transition: all 0.15s;
+    }
+    .btn-cancel:hover { border-color: var(--border-2); color: var(--text-1); }
+    .btn-danger {
+        padding: 9px 18px; border: none; border-radius: 8px;
+        font-family: var(--font); font-size: 13px; font-weight: 600;
+        background: var(--red); color: #fff; cursor: pointer; transition: all 0.15s;
+        box-shadow: 0 2px 8px rgba(220,38,38,0.25);
+    }
+    .btn-danger:hover { background: #b91c1c; transform: translateY(-1px); }
+
+    .btn-outline-danger {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 28px;
+        border: 1.5px solid rgba(220, 38, 38, 0.3);
+        border-radius: 10px;
+        font-family: var(--font);
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--red);
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .btn-outline-danger:hover {
+        background: var(--red-dim);
+        border-color: rgba(220, 38, 38, 0.5);
+    }
+
     /* ── FORM LAYOUT ─── */
     .form-container {
     display: grid;
@@ -639,8 +695,6 @@
                         {{-- Upload zone: hanya muncul jika belum ada logo --}}
                         <div class="image-upload-zone" id="uploadZone" style="{{ $store->logo ? 'display:none;' : '' }}"
                             onclick="document.getElementById('logo').click()">
-                            <input type="file" id="logo" name="logo" style="display:none;" accept="image/*"
-                                onchange="previewLogo(this)">
                             <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor"
                                 stroke-width="1.5" style="color:var(--text-4); margin-bottom:8px;">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -652,11 +706,8 @@
                             </div>
                         </div>
 
-                        {{-- Input file tersembunyi (dipakai saat ada logo, trigger dari tombol Ganti) --}}
-                        @if ($store->logo)
-                            <input type="file" id="logo" name="logo" style="display:none;" accept="image/*"
-                                onchange="previewLogo(this)">
-                        @endif
+                        {{-- Input file utama (hanya 1 elemen untuk mencegah duplikasi name/id) --}}
+                        <input type="file" id="logo" name="logo" style="display:none;" accept="image/*" onchange="previewLogo(this)">
                     </div>
                 </div>
             </div>
@@ -674,6 +725,33 @@
             </button>
         </div>
     </form>
+
+    {{-- Delete Modal for Logo --}}
+    <div class="modal-overlay" id="deleteLogoModal">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+            </div>
+            <div class="modal-title">Hapus Logo Toko?</div>
+            <div class="modal-desc">
+                Logo ini akan dihapus secara permanen dari server. Tindakan ini tidak dapat dibatalkan.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeDeleteLogoModal()">Batalkan</button>
+                <form action="{{ route('stores.destroyLogo', $store) }}" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn-danger">Ya, Hapus Logo</button>
+                </form>
+            </div>
+        </div>
+    </div>
 
 @endsection
 
@@ -723,19 +801,15 @@
         }
 
         function removeExistingLogo() {
-            if (confirm('Hapus logo ini?')) {
-                const container = document.getElementById('logoContainer');
-                const uploadZone = document.getElementById('uploadZone');
-                const input = document.getElementById('logo');
-
-                container.innerHTML = '';
-                uploadZone.style.display = 'block';
-                input.value = "";
-
-                // Jika ingin benar-benar menghapus di backend tanpa upload baru,
-                // bisa tambahkan hidden input disini jika controller mendukung.
-                // Tapi untuk sekarang kita samakan perilakunya dengan menghapus preview.
-            }
+            document.getElementById('deleteLogoModal').classList.add('open');
         }
+
+        function closeDeleteLogoModal() {
+            document.getElementById('deleteLogoModal').classList.remove('open');
+        }
+
+        document.getElementById('deleteLogoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteLogoModal();
+        });
     </script>
 @endpush

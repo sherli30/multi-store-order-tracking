@@ -81,6 +81,62 @@
         height: 16px;
     }
 
+    /* ── Delete Modal ────────────────────────────── */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px);
+        z-index: 2000; display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: all 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; visibility: visible; }
+    .modal-box {
+        background: var(--panel); border-radius: 16px; padding: 28px;
+        width: 420px; max-width: 90vw; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transform: scale(0.95) translateY(10px); transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+    .modal-icon {
+        width: 52px; height: 52px; background: var(--red-dim); border-radius: 14px;
+        display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    }
+    .modal-icon svg { width: 24px; height: 24px; color: var(--red); }
+    .modal-title { font-size: 16px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
+    .modal-desc { font-size: 13px; color: var(--text-2); margin-bottom: 22px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-cancel {
+        padding: 9px 18px; border: 1px solid var(--border); border-radius: 8px;
+        font-family: var(--font); font-size: 13px; font-weight: 600;
+        background: var(--surface); color: var(--text-2); cursor: pointer; transition: all 0.15s;
+    }
+    .btn-cancel:hover { border-color: var(--border-2); color: var(--text-1); }
+    .btn-danger {
+        padding: 9px 18px; border: none; border-radius: 8px;
+        font-family: var(--font); font-size: 13px; font-weight: 600;
+        background: var(--red); color: #fff; cursor: pointer; transition: all 0.15s;
+        box-shadow: 0 2px 8px rgba(220,38,38,0.25);
+    }
+    .btn-danger:hover { background: #b91c1c; transform: translateY(-1px); }
+
+    .btn-outline-danger {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 28px;
+        border: 1.5px solid rgba(220, 38, 38, 0.3);
+        border-radius: 10px;
+        font-family: var(--font);
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--red);
+        background: transparent;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .btn-outline-danger:hover {
+        background: var(--red-dim);
+        border-color: rgba(220, 38, 38, 0.5);
+    }
+
     /* ── FORM LAYOUT ─── */
     .form-container {
         display: grid;
@@ -1085,6 +1141,33 @@
         <img class="image-modal-content" id="modalImage">
     </div>
 
+    {{-- Delete Modal for Image --}}
+    <div class="modal-overlay" id="deleteImageModal">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+            </div>
+            <div class="modal-title">Hapus Foto?</div>
+            <div class="modal-desc">
+                Foto ini akan dihapus secara permanen dari server. Tindakan ini tidak dapat dibatalkan.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeDeleteImageModal()">Batalkan</button>
+                <form id="deleteImageForm" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn-danger">Ya, Hapus Foto</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
@@ -1312,15 +1395,18 @@
 
         // ── IMAGE MANAGEMENT ──
         function deleteExistingImage(imgId) {
-            if (confirm('Hapus gambar ini dari server?')) {
-                document.getElementById('img-card-' + imgId).remove();
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'deleted_images[]';
-                input.value = imgId;
-                document.getElementById('deletedImagesContainer').appendChild(input);
-            }
+            document.getElementById('deleteImageForm').action = '/products/images/' + imgId;
+            document.getElementById('deleteImageModal').classList.add('open');
         }
+
+        function closeDeleteImageModal() {
+            document.getElementById('deleteImageModal').classList.remove('open');
+        }
+
+        document.getElementById('deleteImageModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteImageModal();
+        });
+
         // ── PRICE FORMATTING (Indonesian: dot as thousands separator) ──
         function fmtPrice(val) {
             const n = String(val).replace(/\D/g, '');

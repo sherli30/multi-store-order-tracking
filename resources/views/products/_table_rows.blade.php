@@ -92,38 +92,7 @@
                 @endif
             </div>
 
-            {{-- Quick Stock Buttons (only for active products and single variants) --}}
-            @if($fullyActive)
-                <div class="quick-stock-actions">
-                    @if($variantCount > 0)
-                        {{-- Redirect to detail view for multi-variant stock management --}}
-                        <a href="{{ route('products.stock.index', $product) }}" class="btn-stock-quick" title="Kelola Stok Varian" style="width: auto; padding: 0 8px; font-size: 10px; text-decoration: none;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
-                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-                            </svg>
-                            Kelola Stok Varian
-                        </a>
-                    @else
-                        {{-- Add/Deduct for single variant --}}
-                        <button type="button" class="btn-stock-quick btn-add-stock"
-                                onclick="openStockModal('add', '{{ $product->slug }}', '{{ addslashes($product->name) }}', {{ $product->stock }})"
-                                title="Tambah Stok">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="5" x2="12" y2="19"/>
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                        </button>
-                        <button type="button" class="btn-stock-quick btn-deduct-stock {{ $isOutOfStock ? 'btn-disabled' : '' }}"
-                                onclick="openStockModal('deduct', '{{ $product->slug }}', '{{ addslashes($product->name) }}', {{ $product->stock }})"
-                                title="{{ $isOutOfStock ? 'Stok sudah habis' : 'Kurangi Stok' }}"
-                                {{ $isOutOfStock ? 'disabled' : '' }}>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                            </svg>
-                        </button>
-                    @endif
-                </div>
-            @endif
+            {{-- Quick Stock Buttons removed. Stok dikelola via halaman Riwayat Stok --}}
         </div>
     </td>
 

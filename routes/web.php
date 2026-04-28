@@ -22,9 +22,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // Toko & Produk
     Route::resource('stores', StoreController::class);
+    Route::delete('stores/{store}/logo', [StoreController::class, 'destroyLogo'])->name('stores.destroyLogo');
     Route::resource('products', ProductController::class)->scoped([
         'product' => 'slug',
     ]);
+    Route::delete('products/images/{image}', [ProductController::class, 'destroyImage'])->name('products.destroyImage');
     Route::resource('product-categories', ProductCategoryController::class);
 
     // Returns active categories for a specific store as JSON.

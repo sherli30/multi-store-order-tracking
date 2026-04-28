@@ -600,4 +600,16 @@ class ProductController extends Controller
 
         return $slug;
     }
+
+    /**
+     * Remove a product image permanently.
+     */
+    public function destroyImage(\App\Models\ProductImage $image): RedirectResponse
+    {
+        if (Storage::disk('public')->exists($image->image_path)) {
+            Storage::disk('public')->delete($image->image_path);
+        }
+        $image->delete();
+        return back()->with('success', 'Foto produk berhasil dihapus.');
+    }
 }

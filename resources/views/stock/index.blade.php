@@ -419,14 +419,13 @@
                 </svg>
             </div>
 
-            <form id="stockForm" method="POST" onsubmit="return validateStockForm()" novalidate>
+            <form id="stockForm" method="POST" novalidate>
                 @csrf
                 <div class="stock-modal-field">
                     <label class="stock-modal-label" for="stockQtyInput">Jumlah <span>*</span></label>
                     <input type="number" id="stockQtyInput" name="qty"
                            class="stock-modal-input" placeholder="Masukkan jumlah unit..."
                            min="1" max="999999" required>
-                    <div class="stock-field-error" id="stockQtyError"></div>
                 </div>
                 <div class="stock-modal-field">
                     <label class="stock-modal-label" for="stockNoteInput">Catatan <span>*</span></label>
@@ -470,7 +469,6 @@
         document.getElementById('stockQtyInput').value = '';
         document.getElementById('stockNoteInput').value = '';
         document.getElementById('stockQtyInput').classList.remove('is-invalid');
-        document.getElementById('stockQtyError').style.display = 'none';
 
         document.getElementById('stockModal').classList.add('open');
         setTimeout(() => document.getElementById('stockQtyInput').focus(), 200);
@@ -478,34 +476,6 @@
 
     function closeStockModal() {
         document.getElementById('stockModal').classList.remove('open');
-    }
-
-    function validateStockForm() {
-        const qtyInput = document.getElementById('stockQtyInput');
-        const qtyError = document.getElementById('stockQtyError');
-        const qty = parseInt(qtyInput.value, 10);
-
-        qtyInput.classList.remove('is-invalid');
-        qtyError.style.display = 'none';
-
-        if (!qty || qty < 1) {
-            qtyInput.classList.add('is-invalid');
-            qtyError.textContent = 'Jumlah minimal 1 unit.';
-            qtyError.style.display = 'block';
-            qtyInput.focus();
-            return false;
-        }
-
-        if (_stockType === 'deduct' && qty > _currentStock) {
-            qtyInput.classList.add('is-invalid');
-            qtyError.textContent =
-                `Tidak bisa mengurangi ${qty} unit — stok hanya ${_currentStock.toLocaleString('id-ID')} unit.`;
-            qtyError.style.display = 'block';
-            qtyInput.focus();
-            return false;
-        }
-
-        return true;
     }
 
     document.getElementById('stockModal').addEventListener('click', e => {

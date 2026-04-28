@@ -48,7 +48,10 @@ class StockController extends Controller
         $variant = $product->variants()->first();
 
         if (!$variant) {
-            return back()->with('error', 'Produk tidak memiliki variasi.');
+            return back()->with('error', [
+                'title' => 'Produk Tidak Valid',
+                'message' => 'Produk ini tidak memiliki variasi stok.'
+            ]);
         }
 
         $qty = (int) $request->validated('qty');
@@ -79,7 +82,10 @@ class StockController extends Controller
         $variant = $product->variants()->first();
 
         if (!$variant) {
-            return back()->with('error', 'Produk tidak memiliki variasi.');
+            return back()->with('error', [
+                'title' => 'Produk Tidak Valid',
+                'message' => 'Produk ini tidak memiliki variasi stok.'
+            ]);
         }
 
         $qty = (int) $request->validated('qty');
@@ -92,8 +98,9 @@ class StockController extends Controller
                 referenceId: null,
             );
         } catch (InsufficientStockException $e) {
-            return back()->withErrors([
-                'qty' => $e->getMessage(),
+            return back()->with('error', [
+                'title' => 'Stok Gagal Dikurangi',
+                'message' => $e->getMessage()
             ]);
         }
 
