@@ -16,7 +16,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email'    => 'required|email:rfc,dns',
+            'email' => 'required|email:rfc,dns',
             'password' => [
                 'required',
                 'string',
@@ -30,11 +30,11 @@ class LoginRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.required'    => 'Email tidak boleh kosong. Silakan masukkan alamat email Anda.',
-            'email.email'       => 'Format email tidak valid. Gunakan format yang benar (contoh: user@gmail.com).',
+            'email.required' => 'Email tidak boleh kosong. Silakan masukkan alamat email Anda.',
+            'email.email' => 'Format email tidak valid. Gunakan format yang benar (contoh: user@gmail.com).',
             'password.required' => 'Password wajib diisi untuk masuk.',
-            'password.min'      => 'Password terlalu pendek. Minimal harus 8 karakter.',
-            'password.regex'    => 'Password harus kombinasi huruf dan angka (contoh: User123).',
+            'password.min' => 'Password terlalu pendek. Minimal harus 8 karakter.',
+            'password.regex' => 'Password harus kombinasi huruf dan angka (contoh: User123).',
         ];
     }
 
@@ -47,21 +47,21 @@ class LoginRequest extends FormRequest
 
         if (!$user) {
             throw new HttpResponseException(response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Email tidak terdaftar dalam sistem kami. Silakan cek kembali atau daftar akun baru.',
             ], 404));
         }
 
         if (!\Illuminate\Support\Facades\Hash::check($this->password, $user->password)) {
             throw new HttpResponseException(response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Password yang Anda masukkan salah. Pastikan tidak ada salah ketik.',
             ], 401));
         }
 
         if (!$user->is_active) {
             throw new HttpResponseException(response()->json([
-                'status'  => 'error',
+                'status' => 'error',
                 'message' => 'Akun Anda sedang dinonaktifkan. Silakan hubungi Admin untuk pengaktifan.',
             ], 403));
         }
@@ -72,9 +72,9 @@ class LoginRequest extends FormRequest
     protected function failedValidation(Validator $validator)
     {
         throw new HttpResponseException(response()->json([
-            'status'  => 'error',
+            'status' => 'error',
             'message' => $validator->errors()->first(),
-            'errors'  => $validator->errors()
+            'errors' => $validator->errors()
         ], 422));
     }
 }
