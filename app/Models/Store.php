@@ -20,6 +20,28 @@ class Store extends Model
         'is_active' => 'boolean',
     ];
 
+    protected $appends = ['address', 'logo_url'];
+
+    /**
+     * Karena semua toko memiliki alamat yang sama, kita kembalikan alamat default.
+     */
+    public function getAddressAttribute(): string
+    {
+        return "Jl. Kaliurang No. 45, Sleman, Yogyakarta";
+    }
+
+    /**
+     * Mengembalikan URL lengkap untuk logo toko.
+     */
+    public function getLogoUrlAttribute(): string
+    {
+        if ($this->logo) {
+            return "http://192.168.22.39:8000/storage/" . $this->logo;
+        }
+        // Fallback jika logo kosong
+        return "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&background=random&size=128";
+    }
+
     // ─────────────────────────────────────────────
     // Local Scopes
     // ─────────────────────────────────────────────

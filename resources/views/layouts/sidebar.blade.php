@@ -4,7 +4,7 @@
         <div class="logo-icon">
             <img src="{{ asset('images/logo.png') }}" alt="Logo" style="width: 100%; height: auto;">
         </div>
-        <span class="brand-name">Admin<span>Panel</span></span>
+        <span class="brand-name">Toko<span>Pakan</span></span>
     </a>
 
     <style>

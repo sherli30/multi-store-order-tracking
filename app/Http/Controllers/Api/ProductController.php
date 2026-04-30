@@ -14,7 +14,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Product::with(['store', 'category', 'variants', 'images'])
+            $query = Product::with(['store', 'category', 'variants', 'images', 'descriptions', 'specifications'])
                 ->where('is_active', true);
 
             // Filter by store
@@ -25,6 +25,11 @@ class ProductController extends Controller
             // Filter by category
             if ($request->has('category_id')) {
                 $query->where('category_id', $request->category_id);
+            }
+
+            // Search by name
+            if ($request->has('q')) {
+                $query->where('name', 'like', '%' . $request->q . '%');
             }
 
             $products = $query->get()->map(function ($product) {

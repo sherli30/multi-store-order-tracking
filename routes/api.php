@@ -25,4 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::post('/register', [App\Http\Controllers\Api\AuthController::class, 'register']);
 Route::post('/login', [App\Http\Controllers\Api\AuthController::class, 'login']);
 Route::get('/products', [App\Http\Controllers\Api\ProductController::class, 'index']);
+Route::get('/stores', [App\Http\Controllers\Api\StoreController::class, 'index']);
+Route::get('/categories', [App\Http\Controllers\Api\CategoryController::class, 'index']);
+Route::get('/orders', [App\Http\Controllers\Api\OrderController::class, 'index']);
 Route::post('/orders', [App\Http\Controllers\Api\OrderController::class, 'store']);

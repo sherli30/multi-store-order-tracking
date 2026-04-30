@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Masuk — CV Adisatya IT Consultant</title>
+    <title>Masuk — Toko Pakan</title>
 
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 
@@ -648,7 +648,7 @@
                         <img src="{{ asset('images/logo.png') }}" alt="Logo ayambebek"
                             style="width: 100%; height: auto;">
                     </div>
-                    <span class="logo-name">Multi store Order Tracking</span>
+                    <span class="logo-name">Toko Pakan</span>
                 </a>
             </div>
 
@@ -717,9 +717,9 @@
                             <span class="remember-text">Ingat saya</span>
                         </label>
 
-                        @if (Route::has('password.request'))
+                        {{-- @if (Route::has('password.request'))
                             <a href="{{ route('password.request') }}" class="forgot-link">Lupa sandi?</a>
-                        @endif
+                        @endif --}}
                     </div>
 
                     <button type="submit" class="submit-btn" id="loginBtn">

@@ -25,6 +25,25 @@ class Product extends Model
         'is_active' => 'boolean',
     ];
 
+    /**
+     * The accessors to append to the model's array form.
+     */
+    protected $appends = [
+        'price',
+        'stock',
+        'sold_count',
+    ];
+
+    /**
+     * Get the total quantity sold for this product.
+     */
+    public function getSoldCountAttribute(): int
+    {
+        return (int) \App\Models\OrderItem::whereHas('productVariant', function ($q) {
+            $q->where('product_id', $this->id);
+        })->sum('quantity');
+    }
+
     // ─────────────────────────────────────────────
     // Local Scopes
     // ─────────────────────────────────────────────

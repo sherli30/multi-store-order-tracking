@@ -12,6 +12,36 @@ use Illuminate\Support\Facades\DB;
 class OrderController extends Controller
 {
     /**
+     * Get list of orders for a user
+     */
+    public function index(Request $request)
+    {
+        try {
+            $query = Order::with(['store', 'orderItems.product', 'orderItems.productVariant']);
+
+            if ($request->has('user_id')) {
+                $query->where('user_id', $request->user_id);
+            } elseif ($request->has('customer_phone')) {
+                $query->where('customer_phone', $request->customer_phone);
+            }
+
+            $orders = $query->orderBy('created_at', 'desc')->get();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data pesanan berhasil diambil.',
+                'data'    => $orders
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan saat mengambil data pesanan.',
+            ], 500);
+        }
+    }
+
+    /**
      * Submit a new order from the mobile app
      */
     public function store(\App\Http\Requests\Api\StoreOrderRequest $request)

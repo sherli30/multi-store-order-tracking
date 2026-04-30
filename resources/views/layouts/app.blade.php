@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('title', 'Dashboard') — SiPesan Admin</title>
+    <title>@yield('title', 'Dashboard') — Toko Pakan</title>
 
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 
@@ -1597,7 +1597,7 @@
                 } else {
                     finalMessage = `<div style="color: var(--text-2); font-size: 13.5px;">${message.message || message.error || JSON.stringify(message)}</div>`;
                 }
-                
+
                 if (message.type) type = message.type;
             } else {
                 finalMessage = `<div style="color: var(--text-2); font-size: 13.5px;">${message}</div>`;
