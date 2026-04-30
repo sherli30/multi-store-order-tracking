@@ -134,56 +134,61 @@ class ProductCategoryController extends Controller
      */
     public function update(CategoryRequest $request, ProductCategory $productCategory): RedirectResponse
     {
-        $data = $request->validated();
+        try {
+            $data = $request->validated();
 
-        // Simpan data lama untuk perbandingan di pesan sukses
-        $oldName     = $productCategory->name;
-        $oldStoreId  = $productCategory->store_id;
-        $wasActive   = $productCategory->is_active;
+            // Simpan data lama untuk perbandingan di pesan sukses
+            $oldName    = $productCategory->name;
+            $oldStoreId = $productCategory->store_id;
+            $wasActive  = $productCategory->is_active;
 
-        // Deteksi perubahan SEBELUM update() agar perbandingan akurat
-        $nameChanged   = $oldName !== $data['name'];
-        $storeChanged  = (int) $oldStoreId !== (int) $data['store_id'];
-        $statusChanged = (bool) $wasActive !== (bool) $request->has('is_active');
+            // Deteksi perubahan SEBELUM update() agar perbandingan akurat
+            $nameChanged   = $oldName !== $data['name'];
+            $storeChanged  = (int) $oldStoreId !== (int) $data['store_id'];
+            $statusChanged = (bool) $wasActive !== (bool) $request->has('is_active');
 
-        // Logika Slug: Hanya re-generate jika nama atau toko berubah
-        if ($data['name'] !== $oldName || (int) $data['store_id'] !== $productCategory->store_id) {
-            $data['slug'] = $this->uniqueSlug((int) $data['store_id'], Str::slug($data['name']), $productCategory->id);
-        }
+            // Logika Slug: Hanya re-generate jika nama atau toko berubah
+            if ($data['name'] !== $oldName || (int) $data['store_id'] !== $productCategory->store_id) {
+                $data['slug'] = $this->uniqueSlug((int) $data['store_id'], Str::slug($data['name']), $productCategory->id);
+            }
 
-        $data['is_active'] = $request->has('is_active');
-        $productCategory->update($data);
+            $data['is_active'] = $request->has('is_active');
+            $productCategory->update($data);
 
-        // ── MULTI NOTIFICATION (TOAST) — update ──────────────────────────
-        $messages = [];
+            // ── MULTI NOTIFICATION (TOAST) — update ──────────────────────────
+            $messages = [];
 
-        if ($nameChanged) {
-            $messages[] = "Nama kategori berhasil diubah.";
-        }
+            if ($nameChanged) {
+                $messages[] = "Nama kategori berhasil diubah.";
+            }
 
-        if ($storeChanged) {
-            $newStore = Store::find($data['store_id']);
-            $messages[] = "Toko kategori berhasil dipindahkan ke <strong>{$newStore->name}</strong>.";
-        }
+            if ($storeChanged) {
+                $newStore = Store::find($data['store_id']);
+                $messages[] = "Toko kategori berhasil dipindahkan ke <strong>{$newStore->name}</strong>.";
+            }
 
-        if ($statusChanged) {
-            $statusLabel = $data['is_active'] ? 'Aktif' : 'Nonaktif';
-            $messages[] = "Status kategori berhasil diubah menjadi <strong>{$statusLabel}</strong>.";
-        }
+            if ($statusChanged) {
+                $statusLabel = $data['is_active'] ? 'Aktif' : 'Nonaktif';
+                $messages[] = "Status kategori berhasil diubah menjadi <strong>{$statusLabel}</strong>.";
+            }
 
-        // Fallback jika tidak ada perubahan terdeteksi
-        if (empty($messages)) {
+            // Fallback jika tidak ada perubahan terdeteksi
+            if (empty($messages)) {
+                return redirect()
+                    ->route('product-categories.index')
+                    ->with('info', 'Data kategori sudah sesuai. Tidak ada perubahan yang dilakukan.');
+            }
+
             return redirect()
                 ->route('product-categories.index')
-                ->with('info', 'Data kategori sudah sesuai. Tidak ada perubahan yang dilakukan.');
-        }
+                ->with('success', [
+                    'title' => "Kategori \"{$productCategory->name}\" Berhasil Diperbarui",
+                    'list'  => $messages
+                ]);
 
-        return redirect()
-            ->route('product-categories.index')
-            ->with('success', [
-                'title' => "Kategori \"{$productCategory->name}\" Berhasil Diperbarui",
-                'list' => $messages
-            ]);
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan perubahan data kategori. Silakan coba lagi.');
+        }
     }
 
     /**

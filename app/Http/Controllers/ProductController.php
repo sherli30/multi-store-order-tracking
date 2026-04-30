@@ -296,7 +296,7 @@ class ProductController extends Controller
             $imagesDeleted     = !empty($data['deleted_images']);
             $imagesReplaced    = $request->hasFile('replace_images');
             $imagesAdded       = $request->hasFile('images');
-            
+
             $currentPrimary    = $product->images()->where('is_primary', true)->first();
             $primaryChanged    = isset($data['primary_image_id']) && (!$currentPrimary || (int)$currentPrimary->id !== (int)$data['primary_image_id']);
 
@@ -557,17 +557,21 @@ class ProductController extends Controller
     {
         $name = $product->name;
 
-        // Delete images
-        foreach ($product->images as $image) {
-            Storage::disk('public')->delete($image->image_path);
-            $image->delete();
+        try {
+            // Delete images
+            foreach ($product->images as $image) {
+                Storage::disk('public')->delete($image->image_path);
+                $image->delete();
+            }
+
+            $product->delete();
+
+            return redirect()
+                ->route('products.index')
+                ->with('success', "Produk \"{$name}\" berhasil dihapus secara permanen dari sistem.");
+        } catch (\Exception $e) {
+            return back()->with('error', "Gagal menghapus produk \"{$name}\". Terjadi kesalahan pada sistem, silakan coba lagi.");
         }
-
-        $product->delete();
-
-        return redirect()
-            ->route('products.index')
-            ->with('success', "Produk {$name} berhasil dihapus.");
     }
 
     public function byStore(Store $store): JsonResponse
@@ -606,10 +610,14 @@ class ProductController extends Controller
      */
     public function destroyImage(\App\Models\ProductImage $image): RedirectResponse
     {
-        if (Storage::disk('public')->exists($image->image_path)) {
-            Storage::disk('public')->delete($image->image_path);
+        try {
+            if (Storage::disk('public')->exists($image->image_path)) {
+                Storage::disk('public')->delete($image->image_path);
+            }
+            $image->delete();
+            return back()->with('success', 'Foto produk berhasil dihapus dari sistem.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghapus foto produk. Silakan coba lagi.');
         }
-        $image->delete();
-        return back()->with('success', 'Foto produk berhasil dihapus.');
     }
 }

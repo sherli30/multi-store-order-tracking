@@ -29,15 +29,21 @@ class AuthenticatedSessionController extends Controller
         // Semua logika ini sudah ada di dalam LoginRequest yang kita buat tadi.
         $request->authenticate();
 
-        // Regenerasi session untuk mencegah session fixation
-        $request->session()->regenerate();
+        try {
+            // Regenerasi session untuk mencegah session fixation
+            $request->session()->regenerate();
 
-        // Ambil data admin yang login untuk pesan selamat datang
-        $user = Auth::user();
+            // Ambil data admin yang login untuk pesan selamat datang
+            $user = Auth::user();
 
-        // Redirect langsung ke dashboard admin dengan pesan sukses yang profesional
-        return redirect()->route('dashboard')
-            ->with('success', 'Akses Berhasil. Selamat datang kembali, ' . $user->name . '. Panel administrasi telah siap.');
+            // Redirect langsung ke dashboard admin dengan pesan sukses yang profesional
+            return redirect()->route('dashboard')
+                ->with('success', 'Akses Berhasil. Selamat datang kembali, ' . $user->name . '. Panel administrasi telah siap.');
+        } catch (\Exception $e) {
+            Auth::logout();
+            return redirect()->route('login')
+                ->with('error', 'Terjadi kesalahan saat memproses sesi login. Silakan coba masuk kembali.');
+        }
     }
 
     /**

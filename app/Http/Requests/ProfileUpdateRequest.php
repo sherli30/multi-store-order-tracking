@@ -34,6 +34,29 @@ class ProfileUpdateRequest extends FormRequest
     {
         $bag = $this->routeIs('password.update') ? 'updatePassword' : 'default';
 
+        // Pisahkan pesan regex password: angka vs huruf
+        $errors = $validator->errors();
+        if ($errors->has('password')) {
+            $raw = $this->input('password', '');
+            $passwordErrors = $errors->get('password');
+
+            $filteredErrors = array_filter($passwordErrors, function ($msg) {
+                return $msg !== '__replaced__';
+            });
+
+            if (!preg_match('/[0-9]/', $raw)) {
+                $filteredErrors[] = 'Password harus mengandung minimal 1 angka (contoh: Admin123).';
+            }
+            if (!preg_match('/[A-Za-z]/', $raw)) {
+                $filteredErrors[] = 'Password harus mengandung minimal 1 huruf (contoh: Admin123).';
+            }
+
+            $errors->forget('password');
+            foreach (array_values($filteredErrors) as $msg) {
+                $errors->add('password', $msg);
+            }
+        }
+
         throw (new ValidationException($validator))
             ->errorBag($bag)
             ->redirectTo($this->getRedirectUrl());
@@ -83,18 +106,21 @@ class ProfileUpdateRequest extends FormRequest
         return [
             // Nama
             'name.required' => 'Nama lengkap tidak boleh kosong. Silakan masukkan nama asli Anda.',
+            'name.string'   => 'Nama harus berupa teks, bukan angka atau karakter khusus.',
             'name.min'      => 'Nama terlalu pendek. Gunakan minimal 3 karakter agar data valid.',
             'name.max'      => 'Nama terlalu panjang. Maksimal 100 karakter.',
 
             // Email
-            'email.required' => 'Email wajib diisi agar akun tetap dapat diverifikasi.',
-            'email.email'    => 'Format email salah. Pastikan menggunakan tanda "@" (contoh: admin@gmail.com).',
-            'email.unique'   => 'Email ini sudah terdaftar di sistem. Silakan gunakan alamat email lain.',
+            'email.required'   => 'Email wajib diisi agar akun tetap dapat diverifikasi.',
+            'email.email'      => 'Format email salah. Pastikan menggunakan tanda "@" (contoh: admin@gmail.com).',
+            'email.lowercase'  => 'Email harus ditulis dalam huruf kecil semua (contoh: admin@gmail.com).',
+            'email.unique'     => 'Email ini sudah terdaftar di sistem. Silakan gunakan alamat email lain.',
 
             // Nomor HP
             'phone.required'       => 'Nomor Telepon tidak boleh kosong. Silakan masukkan nomor telepon Anda.',
             'phone.numeric'        => 'Nomor HP harus berupa angka.',
             'phone.digits_between' => 'Nomor HP tidak valid. Pastikan terdiri dari 10 sampai 14 digit angka.',
+            'phone.max'            => 'Nomor HP terlalu panjang. Maksimal 14 digit angka.',
 
             // Avatar / Foto
             'avatar.image' => 'File yang Anda pilih bukan gambar. Gunakan format JPG, PNG, atau WebP.',
@@ -110,7 +136,11 @@ class ProfileUpdateRequest extends FormRequest
             'password.min'       => 'Password terlalu pendek. Gunakan minimal 8 karakter agar akun tetap aman.',
             'password.max'       => 'Password terlalu panjang. Maksimal adalah 255 karakter.',
             'password.confirmed' => 'Konfirmasi kata sandi baru tidak cocok. Pastikan keduanya sama.',
-            'password.regex'     => 'Password harus berisi kombinasi huruf dan angka (contoh: Admin123).',
+            // Pesan generik ini sengaja dikosongkan string-nya karena akan
+            // digantikan oleh pesan spesifik di failedValidation().
+            // Nilai dummy diperlukan agar key dikenali Laravel, tapi tidak
+            // akan pernah tampil ke user karena selalu di-replace di bawah.
+            'password.regex'     => '__replaced__',
         ];
     }
 }

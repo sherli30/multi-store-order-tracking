@@ -30,12 +30,16 @@ class ConfirmablePasswordController extends Controller
             'password' => $request->password,
         ])) {
             throw ValidationException::withMessages([
-                'password' => __('auth.password'),
+                'password' => 'Kata sandi yang Anda masukkan salah. Pastikan tidak ada salah ketik dan Caps Lock tidak aktif.',
             ]);
         }
 
-        $request->session()->put('auth.password_confirmed_at', time());
+        try {
+            $request->session()->put('auth.password_confirmed_at', time());
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+            return redirect()->intended(RouteServiceProvider::HOME);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan saat memverifikasi sesi. Silakan coba lagi.');
+        }
     }
 }

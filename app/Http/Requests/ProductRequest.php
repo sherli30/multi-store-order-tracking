@@ -42,8 +42,8 @@ class ProductRequest extends FormRequest
             'variants.*.id'     => ['nullable', 'exists:product_variants,id'],
             'variants.*.name'   => ['required', 'string', 'max:255'],
             'variants.*.sku'    => ['nullable', 'string', 'max:100'],
-            'variants.*.price'  => ['required', 'numeric', 'min:0'],
-            'variants.*.stock'  => [$this->isMethod('POST') ? 'required' : 'nullable', 'integer', 'min:0'],
+            'variants.*.price'  => ['required', 'numeric', 'min:0', 'max:999999999'],
+            'variants.*.stock'  => [$this->isMethod('POST') ? 'required' : 'nullable', 'integer', 'min:0', 'max:999999'],
             'variants.*.weight' => ['required', 'numeric', 'min:0'],
 
             // Multiple Images
@@ -104,6 +104,7 @@ class ProductRequest extends FormRequest
             'weight.required'      => 'Berat produk wajib diisi. Berat digunakan untuk kalkulasi ongkos kirim.',
             'weight.numeric'       => 'Berat harus berupa angka (contoh: 500 untuk 500 gram).',
             'weight.min'           => 'Berat tidak boleh bernilai negatif.',
+            'weight.max'           => 'Berat yang dimasukkan terlalu besar. Maksimal 999.999 gram.',
 
             // ── Variasi Produk ────────────────────────────────────────────────
             'variants.required'          => 'Tambahkan setidaknya 1 variasi produk sebelum menyimpan.',
@@ -114,9 +115,11 @@ class ProductRequest extends FormRequest
             'variants.*.price.required'  => 'Harga wajib diisi untuk setiap variasi.',
             'variants.*.price.numeric'   => 'Harga variasi harus berupa angka.',
             'variants.*.price.min'       => 'Harga variasi tidak boleh bernilai negatif.',
+            'variants.*.price.max'       => 'Harga variasi terlalu besar. Maksimal Rp 999.999.999 per variasi.',
             'variants.*.stock.required'  => 'Stok awal wajib diisi untuk setiap variasi. Masukkan 0 jika belum tersedia.',
             'variants.*.stock.integer'   => 'Stok variasi harus berupa bilangan bulat.',
             'variants.*.stock.min'       => 'Stok variasi tidak boleh bernilai negatif.',
+            'variants.*.stock.max'       => 'Jumlah stok variasi terlalu besar. Maksimal 999.999 unit.',
             'variants.*.weight.required' => 'Berat wajib diisi untuk setiap variasi.',
             'variants.*.weight.numeric'  => 'Berat variasi harus berupa angka.',
             'variants.*.weight.min'      => 'Berat variasi tidak boleh bernilai negatif.',
@@ -129,6 +132,8 @@ class ProductRequest extends FormRequest
             'replace_images.*.image' => 'File pengganti bukan gambar. Pastikan file bertipe gambar.',
             'replace_images.*.mimes' => 'Format gambar pengganti tidak didukung. Gunakan .jpg, .jpeg, .png, atau .webp.',
             'replace_images.*.max'   => 'Ukuran foto pengganti terlalu besar. Maksimal 2 MB per file.',
+            'deleted_images.*.exists'  => 'Foto yang ingin dihapus tidak ditemukan. Muat ulang halaman dan coba lagi.',
+            'primary_image_id.exists'  => 'Foto utama yang dipilih tidak ditemukan. Pilih ulang foto utama produk.',
 
             // ── Deskripsi ─────────────────────────────────────────────────────
             'descriptions.*.title.required'   => 'Judul deskripsi tidak boleh kosong.',

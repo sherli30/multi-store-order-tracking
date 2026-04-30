@@ -56,12 +56,19 @@ class StockController extends Controller
 
         $qty = (int) $request->validated('qty');
 
-        $this->stockService->addStock(
-            variant:     $variant,
-            qty:         $qty,
-            source:      'manual_adjustment',
-            referenceId: null,
-        );
+        try {
+            $this->stockService->addStock(
+                variant:     $variant,
+                qty:         $qty,
+                source:      'manual_adjustment',
+                referenceId: null,
+            );
+        } catch (\Exception $e) {
+            return back()->with('error', [
+                'title' => 'Stok Gagal Ditambahkan',
+                'message' => 'Terjadi kesalahan saat menambahkan stok. Silakan coba lagi.'
+            ]);
+        }
 
         // ── MULTI NOTIFICATION (TOAST) — add stock ────────────────────────
         $messages = [];
@@ -99,8 +106,13 @@ class StockController extends Controller
             );
         } catch (InsufficientStockException $e) {
             return back()->with('error', [
-                'title' => 'Stok Gagal Dikurangi',
+                'title'   => 'Stok Gagal Dikurangi',
                 'message' => $e->getMessage()
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('error', [
+                'title'   => 'Stok Gagal Dikurangi',
+                'message' => 'Terjadi kesalahan saat mengurangi stok. Silakan coba lagi.'
             ]);
         }
 

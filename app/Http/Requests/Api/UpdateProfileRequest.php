@@ -16,7 +16,7 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'    => 'required|string|min:3|max:255',
+            'name'    => 'sometimes|required|string|min:3|max:255',
             'phone'   => 'nullable|string|min:10|max:20',
             'address' => 'nullable|string|min:5',
             'avatar'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
@@ -26,11 +26,22 @@ class UpdateProfileRequest extends FormRequest
     public function messages(): array
     {
         return [
+            // Nama
             'name.required' => 'Nama lengkap tidak boleh kosong.',
+            'name.string'   => 'Nama harus berupa teks, bukan angka atau karakter khusus.',
             'name.min'      => 'Nama minimal harus terdiri dari 3 karakter.',
+            'name.max'      => 'Nama terlalu panjang. Maksimal 255 karakter.',
+
+            // Nomor HP
+            'phone.string'  => 'Nomor HP harus berupa teks angka, bukan format lain.',
             'phone.min'     => 'Nomor HP tidak valid. Minimal 10 digit.',
-            'phone.max'     => 'Nomor HP terlalu panjang.',
-            'address.min'   => 'Alamat terlalu singkat. Mohon masukkan alamat yang lebih detail.',
+            'phone.max'     => 'Nomor HP terlalu panjang. Maksimal 20 digit.',
+
+            // Alamat
+            'address.string' => 'Alamat harus berupa teks.',
+            'address.min'    => 'Alamat terlalu singkat. Mohon masukkan alamat yang lebih detail.',
+
+            // Avatar / Foto
             'avatar.image'  => 'File yang Anda pilih bukan gambar.',
             'avatar.mimes'  => 'Format foto profil harus JPG, JPEG, atau PNG.',
             'avatar.max'    => 'Ukuran foto terlalu besar. Maksimal adalah 2MB.',

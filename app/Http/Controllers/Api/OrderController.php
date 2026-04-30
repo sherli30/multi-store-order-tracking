@@ -14,45 +14,38 @@ class OrderController extends Controller
     /**
      * Submit a new order from the mobile app
      */
-    public function store(Request $request)
+    public function store(\App\Http\Requests\Api\StoreOrderRequest $request)
     {
-        $request->validate([
-            'store_id' => 'required|exists:stores,id',
-            'customer_name' => 'required|string|max:255',
-            'customer_phone' => 'nullable|string|max:20',
-            'shipping_address' => 'required|string',
-            'shipping_type' => 'required|in:reguler,cargo',
-            'items' => 'required|array|min:1',
-            'items.*.variant_id' => 'required|exists:product_variants,id',
-            'items.*.quantity' => 'required|integer|min:1',
-        ]);
+        // Data otomatis tervalidasi oleh StoreOrderRequest
 
         try {
             DB::beginTransaction();
 
             // Calculate total amount & prepare items
-            $totalAmount = 0;
+            $totalAmount    = 0;
             $orderItemsData = [];
 
             foreach ($request->items as $item) {
                 $variant = ProductVariant::lockForUpdate()->findOrFail($item['variant_id']);
 
+                // Cek stok tidak mencukupi — rollback dulu sebelum return
                 if ($variant->stock < $item['quantity']) {
+                    DB::rollBack();
                     return response()->json([
-                        'status' => 'error',
-                        'message' => "Stok produk {$variant->name} tidak mencukupi."
+                        'status'  => 'error',
+                        'message' => 'Stok produk "' . $variant->name . '" tidak mencukupi. Tersedia ' . $variant->stock . ' unit, Anda memesan ' . $item['quantity'] . ' unit.',
                     ], 400);
                 }
 
-                $subtotal = $variant->price * $item['quantity'];
+                $subtotal     = $variant->price * $item['quantity'];
                 $totalAmount += $subtotal;
 
                 $orderItemsData[] = [
-                    'product_id' => $variant->product_id,
+                    'product_id'         => $variant->product_id,
                     'product_variant_id' => $variant->id,
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $variant->price,
-                    'subtotal' => $subtotal,
+                    'quantity'           => $item['quantity'],
+                    'unit_price'         => $variant->price,
+                    'subtotal'           => $subtotal,
                 ];
 
                 // Deduct stock
@@ -61,14 +54,14 @@ class OrderController extends Controller
 
             // Create Order
             $order = Order::create([
-                'store_id' => $request->store_id,
-                'customer_name' => $request->customer_name,
-                'customer_phone' => $request->customer_phone,
+                'store_id'         => $request->store_id,
+                'customer_name'    => $request->customer_name,
+                'customer_phone'   => $request->customer_phone,
                 'shipping_address' => $request->shipping_address,
-                'shipping_type' => $request->shipping_type,
-                'status' => 'pending',
-                'total_amount' => $totalAmount,
-                'order_number' => 'ORD-' . strtoupper(uniqid()),
+                'shipping_type'    => $request->shipping_type,
+                'status'           => 'pending',
+                'total_amount'     => $totalAmount,
+                'order_number'     => 'ORD-' . strtoupper(uniqid()),
             ]);
 
             // Insert Order Items
@@ -80,17 +73,23 @@ class OrderController extends Controller
             DB::commit();
 
             return response()->json([
-                'status' => 'success',
-                'message' => 'Pesanan berhasil dibuat',
-                'data' => $order->load('orderItems')
+                'status'  => 'success',
+                'message' => 'Pesanan Anda berhasil dibuat dengan nomor ' . $order->order_number . '. Silakan lakukan pembayaran untuk memproses pesanan.',
+                'data'    => $order->load('orderItems')
             ], 201);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Salah satu produk yang Anda pesan tidak ditemukan. Silakan periksa kembali daftar pesanan Anda.',
+            ], 404);
 
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
-                'status' => 'error',
-                'message' => 'Terjadi kesalahan saat memproses pesanan',
-                'error' => $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server saat memproses pesanan. Silakan coba beberapa saat lagi.',
             ], 500);
         }
     }

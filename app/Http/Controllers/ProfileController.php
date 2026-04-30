@@ -49,9 +49,15 @@ class ProfileController extends Controller
                 Storage::disk('public')->delete($user->avatar);
             }
 
-            $validated['avatar'] = $request->file('avatar')->store('avatars', 'public');
-        }
+            $path = $request->file('avatar')->store('avatars', 'public');
 
+            if (!$path) {
+                return Redirect::route('profile.edit')
+                    ->with('error', 'Gagal mengunggah foto profil. Silakan coba lagi atau gunakan file lain.');
+            }
+
+            $validated['avatar'] = $path;
+        }
         // Terapkan semua perubahan sekaligus
         $user->fill($validated);
         $user->save();
@@ -86,13 +92,17 @@ class ProfileController extends Controller
      */
     public function updatePassword(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->update([
-            'password' => Hash::make($request->password),
-        ]);
+        try {
+            $request->user()->update([
+                'password' => Hash::make($request->password),
+            ]);
 
-        return back()->with(
-            'password_success',
-            'Kata sandi berhasil diperbarui. Akun Anda sekarang lebih aman dengan kredensial baru.'
-        );
+            return back()->with(
+                'password_success',
+                'Kata sandi berhasil diperbarui. Akun Anda sekarang lebih aman dengan kredensial baru.'
+            );
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal memperbarui kata sandi. Terjadi kesalahan pada sistem, silakan coba lagi.');
+        }
     }
 }

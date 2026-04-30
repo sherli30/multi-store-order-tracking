@@ -50,7 +50,11 @@ class LoginRequest extends FormRequest
             // Password
             'password.required' => 'Password wajib diisi untuk masuk ke sistem.',
             'password.min'      => 'Password terlalu pendek. Gunakan minimal 8 karakter agar akun tetap aman.',
-            'password.regex'    => 'Password harus berisi kombinasi huruf dan angka (contoh: Admin123).',
+            // Pesan generik ini sengaja dikosongkan string-nya karena akan
+            // digantikan oleh pesan spesifik di failedValidation().
+            // Nilai dummy diperlukan agar key dikenali Laravel, tapi tidak
+            // akan pernah tampil ke user karena selalu di-replace di bawah.
+            'password.regex'    => '__replaced__',
         ];
     }
 
@@ -113,5 +117,37 @@ class LoginRequest extends FormRequest
     public function throttleKey(): string
     {
         return Str::transliterate(Str::lower($this->string('email')) . '|' . $this->ip());
+    }
+
+    /**
+     * PISAH PESAN REGEX: Angka dan huruf ditampilkan sebagai error terpisah
+     */
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator): void
+    {
+        $errors = $validator->errors();
+
+        if ($errors->has('password')) {
+            $raw = $this->input('password', '');
+            $passwordErrors = $errors->get('password');
+
+            $filteredErrors = array_filter($passwordErrors, function ($msg) {
+                return $msg !== '__replaced__';
+            });
+
+            if (!preg_match('/[0-9]/', $raw)) {
+                $filteredErrors[] = 'Password harus mengandung minimal 1 angka (contoh: Admin123).';
+            }
+            if (!preg_match('/[A-Za-z]/', $raw)) {
+                $filteredErrors[] = 'Password harus mengandung minimal 1 huruf (contoh: Admin123).';
+            }
+
+            $errors->forget('password');
+            foreach (array_values($filteredErrors) as $msg) {
+                $errors->add('password', $msg);
+            }
+        }
+
+        throw (new \Illuminate\Validation\ValidationException($validator))
+            ->redirectTo($this->getRedirectUrl());
     }
 }

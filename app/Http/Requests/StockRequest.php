@@ -61,6 +61,7 @@ class StockRequest extends FormRequest
             'note.max'      => 'Catatan terlalu panjang. Maksimal 500 karakter, cukup tuliskan poin penting saja.',
 
             // Type (Opsional jika digunakan)
+            'type.string'   => 'Tipe transaksi harus berupa teks.',
             'type.in'       => 'Tipe transaksi tidak valid. Pilihan yang tersedia hanya "in" (stok masuk) atau "out" (stok keluar).',
         ];
     }
