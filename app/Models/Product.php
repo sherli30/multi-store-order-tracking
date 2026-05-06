@@ -19,10 +19,12 @@ class Product extends Model
         'name',
         'slug',
         'is_active',
+        'is_featured',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_featured' => 'boolean',
     ];
 
     /**
@@ -233,5 +235,18 @@ class Product extends Model
     public function getPriceAttribute()
     {
         return $this->variants()->where('is_active', true)->min('price') ?? 0;
+    }
+
+    /**
+     * Otomatis hapus semua foto produk saat produk dihapus secara permanen.
+     */
+    protected static function booted()
+    {
+        static::forceDeleted(function ($product) {
+            foreach ($product->images as $image) {
+                // Memicu hook deleting pada model ProductImage
+                $image->delete();
+            }
+        });
     }
 }

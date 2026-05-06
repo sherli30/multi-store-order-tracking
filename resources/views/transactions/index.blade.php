@@ -708,7 +708,7 @@
             desc.innerHTML       = `ID Transaksi: <strong>${trxCode}</strong><br>Tandai pembayaran ini sebagai <strong>lunas</strong>.`;
             alert.className      = 'modal-alert info';
             alert.style.display  = 'flex';
-            alertText.innerHTML  = 'Auto-Sync: Status pesanan terkait akan diperbarui otomatis menjadi <strong>Dalam Pengemasan (Processing)</strong>.';
+            alertText.innerHTML  = 'Auto-Sync: Status pesanan terkait akan diperbarui otomatis menjadi <strong>Dikemas</strong>.';
             btn.className        = 'btn-modal primary';
             btn.innerHTML        = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> Tandai Lunas`;
         } else if (type === 'failed') {
@@ -717,7 +717,7 @@
             desc.innerHTML       = `ID Transaksi: <strong>${trxCode}</strong><br>Tandai pembayaran ini sebagai <strong>gagal/tidak valid</strong>.`;
             alert.className      = 'modal-alert warn';
             alert.style.display  = 'flex';
-            alertText.innerHTML  = 'Auto-Sync: Pesanan terkait akan otomatis <strong>dibatalkan (Cancelled)</strong>.';
+            alertText.innerHTML  = 'Auto-Sync: Pesanan terkait akan otomatis <strong>Dibatalkan</strong>.';
             btn.className        = 'btn-modal danger-btn';
             btn.innerHTML        = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Tolak Pembayaran`;
         } else if (type === 'refund') {

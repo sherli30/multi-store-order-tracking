@@ -15,7 +15,7 @@ class DeliveryController extends Controller
     public function index(Request $request)
     {
         $query = Order::with('store', 'trackingHistories')
-            ->whereIn('status', ['processing', 'shipping', 'completed', 'cancelled'])
+            ->whereIn('status', ['perlu_diproses', 'processing', 'shipping', 'completed', 'cancelled'])
             ->latest();
 
         $query->when($request->filled('search'), function ($q) use ($request) {
@@ -93,7 +93,13 @@ class DeliveryController extends Controller
             ]);
         });
 
-        return back()->with('success', "Status pesanan {$order->order_number} berhasil diperbarui menjadi {$request->status}!");
+        $statusLabel = [
+            'processing' => 'Dikemas',
+            'shipping'   => 'Dikirim',
+            'completed'  => 'Selesai',
+        ][$request->status] ?? $request->status;
+
+        return back()->with('success', "Status pesanan {$order->order_number} berhasil diperbarui menjadi {$statusLabel}!");
     }
 
     /**

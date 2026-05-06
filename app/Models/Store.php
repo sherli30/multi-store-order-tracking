@@ -36,7 +36,7 @@ class Store extends Model
     public function getLogoUrlAttribute(): string
     {
         if ($this->logo) {
-            return "http://192.168.22.39:8000/storage/" . $this->logo;
+            return "http://192.168.2.11:8000/storage/" . $this->logo;
         }
         // Fallback jika logo kosong
         return "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&background=random&size=128";
@@ -92,5 +92,17 @@ class Store extends Model
     public function activeProducts(): HasMany
     {
         return $this->hasMany(Product::class)->where('is_active', true);
+    }
+
+    /**
+     * Otomatis hapus file logo saat toko dihapus.
+     */
+    protected static function booted()
+    {
+        static::deleting(function ($store) {
+            if ($store->logo && \Illuminate\Support\Facades\Storage::disk('public')->exists($store->logo)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($store->logo);
+            }
+        });
     }
 }

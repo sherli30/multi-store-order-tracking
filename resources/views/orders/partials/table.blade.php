@@ -1,170 +1,148 @@
-@if($orders->isEmpty())
-    <div class="empty-state">
-        <div class="empty-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--text-4);">
-                <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/>
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                <line x1="12" y1="22.08" x2="12" y2="12"/>
-            </svg>
-        </div>
-        <div class="empty-title">Tidak ada pesanan ditemukan</div>
-        <div class="empty-desc">Coba ubah filter atau kata kunci pencarian Anda.</div>
-    </div>
+@foreach($orders as $order)
+<tr data-order-id="{{ $order->id }}">
 
-@else
-    <div style="overflow-x: auto;">
-        <table class="order-table">
-            <thead>
-                <tr>
-                    <th style="width:48px; text-align:center;">#</th>
-                    <th>ID Pesanan</th>
-                    <th>Customer</th>
-                    <th>Tanggal</th>
-                    <th>Pengiriman</th>
-                    <th style="text-align:right; padding-right:20px;">Total</th>
-                    <th>Status</th>
-                    <th style="width:56px; text-align:center;">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
+    {{-- No --}}
+    <td class="cell-no"></td>
+
+    {{-- ID Pesanan --}}
+    <td>
+        <div class="product-info">
+            <div class="product-thumb">
                 @php
-                    $startIndex = ($orders->currentPage() - 1) * $orders->perPage() + 1;
-                    $statusLabel = [
-                        'pending'    => 'Menunggu',
-                        'processing' => 'Dikemas',
-                        'shipping'   => 'Dikirim',
-                        'completed'  => 'Selesai',
-                        'cancelled'  => 'Dibatalkan',
-                    ];
+                    $firstItem = $order->orderItems->first();
+                    $product = $firstItem?->product;
                 @endphp
-
-                @foreach($orders as $order)
-                <tr>
-                    {{-- No --}}
-                    <td style="text-align:center; color:var(--text-4); font-size:12px; font-weight:600;">
-                        {{ $startIndex + $loop->index }}
-                    </td>
-
-                    {{-- ID Pesanan --}}
-                    <td>
-                        <div class="order-id">{{ $order->order_number }}</div>
-                        <div class="order-store">{{ $order->store->name ?? '—' }}</div>
-                    </td>
-
-                    {{-- Customer --}}
-                    <td>
-                        <div class="customer-name">{{ $order->customer_name }}</div>
-                        <div class="customer-sub">
-                            {{ $order->orderItems->count() }} produk &middot; {{ $order->orderItems->sum('quantity') }} unit
-                        </div>
-                    </td>
-
-                    {{-- Tanggal --}}
-                    <td style="white-space:nowrap;">
-                        <div style="font-size:13px; font-weight:500; color:var(--text-1);">
-                            {{ $order->created_at->format('d M Y') }}
-                        </div>
-                        <div style="font-size:11.5px; color:var(--text-3);">
-                            {{ $order->created_at->format('H:i') }} WIB
-                        </div>
-                    </td>
-
-                    {{-- Pengiriman --}}
-                    <td>
-                        <span class="shipping-badge shipping-{{ $order->shipping_type }}">
-                            {{ ucfirst($order->shipping_type) }}
-                        </span>
-                    </td>
-
-                    {{-- Total --}}
-                    <td style="text-align:right; padding-right:20px;">
-                        <div class="amount-total">
-                            Rp {{ number_format($order->total_amount, 0, ',', '.') }}
-                        </div>
-                    </td>
-
-                    {{-- Status --}}
-                    <td>
-                        <span class="status {{ $order->status }}">
-                            {{ $statusLabel[$order->status] ?? ucfirst($order->status) }}
-                        </span>
-                    </td>
-
-                    {{-- Aksi --}}
-                    <td style="text-align:center;">
-                        <a href="{{ route('orders.show', $order) }}" class="action-btn" title="Lihat Detail">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </a>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-
-    {{-- Pagination --}}
-    <div class="pagination-wrap">
-        <div class="pagination-info">
-            @if($orders->hasPages())
-                Menampilkan
-                <strong>{{ $orders->firstItem() }}</strong>–<strong>{{ $orders->lastItem() }}</strong>
-                dari <strong>{{ $orders->total() }}</strong> pesanan
-            @else
-                <strong>{{ $orders->total() }}</strong> pesanan ditemukan
-            @endif
-        </div>
-
-        @if($orders->hasPages())
-        <div class="pagination-links">
-            {{-- Prev --}}
-            @if($orders->onFirstPage())
-                <span class="disabled">‹ Prev</span>
-            @else
-                <a href="{{ $orders->previousPageUrl() }}">‹ Prev</a>
-            @endif
-
-            {{-- Numbered pages --}}
-            @php
-                $current = $orders->currentPage();
-                $last    = $orders->lastPage();
-                $start   = max(1, $current - 2);
-                $end     = min($last, $current + 2);
-            @endphp
-
-            @if($start > 1)
-                <a href="{{ $orders->url(1) }}">1</a>
-                @if($start > 2)
-                    <span style="border:none; background:none; color:var(--text-3); cursor:default;">…</span>
-                @endif
-            @endif
-
-            @for($p = $start; $p <= $end; $p++)
-                @if($p === $current)
-                    <span class="active-page">{{ $p }}</span>
+                @if($product && $product->image)
+                    <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $order->order_number }}">
                 @else
-                    <a href="{{ $orders->url($p) }}">{{ $p }}</a>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
                 @endif
-            @endfor
+            </div>
+            <div>
+                <div class="product-name">#{{ $order->order_number }}</div>
+                <div class="product-slug" style="font-family: inherit;">{{ ucfirst($order->shipping_type) }}</div>
+            </div>
+        </div>
+    </td>
 
-            @if($end < $last)
-                @if($end < $last - 1)
-                    <span style="border:none; background:none; color:var(--text-3); cursor:default;">…</span>
-                @endif
-                <a href="{{ $orders->url($last) }}">{{ $last }}</a>
+    {{-- Pelanggan --}}
+    <td>
+        <div class="product-name">{{ $order->customer_name }}</div>
+        <div class="product-slug" style="font-family: inherit;">{{ $order->customer_phone }}</div>
+    </td>
+
+    {{-- Toko --}}
+    <td>
+        <span class="store-badge">
+            {{ $order->store->name ?? 'Toko Pusat' }}
+        </span>
+    </td>
+
+    {{-- Waktu --}}
+    <td>
+        <div style="font-weight: 700; color: var(--text-1); font-size: 13px;">{{ $order->created_at->format('d M Y') }}</div>
+        <div style="font-size: 11px; color: var(--text-3); margin-top: 2px;">{{ $order->created_at->format('H:i') }} WIB</div>
+    </td>
+
+    {{-- Total Harga --}}
+    <td>
+        <div class="price-value">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</div>
+    </td>
+
+    {{-- Status --}}
+    <td>
+        <span class="badge badge-{{ $order->status }}">
+            {{ [
+                'pending' => 'Belum Bayar',
+                'perlu_diproses' => 'Perlu Diproses',
+                'processing' => 'Dikemas',
+                'shipping' => 'Dikirim',
+                'completed' => 'Selesai',
+                'cancelled' => 'Dibatalkan'
+            ][$order->status] ?? ucfirst($order->status) }}
+        </span>
+    </td>
+
+    {{-- Aksi --}}
+    <td>
+        <div class="actions-cell">
+            {{-- Tahap 1: Konfirmasi Pembayaran (Hanya untuk status 'pending') --}}
+            @if($order->status === 'pending')
+                <form action="{{ route('orders.update-status', $order) }}" method="POST" style="display: inline;">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="perlu_diproses">
+                    <button type="submit" class="btn-sm" style="background: var(--amber); color: #fff; border: none;" title="Tandai Sudah Bayar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
+                    </button>
+                </form>
             @endif
 
-            {{-- Next --}}
-            @if($orders->hasMorePages())
-                <a href="{{ $orders->nextPageUrl() }}">Next ›</a>
-            @else
-                <span class="disabled">Next ›</span>
+            {{-- Tahap 2: Konfirmasi Pesanan & Proses (Hanya untuk status 'perlu_diproses') --}}
+            @if($order->status === 'perlu_diproses')
+                <form action="{{ route('orders.update-status', $order) }}" method="POST" style="display: inline;">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="status" value="processing">
+                    <button type="submit" class="btn-sm" style="background: var(--accent); color: #fff; border: none;" title="Konfirmasi & Proses">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </button>
+                </form>
+            @endif
+
+            {{-- Cek Status Midtrans (Hanya untuk status 'pending') --}}
+            @if($order->status === 'pending')
+                <form action="{{ route('orders.check-payment-status', $order) }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn-sm" style="background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border);" title="Cek Status Midtrans">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                </form>
+            @endif
+
+            {{-- View Detail --}}
+            <a href="{{ route('orders.show', $order) }}" class="btn-sm" title="Detail Pesanan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </a>
+
+            {{-- Update Status (Modal Trigger) --}}
+            @if(!in_array($order->status, ['completed', 'cancelled']))
+                <button type="button" class="btn-sm" title="Update Status" 
+                        onclick="openStatusModal('{{ $order->id }}', '{{ $order->order_number }}', '{{ $order->status }}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                    </svg>
+                </button>
+            @endif
+
+            {{-- Cancel Order (Modal Trigger) --}}
+            @if(!in_array($order->status, ['completed', 'cancelled']))
+                <button type="button" class="btn-sm danger" title="Batalkan Pesanan" 
+                        onclick="openCancelModal('{{ $order->id }}', '{{ $order->order_number }}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg>
+                </button>
             @endif
         </div>
-        @endif
-    </div>
-
-@endif
+    </td>
+</tr>
+@endforeach

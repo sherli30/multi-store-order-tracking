@@ -534,17 +534,55 @@
                     </div>
                     <div class="info-row">
                         <div class="info-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" />
                                 <circle cx="12" cy="10" r="3" />
                             </svg>
                             Alamat
                         </div>
-                        <div class="info-value {{ $customer->address ? '' : 'muted' }}" style="line-height:1.6;">
-                            {{ $customer->address ?: 'Alamat belum diisi.' }}
+                        <div class="info-value {{ $customer->address ? '' : 'muted' }}">
+                            {{ $customer->address ?: 'Belum diisi.' }}
                         </div>
                     </div>
+
+                    @if($customer->city)
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 21h18M3 7v14M21 7v14M9 21V11h6v10M2 7l10-4 10 4" />
+                            </svg>
+                            Kota
+                        </div>
+                        <div class="info-value">{{ $customer->city }}</div>
+                    </div>
+                    @endif
+
+                    @if($customer->province)
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
+                                <line x1="8" y1="2" x2="8" y2="18" />
+                                <line x1="16" y1="6" x2="16" y2="22" />
+                            </svg>
+                            Provinsi
+                        </div>
+                        <div class="info-value">{{ $customer->province }}</div>
+                    </div>
+                    @endif
+
+                    @if($customer->postal_code)
+                    <div class="info-row">
+                        <div class="info-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                <polyline points="22,6 12,13 2,6" />
+                            </svg>
+                            Kode Pos
+                        </div>
+                        <div class="info-value">{{ $customer->postal_code }}</div>
+                    </div>
+                    @endif
                     <div class="info-row">
                         <div class="info-label">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"

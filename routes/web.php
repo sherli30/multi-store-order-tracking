@@ -48,6 +48,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('orders/{order}/check-payment-status', [OrderController::class, 'checkPaymentStatus'])->name('orders.check-payment-status');
     Route::patch('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::patch('orders/{order}/shipping', [OrderController::class, 'updateShipping'])->name('orders.update-shipping');
 

@@ -26,6 +26,9 @@ class User extends Authenticatable
         'role',
         'phone',
         'address',
+        'province',
+        'city',
+        'postal_code',
         'is_active',
     ];
 
@@ -56,5 +59,17 @@ class User extends Authenticatable
     public function orders()
     {
         return $this->hasMany(Order::class, 'user_id');
+    }
+
+    /**
+     * Otomatis hapus file avatar saat user dihapus secara permanen.
+     */
+    protected static function booted()
+    {
+        static::forceDeleted(function ($user) {
+            if ($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
+        });
     }
 }

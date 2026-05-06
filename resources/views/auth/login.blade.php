@@ -413,17 +413,7 @@
             line-height: 1;
         }
 
-        .forgot-link {
-            font-size: 14px;
-            color: var(--accent);
-            font-weight: 600;
-            text-decoration: none;
-            line-height: 1;
-        }
 
-        .forgot-link:hover {
-            text-decoration: underline;
-        }
 
 
         .submit-btn {
@@ -717,9 +707,7 @@
                             <span class="remember-text">Ingat saya</span>
                         </label>
 
-                        {{-- @if (Route::has('password.request'))
-                            <a href="{{ route('password.request') }}" class="forgot-link">Lupa sandi?</a>
-                        @endif --}}
+
                     </div>
 
                     <button type="submit" class="submit-btn" id="loginBtn">

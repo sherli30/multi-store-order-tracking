@@ -59,7 +59,7 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Terjadi kesalahan pada server saat mengambil data produk. Silakan coba beberapa saat lagi.',
+                'message' => 'Terjadi kesalahan pada server saat mengambil data produk: ' . $e->getMessage(),
             ], 500);
         }
     }

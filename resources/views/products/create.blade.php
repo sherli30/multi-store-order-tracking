@@ -750,7 +750,14 @@
                                 <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}>
                                 <span class="toggle-slider"></span>
                             </label>
-                            <div class="toggle-label">Aktif</div>
+                            <div class="toggle-label">Aktif / Publikasi</div>
+                        </div>
+                        <div class="toggle-card">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_featured" value="1" {{ old('is_featured') ? 'checked' : '' }}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <div class="toggle-label">Unggulan (Home)</div>
                         </div>
                         <p class="field-hint">Produk yang tidak aktif akan disembunyikan dari daftar belanja pelanggan.</p>
                     </div>

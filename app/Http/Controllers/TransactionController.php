@@ -73,7 +73,7 @@ class TransactionController extends Controller
             $order = $transaction->order;
             if ($order && $order->status === 'pending') {
                 $order->update([
-                    'status' => 'processing'
+                    'status' => 'perlu_diproses'
                 ]);
 
                 // Update stock when payment is verified
@@ -82,8 +82,8 @@ class TransactionController extends Controller
                 TrackingHistory::create([
                     'order_id' => $order->id,
                     'admin_id' => auth()->id(),
-                    'status'   => 'processing',
-                    'notes'    => 'Status pesanan otomatis diproses karena pembayaran Lunas.',
+                    'status'   => 'perlu_diproses',
+                    'notes'    => 'Status pesanan otomatis diperbarui menjadi Perlu Diproses karena pembayaran Lunas.',
                 ]);
             }
         }

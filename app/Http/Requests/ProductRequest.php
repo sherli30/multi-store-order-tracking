@@ -28,6 +28,7 @@ class ProductRequest extends FormRequest
             ],
             'name'        => ['required', 'string', 'max:255'],
             'is_active'   => ['nullable', 'boolean'],
+            'is_featured' => ['nullable', 'boolean'],
 
             // Variasi
             'has_variants' => ['nullable', 'boolean'],
@@ -191,6 +192,7 @@ class ProductRequest extends FormRequest
         $this->merge([
             'price'           => $price,
             'is_active'       => $this->has('is_active'),
+            'is_featured'     => $this->has('is_featured'),
             'has_variants'    => $this->has('has_variants'),
             'variants'        => $variants,
             'packing_options' => $packingOptions,

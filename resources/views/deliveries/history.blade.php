@@ -182,13 +182,13 @@
                 <div class="timeline-content-left">
                     <h4>
                         @if($h->status === 'processing')
-                            Paket Dalam Pengemasan Gudang
+                            Dikemas
                         @elseif($h->status === 'shipping')
-                            Paket Dikirim ke Kurir Ekspedisi
+                            Dikirim
                         @elseif($h->status === 'completed')
-                            Paket Tiba di Alamat Penerima
+                            Selesai
                         @elseif($h->status === 'cancelled')
-                            Paket Dibatalkan/Return
+                            Dibatalkan
                         @else
                             {{ ucfirst($h->status) }}
                         @endif

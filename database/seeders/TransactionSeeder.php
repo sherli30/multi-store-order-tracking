@@ -20,8 +20,10 @@ class TransactionSeeder extends Seeder
                 $status = 'pending';
             } elseif ($order->status == 'cancelled') {
                 $status = fake()->randomElement(['refund', 'failed']);
-            } else {
+            } elseif ($order->status == 'perlu_diproses' || $order->status == 'processing' || $order->status == 'shipping' || $order->status == 'completed') {
                 $status = 'paid';
+            } else {
+                $status = 'pending';
             }
 
             \App\Models\Transaction::factory()->create([

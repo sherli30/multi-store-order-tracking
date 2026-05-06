@@ -16,9 +16,12 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name'    => 'sometimes|required|string|min:3|max:255',
+            'name'    => 'required|string|min:3|max:255',
             'phone'   => 'nullable|string|min:10|max:20',
             'address' => 'nullable|string|min:5',
+            'province' => 'required|string|max:100',
+            'city'    => 'required|string|max:100',
+            'postal_code' => 'required|string|max:10',
             'avatar'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ];
     }
@@ -40,6 +43,15 @@ class UpdateProfileRequest extends FormRequest
             // Alamat
             'address.string' => 'Alamat harus berupa teks.',
             'address.min'    => 'Alamat terlalu singkat. Mohon masukkan alamat yang lebih detail.',
+
+            // Wilayah
+            'province.required' => 'Provinsi wajib dipilih.',
+            'province.string' => 'Nama provinsi harus berupa teks.',
+            'city.required'   => 'Nama kota tidak boleh kosong.',
+            'city.string'    => 'Nama kota harus berupa teks.',
+            'city.max'       => 'Nama kota terlalu panjang.',
+            'postal_code.required' => 'Kode pos tidak boleh kosong.',
+            'postal_code.max' => 'Kode pos maksimal 10 karakter.',
 
             // Avatar / Foto
             'avatar.image'  => 'File yang Anda pilih bukan gambar.',

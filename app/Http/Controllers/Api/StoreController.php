@@ -26,14 +26,14 @@ class StoreController extends Controller
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Data toko berhasil diambil.',
+                'message' => 'Daftar toko berhasil dimuat. Ditemukan ' . $stores->count() . ' toko aktif.',
                 'data'    => $stores
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Terjadi kesalahan saat mengambil data toko.',
+                'message' => 'Terjadi kendala teknis saat mengambil data toko. Silakan coba beberapa saat lagi.',
             ], 500);
         }
     }

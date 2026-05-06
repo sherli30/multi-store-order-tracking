@@ -33,14 +33,14 @@ class CategoryController extends Controller
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Data kategori berhasil diambil.',
+                'message' => 'Daftar kategori berhasil dimuat. Ditemukan ' . $categories->count() . ' kategori aktif.',
                 'data'    => $categories
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Terjadi kesalahan saat mengambil data kategori.',
+                'message' => 'Terjadi kendala teknis saat mengambil data kategori. Silakan coba beberapa saat lagi.',
             ], 500);
         }
     }

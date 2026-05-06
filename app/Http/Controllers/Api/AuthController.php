@@ -83,14 +83,18 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            // Deteksi perubahan SEBELUM update() agar perbandingan akurat
-            $nameChanged   = $request->filled('name')    && $user->name    !== $request->name;
-            $phoneChanged  = $request->filled('phone')   && $user->phone   !== $request->phone;
-            $addressChanged = $request->filled('address') && $user->address !== $request->address;
-            $avatarChanged = $request->hasFile('avatar');
+            // Menggunakan has() agar nilai kosong tetap terdeteksi sebagai "perubahan" 
+            // sehingga validasi Required di Request API bisa terpancing.
+            $nameChanged    = $request->has('name')    && $user->name    !== $request->name;
+            $phoneChanged   = $request->has('phone')   && $user->phone   !== $request->phone;
+            $addressChanged = $request->has('address') && $user->address !== $request->address;
+            $provinceChanged = $request->has('province') && $user->province !== $request->province;
+            $cityChanged    = $request->has('city')    && $user->city    !== $request->city;
+            $postalChanged  = $request->has('postal_code') && $user->postal_code !== $request->postal_code;
+            $avatarChanged  = $request->hasFile('avatar');
 
             // ── Tidak ada perubahan sama sekali ──────────────────────────────
-            if (!$nameChanged && !$phoneChanged && !$addressChanged && !$avatarChanged) {
+            if (!$nameChanged && !$phoneChanged && !$addressChanged && !$provinceChanged && !$cityChanged && !$postalChanged && !$avatarChanged) {
                 return response()->json([
                     'status'  => 'info',
                     'message' => 'Data Anda sudah sesuai. Tidak ada perubahan yang dilakukan.',
@@ -100,7 +104,7 @@ class AuthController extends Controller
                 ], 200);
             }
 
-            $data = $request->only(['name', 'phone', 'address']);
+            $data = $request->only(['name', 'phone', 'address', 'province', 'city', 'postal_code']);
 
             // ── Proses unggah foto baru ───────────────────────────────────────
             if ($avatarChanged) {
@@ -136,6 +140,15 @@ class AuthController extends Controller
             }
             if ($addressChanged) {
                 $messages[] = 'Alamat berhasil diperbarui.';
+            }
+            if ($provinceChanged) {
+                $messages[] = 'Provinsi berhasil diperbarui.';
+            }
+            if ($cityChanged) {
+                $messages[] = 'Kota berhasil diperbarui.';
+            }
+            if ($postalChanged) {
+                $messages[] = 'Kode pos berhasil diperbarui.';
             }
 
             return response()->json([
@@ -178,6 +191,39 @@ class AuthController extends Controller
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kesalahan saat keluar dari sistem. Silakan coba beberapa saat lagi.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Simulation of Forgot Password
+     */
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email'
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email'    => 'Format email tidak valid.',
+            'email.exists'   => 'Email tidak terdaftar di sistem kami.'
+        ]);
+
+        try {
+            $user = User::where('email', $request->email)->first();
+            
+            // Simulation: Reset password to 12345678
+            $user->password = Hash::make('12345678');
+            $user->save();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Password Anda telah berhasil direset menjadi "12345678" demi kemudahan demonstrasi. Silakan login kembali.',
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal mereset password. Silakan coba beberapa saat lagi.',
             ], 500);
         }
     }

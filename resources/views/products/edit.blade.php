@@ -964,6 +964,14 @@
                             </label>
                             <div class="toggle-label">Aktif / Publikasi</div>
                         </div>
+                        <div class="toggle-card">
+                            <label class="toggle-switch">
+                                <input type="checkbox" name="is_featured" value="1"
+                                    {{ old('is_featured', $product->is_featured) ? 'checked' : '' }}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <div class="toggle-label">Unggulan (Home)</div>
+                        </div>
                     </div>
                 </div>
 

@@ -293,6 +293,7 @@ class ProductController extends Controller
             $storeChanged      = (int) $product->store_id !== (int) $data['store_id'];
             $categoryChanged   = (int) $product->category_id !== (int) $data['category_id'];
             $statusChanged     = (bool) $product->is_active !== (bool) $data['is_active'];
+            $featuredChanged   = (bool) $product->is_featured !== (bool) $data['is_featured'];
             $imagesDeleted     = !empty($data['deleted_images']);
             $imagesReplaced    = $request->hasFile('replace_images');
             $imagesAdded       = $request->hasFile('images');
@@ -485,8 +486,12 @@ class ProductController extends Controller
             }
 
             if ($statusChanged) {
-                $statusLabel = $data['is_active'] ? 'Aktif' : 'Nonaktif';
                 $messages[] = "Status produk berhasil diubah menjadi <strong>{$statusLabel}</strong>.";
+            }
+
+            if ($featuredChanged) {
+                $featuredLabel = $data['is_featured'] ? 'Unggulan' : 'Reguler';
+                $messages[] = "Status Unggulan berhasil diubah menjadi <strong>{$featuredLabel}</strong>.";
             }
 
             if ($singlePriceChanged) {

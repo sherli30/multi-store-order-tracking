@@ -51,10 +51,10 @@ class ProductCategorySeeder extends Seeder
                 ProductCategory::firstOrCreate(
                     [
                         'store_id' => $store->id,
-                        'slug'     => $store->id . '-' . Str::slug($name),
+                        'slug' => $store->id . '-' . Str::slug($name),
                     ],
                     [
-                        'name'      => $name,
+                        'name' => $name,
                         'is_active' => true,
                     ]
                 );

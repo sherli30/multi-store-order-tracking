@@ -26,4 +26,16 @@ class ProductImage extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    /**
+     * Otomatis hapus file foto dari storage saat record ProductImage dihapus.
+     */
+    protected static function booted()
+    {
+        static::deleting(function ($image) {
+            if ($image->image_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($image->image_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($image->image_path);
+            }
+        });
+    }
 }

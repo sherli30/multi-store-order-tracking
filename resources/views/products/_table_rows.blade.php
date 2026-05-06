@@ -37,6 +37,9 @@
             </div>
             <div>
                 <div class="product-name">{{ $product->name }}</div>
+                @if($product->is_featured)
+                    <span style="font-size: 10px; font-weight: 800; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">UNGGULAN (HOME)</span>
+                @endif
             </div>
         </div>
     </td>

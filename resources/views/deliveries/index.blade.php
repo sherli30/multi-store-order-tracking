@@ -236,14 +236,21 @@ tr:hover { background: var(--surface); }
                         @endif
                     </td>
                     <td>
-                        @if($order->status === 'processing')
-                            <span class="badge badge-warning">Proses Kemas</span>
+                        @if($order->status === 'paid')
+                            <span class="badge badge-blue">Perlu Diproses</span>
+                        @elseif($order->status === 'processing')
+                            <span class="badge badge-warning">Dikemas</span>
                         @elseif($order->status === 'shipping')
-                            <span class="badge badge-blue">Terkirim ke Kurir</span>
+                            <span class="badge badge-blue">Dikirim</span>
                         @elseif($order->status === 'completed')
-                            <span class="badge badge-success">Paket Tiba</span>
+                            <span class="badge badge-success">Selesai</span>
                         @else
-                            <span class="badge badge-gray">{{ ucfirst($order->status) }}</span>
+                            <span class="badge badge-gray">
+                                {{ [
+                                    'pending' => 'Belum Bayar',
+                                    'cancelled' => 'Dibatalkan'
+                                ][$order->status] ?? ucfirst($order->status) }}
+                            </span>
                         @endif
                     </td>
                     <td style="font-size:12.5px; color:var(--text-3);">
@@ -286,9 +293,10 @@ tr:hover { background: var(--surface); }
                 <div class="form-group">
                     <label class="form-label">Ubah Status Menjadi <span style="color:var(--red);">*</span></label>
                     <select name="status" id="modalStatus" class="form-select" required onchange="toggleResiFields()">
-                        <option value="processing">Sedang Dikemas (Processing)</option>
-                        <option value="shipping">Serahkan ke Kurir (Shipping)</option>
-                        <option value="completed">Paket Tiba (Completed)</option>
+                        <option value="paid">Perlu Diproses</option>
+                        <option value="processing">Dikemas</option>
+                        <option value="shipping">Dikirim</option>
+                        <option value="completed">Selesai</option>
                     </select>
                 </div>
                 

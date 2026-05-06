@@ -9,6 +9,7 @@ use App\Models\TrackingHistory;
 use App\Services\OrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -23,9 +24,12 @@ class OrderController extends Controller
         // ── Tab counts (single query via groupBy for efficiency) ──────────
         $countQuery = Order::query();
 
-        // Apply non-status filters so tab counts respect active store/search/date filters
+        // Apply filters so tab counts respect active store/search/date/shipping filters
         if ($storeId = $request->input('store_id')) {
             $countQuery->where('store_id', $storeId);
+        }
+        if ($shippingType = $request->input('shipping_type')) {
+            $countQuery->where('shipping_type', $shippingType);
         }
         if ($search = $request->input('search')) {
             $countQuery->where(function ($q) use ($search) {
@@ -46,6 +50,7 @@ class OrderController extends Controller
         $tabCounts = [
             'all'        => array_sum($statusCounts),
             'pending'    => $statusCounts['pending']    ?? 0,
+            'perlu_diproses' => $statusCounts['perlu_diproses'] ?? 0,
             'processing' => $statusCounts['processing'] ?? 0,
             'shipping'   => $statusCounts['shipping']   ?? 0,
             'completed'  => $statusCounts['completed']  ?? 0,
@@ -53,27 +58,34 @@ class OrderController extends Controller
         ];
 
         // ── Main query — only load what the table needs ───────────────────
-        $query = Order::with(['store', 'orderItems']);
+        $query = Order::with(['store', 'orderItems.productVariant.product']);
 
         // Sorting
-        $sort = $request->input('sort', 'created_at');
-        $dir  = $request->input('dir', 'desc');
-        $allowedSorts = ['created_at', 'status', 'total_amount'];
-        if (in_array($sort, $allowedSorts)) {
-            $query->orderBy($sort, $dir === 'asc' ? 'asc' : 'desc');
+        $sort = $request->input('sort', 'desc');
+        if ($sort === 'asc') {
+            $query->oldest();
+        } elseif ($sort === 'total_high') {
+            $query->orderBy('total_amount', 'desc');
+        } elseif ($sort === 'total_low') {
+            $query->orderBy('total_amount', 'asc');
         } else {
             $query->latest();
         }
 
         // Filter by tab/status
         $tab = $request->input('tab', 'all');
-        if ($tab !== 'all' && in_array($tab, ['pending', 'processing', 'shipping', 'completed', 'cancelled'])) {
+        if ($tab !== 'all' && in_array($tab, ['pending', 'perlu_diproses', 'processing', 'shipping', 'completed', 'cancelled'])) {
             $query->where('status', $tab);
         }
 
         // Filter by store
         if ($storeId) {
             $query->where('store_id', $storeId);
+        }
+
+        // Filter by shipping type
+        if ($shippingType) {
+            $query->where('shipping_type', $shippingType);
         }
 
         // Filter by explicit status param (sidebar links)
@@ -130,13 +142,13 @@ class OrderController extends Controller
     public function updateStatus(Request $request, Order $order): RedirectResponse
     {
         $request->validate([
-            'status' => 'required|in:pending,processing,shipping,completed',
+            'status' => 'required|in:pending,perlu_diproses,processing,shipping,completed',
         ]);
 
         $newStatus = $request->status;
 
-        // Deduct stock when order moves to 'processing' (if not already done)
-        if ($newStatus === 'processing' && !$order->is_stock_deducted) {
+        // Deduct stock when order moves to 'perlu_diproses' or 'processing' (if not already done)
+        if (in_array($newStatus, ['perlu_diproses', 'processing']) && !$order->is_stock_deducted) {
             try {
                 $this->orderService->processOrderStock($order);
             } catch (InsufficientStockException $e) {
@@ -154,8 +166,9 @@ class OrderController extends Controller
         ]);
 
         $statusMsg = match ($newStatus) {
-            'processing' => 'Sedang Dikemas',
-            'shipping'   => 'Sedang Dikirim',
+            'perlu_diproses' => 'Perlu Diproses',
+            'processing' => 'Dikemas',
+            'shipping'   => 'Dikirim',
             'completed'  => 'Selesai',
             default      => ucfirst($newStatus),
         };
@@ -203,5 +216,63 @@ class OrderController extends Controller
         $order->update(['shipping_type' => $request->shipping_type]);
 
         return back()->with('success', "Jenis pengiriman pesanan {$order->order_number} berhasil diperbarui ke " . ucfirst($request->shipping_type) . ".");
+    }
+
+    /**
+     * Manual check to Midtrans API for payment status.
+     */
+    public function checkPaymentStatus(Order $order): RedirectResponse
+    {
+        $serverKey = config('midtrans.server_key');
+        $isProduction = config('midtrans.is_production');
+        $baseUrl = $isProduction 
+            ? 'https://api.midtrans.com/v2/' 
+            : 'https://api.sandbox.midtrans.com/v2/';
+
+        $midtransOrderId = $order->midtrans_order_id ?? $order->order_number;
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'Authorization' => 'Basic ' . base64_encode($serverKey . ':'),
+            ])->get($baseUrl . $midtransOrderId . '/status');
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                if (!isset($data['transaction_status'])) {
+                    return back()->with('error', 'Transaksi tidak ditemukan di Midtrans. Ini bisa terjadi jika link pembayaran belum pernah dibuka oleh pelanggan.');
+                }
+
+                $transactionStatus = $data['transaction_status'];
+
+                if ($transactionStatus == 'settlement' || $transactionStatus == 'capture') {
+                    if ($order->status === 'pending') {
+                        $order->update([
+                            'status' => 'perlu_diproses',
+                            'payment_status' => 'settlement'
+                        ]);
+
+                        TrackingHistory::create([
+                            'order_id' => $order->id,
+                            'admin_id' => auth()->id(),
+                            'status'   => 'perlu_diproses',
+                            'notes'    => 'Status diperbarui via cek status manual ke Midtrans.',
+                        ]);
+                        
+                        return back()->with('success', 'Pembayaran terverifikasi! Status pesanan diperbarui ke Perlu Diproses.');
+                    }
+                    return back()->with('info', 'Pembayaran sudah terverifikasi sebelumnya.');
+                }
+
+                return back()->with('info', 'Status pembayaran di Midtrans: ' . $transactionStatus);
+            }
+
+            return back()->with('error', 'Gagal mendapatkan status dari Midtrans. Pesanan mungkin belum dibayar atau link pembayaran belum dibuka.');
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 }
