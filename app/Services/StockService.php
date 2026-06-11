@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\InsufficientStockException;
-use App\Models\ProductVariant;
+use App\Models\Product;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 
@@ -33,100 +33,103 @@ class StockService
     // ─────────────────────────────────────────────
 
     /**
-     * Add stock to a product variant (type: in).
+     * Add stock to a product (type: in).
      *
-     * @param  ProductVariant  $variant      The variant to add stock to.
-     * @param  int             $qty          Amount to add. Must be > 0.
-     * @param  string          $source       Movement source label (e.g. 'manual_adjustment', 'initial_stock').
-     * @param  int|null        $referenceId  Optional Order ID or other reference.
+     * @param  Product  $product      The product to add stock to.
+     * @param  int      $qty          Amount to add. Must be > 0.
+     * @param  string   $source       Movement source label (e.g. 'manual_adjustment', 'initial_stock').
+     * @param  int|null $referenceId  Optional Order ID or other reference.
      *
-     * @return StockMovement                 The created stock movement log.
+     * @return StockMovement          The created stock movement log.
      */
     public function addStock(
-        ProductVariant $variant,
-        int            $qty,
-        string         $source      = 'manual_adjustment',
-        ?int           $referenceId = null,
+        Product $product,
+        int     $qty,
+        string  $source      = 'manual_adjustment',
+        ?int    $referenceId = null,
+        ?string $note        = null,
     ): StockMovement {
         if ($qty <= 0) {
             throw new \InvalidArgumentException("Qty harus lebih dari 0, diterima: {$qty}.");
         }
 
-        return DB::transaction(function () use ($variant, $qty, $source, $referenceId) {
+        return DB::transaction(function () use ($product, $qty, $source, $referenceId, $note) {
             // Re-fetch with a write lock to prevent race condition
-            $locked = ProductVariant::lockForUpdate()->findOrFail($variant->id);
+            $locked = Product::lockForUpdate()->findOrFail($product->id);
 
             $locked->increment('stock', $qty);
 
             return StockMovement::create([
-                'product_variant_id' => $locked->id,
-                'type'               => 'in',
-                'quantity'           => $qty,
-                'source'             => $source,
-                'reference_id'       => $referenceId,
+                'product_id'   => $locked->id,
+                'type'         => 'in',
+                'quantity'     => $qty,
+                'source'       => $source,
+                'reference_id' => $referenceId,
+                'note'         => $note,
             ]);
         });
     }
 
     /**
-     * Deduct stock from a product variant (type: out).
+     * Deduct stock from a product (type: out).
      * Throws InsufficientStockException if stock would go negative.
      *
-     * @param  ProductVariant  $variant      The variant to deduct from.
-     * @param  int             $qty          Amount to deduct. Must be > 0.
-     * @param  string          $source       Movement source label.
-     * @param  int|null        $referenceId  Optional Order ID or other reference.
+     * @param  Product     $product      The product to deduct from.
+     * @param  int         $qty          Amount to deduct. Must be > 0.
+     * @param  string      $source       Movement source label.
+     * @param  int|null    $referenceId  Optional Order ID or other reference.
+     * @param  string|null $note         Optional note for the movement.
      *
-     * @return StockMovement                 The created stock movement log.
+     * @return StockMovement             The created stock movement log.
      *
      * @throws InsufficientStockException
      */
     public function deductStock(
-        ProductVariant $variant,
-        int            $qty,
-        string         $source      = 'manual_adjustment',
-        ?int           $referenceId = null,
+        Product $product,
+        int     $qty,
+        string  $source      = 'manual_adjustment',
+        ?int    $referenceId = null,
+        ?string $note        = null,
     ): StockMovement {
         if ($qty <= 0) {
             throw new \InvalidArgumentException("Qty harus lebih dari 0, diterima: {$qty}.");
         }
 
-        return DB::transaction(function () use ($variant, $qty, $source, $referenceId) {
+        return DB::transaction(function () use ($product, $qty, $source, $referenceId, $note) {
             // Re-fetch with a write lock to prevent race conditions
-            $locked = ProductVariant::lockForUpdate()->findOrFail($variant->id);
+            $locked = Product::lockForUpdate()->findOrFail($product->id);
 
             if ($locked->stock < $qty) {
-                // Determine name combining product and variant names
-                $productName = $locked->product->name . ' - ' . $locked->name;
-                throw new InsufficientStockException($productName, $qty, $locked->stock);
+                throw new InsufficientStockException($locked->name, $qty, $locked->stock);
             }
 
             $locked->decrement('stock', $qty);
 
             return StockMovement::create([
-                'product_variant_id' => $locked->id,
-                'type'               => 'out',
-                'quantity'           => $qty,
-                'source'             => $source,
-                'reference_id'       => $referenceId,
+                'product_id'   => $locked->id,
+                'type'         => 'out',
+                'quantity'     => $qty,
+                'source'       => $source,
+                'reference_id' => $referenceId,
+                'note'         => $note,
             ]);
         });
     }
 
     /**
      * Get the total net stock based on movement history.
-     * Useful for auditing — should match variant.stock.
+     * Useful for auditing — should match product.stock.
      *
-     * @param  ProductVariant $variant
+     * @param  Product $product
      * @return int
      */
-    public function computeStockFromLog(ProductVariant $variant): int
+    public function computeStockFromLog(Product $product): int
     {
-        $in  = StockMovement::where('product_variant_id', $variant->id)
+        $in  = StockMovement::where('product_id', $product->id)
                             ->where('type', 'in')
                             ->sum('quantity');
 
-        $out = StockMovement::where('product_variant_id', $variant->id)
+        $out = StockMovement::where('product_id', $product->id)
                             ->where('type', 'out')
                             ->sum('quantity');
 

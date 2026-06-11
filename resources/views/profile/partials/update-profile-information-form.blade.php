@@ -83,8 +83,11 @@
                                 <circle cx="12" cy="7" r="4"></circle>
                             </svg>
                         </span>
-                        <input type="text" id="name" name="name" class="form-input" style="padding-left: 36px;"
+                        <input type="text" id="name" name="name" class="form-input @error('name') is-invalid @enderror" style="padding-left: 36px;"
                             value="{{ old('name', $user->name) }}" required placeholder="Masukkan nama lengkap">
+                        @error('name')
+                            <span class="error-text">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
 
@@ -103,8 +106,11 @@
                                 </path>
                             </svg>
                         </span>
-                        <input type="text" id="phone" name="phone" class="form-input" style="padding-left: 36px;"
+                        <input type="text" id="phone" name="phone" class="form-input @error('phone') is-invalid @enderror" style="padding-left: 36px;"
                             value="{{ old('phone', $user->phone) }}" placeholder="Contoh: 08123456789">
+                        @error('phone')
+                            <span class="error-text">{{ $message }}</span>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -124,8 +130,11 @@
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
                     </span>
-                    <input type="email" id="email" name="email" class="form-input" style="padding-left: 36px;"
+                    <input type="email" id="email" name="email" class="form-input @error('email') is-invalid @enderror" style="padding-left: 36px;"
                         value="{{ old('email', $user->email) }}" required placeholder="contoh@email.com">
+                    @error('email')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
                 </div>
 
                 @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && !$user->hasVerifiedEmail())

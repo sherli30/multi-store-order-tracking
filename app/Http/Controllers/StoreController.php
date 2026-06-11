@@ -31,6 +31,11 @@ class StoreController extends Controller
             $q->where('is_active', $request->status === 'active');
         });
 
+        // ── Filter Wilayah ──
+        $query->when($request->filled('province_id'), function ($q) use ($request) {
+            $q->where('province_id', $request->province_id);
+        });
+
         // ── Filter Tanggal ──
         $query->when($request->filled('date'), function ($q) use ($request) {
             $q->whereDate('created_at', $request->date);
@@ -50,20 +55,15 @@ class StoreController extends Controller
         $query->latest();
 
         $stores = $query->get();
+
         $statsQuery = Store::query();
-        if ($request->filled('search')) {
-            $statsQuery->where('name', 'like', '%' . $request->search . '%');
-        }
+        // Hapus logika search untuk mematuhi aturan "jangan tambahkan cari"
 
         $stats = [
             'total' => (clone $statsQuery)->count(),
             'active' => (clone $statsQuery)->where('is_active', true)->count(),
             'inactive' => (clone $statsQuery)->where('is_active', false)->count(),
-            'total_products' => Product::whereHas('store', function ($q) use ($request) {
-                if ($request->filled('search')) {
-                    $q->where('name', 'like', '%' . $request->search . '%');
-                }
-            })->count(),
+            'total_products' => \App\Models\Product::count(),
         ];
 
         // JIKA REQUEST ADALAH AJAX, kembalikan partial view
@@ -71,12 +71,15 @@ class StoreController extends Controller
             return view('stores._table_rows', compact('stores'))->render();
         }
 
-        return view('stores.index', compact('stores', 'stats'));
+        $provinces = \App\Models\Province::orderBy('name')->get();
+
+        return view('stores.index', compact('stores', 'stats', 'provinces'));
     }
 
     public function create(): View
     {
-        return view('stores.create');
+        $provinces = \App\Models\Province::orderBy('name')->get();
+        return view('stores.create', compact('provinces'));
     }
 
     /**
@@ -86,7 +89,6 @@ class StoreController extends Controller
     {
         try {
             $data = $request->validated();
-            $data['slug'] = $this->uniqueSlug($data['name']);
 
             $logoUploaded = $request->hasFile('logo');
             if ($logoUploaded) {
@@ -97,19 +99,21 @@ class StoreController extends Controller
 
             // ── MULTI NOTIFICATION (TOAST) — store ───────────────────────────
             $messages = [];
-            $messages[] = "Sistem telah menyimpan profil toko baru ini.";
+            $messages[] = "Profil toko <strong>{$store->name}</strong> telah berhasil didaftarkan ke sistem.";
+            $messages[] = "Alamat toko telah diset di {$store->city->name}, {$store->province->name}.";
+            $messages[] = "Informasi kontak dan jam operasional telah disimpan.";
 
             if ($logoUploaded) {
-                $messages[] = 'Logo toko berhasil diunggah.';
+                $messages[] = 'Logo identitas toko berhasil diunggah dan dikaitkan.';
             }
 
             $statusLabel = $data['is_active'] ? 'Aktif' : 'Nonaktif';
-            $messages[] = "Status toko diset sebagai <strong>{$statusLabel}</strong>.";
+            $messages[] = "Toko saat ini dalam status operasional <strong>{$statusLabel}</strong>.";
 
             return redirect()
                 ->route('stores.index')
                 ->with('success', [
-                    'title' => "Toko \"{$store->name}\" Berhasil Ditambahkan",
+                    'title' => "Pendaftaran Toko Berhasil",
                     'list' => $messages
                 ]);
         } catch (\Exception $e) {
@@ -122,7 +126,8 @@ class StoreController extends Controller
      */
     public function edit(Store $store): View
     {
-        return view('stores.edit', compact('store'));
+        $provinces = \App\Models\Province::orderBy('name')->get();
+        return view('stores.edit', compact('store', 'provinces'));
     }
 
     /**
@@ -137,13 +142,14 @@ class StoreController extends Controller
             $nameChanged   = $store->name !== $data['name'];
             $statusChanged = (bool) $store->is_active !== (bool) $data['is_active'];
             $logoChanged   = $request->hasFile('logo');
+            $addressChanged = $store->address !== $data['address'];
+            $locationChanged = $store->city_id != $data['city_id'] || $store->province_id != $data['province_id'];
+            $phoneChanged = $store->phone !== $data['phone'];
+            $hoursChanged = $store->operational_hours !== $data['operational_hours'];
+            $descChanged = $store->description !== $data['description'];
 
             $oldName = $store->name;
             $wasActive = $store->is_active;
-
-            if ($data['name'] !== $store->name) {
-                $data['slug'] = $this->uniqueSlug($data['name'], $store->id);
-            }
 
             if ($request->hasFile('logo')) {
                 // Hapus logo lama jika ada
@@ -159,16 +165,43 @@ class StoreController extends Controller
             $messages = [];
 
             if ($nameChanged) {
-                $messages[] = "Nama toko berhasil diubah.";
+                $messages[] = "Nama toko berhasil diubah menjadi <strong>{$data['name']}</strong>.";
+            }
+
+            if ($addressChanged) {
+                $messages[] = "Detail alamat jalan telah diperbarui.";
+            }
+
+            if ($locationChanged) {
+                $store->load(['city', 'province']);
+                $messages[] = "Lokasi operasional toko telah dipindahkan ke <strong>{$store->city->name}, {$store->province->name}</strong>.";
+            }
+
+            if ($phoneChanged) {
+                $messages[] = "Nomor telepon toko telah diperbarui.";
+            }
+
+            if ($hoursChanged) {
+                $messages[] = "Jam operasional toko telah diperbarui.";
+            }
+
+            if ($descChanged) {
+                $messages[] = "Deskripsi toko telah diperbarui.";
             }
 
             if ($logoChanged) {
-                $messages[] = 'Logo toko berhasil diperbarui.';
+                $messages[] = 'Logo toko berhasil diperbarui dengan gambar baru.';
             }
 
             if ($statusChanged) {
                 $statusLabel = $data['is_active'] ? 'Aktif' : 'Nonaktif';
                 $messages[] = "Status operasional toko berhasil diubah menjadi <strong>{$statusLabel}</strong>.";
+                
+                if (!$data['is_active']) {
+                    $messages[] = "Semua kategori dan produk di toko ini akan tidak tersedia bagi pelanggan.";
+                } else {
+                    $messages[] = "Semua kategori dan produk aktif di toko ini kembali tersedia bagi pelanggan.";
+                }
             }
 
             // Fallback jika tidak ada perubahan terdeteksi
@@ -197,10 +230,20 @@ class StoreController extends Controller
         $name = $store->name;
 
         // Cek keterhubungan data sebelum hapus (Proteksi Data)
-        $productCount = $store->products()->count();
+        $categoryCount = $store->productCategories()->count();
+        if ($categoryCount > 0) {
+            return back()->with('error', "Toko {$name} masih memiliki {$categoryCount} kategori produk. Hapus kategori tersebut terlebih dahulu.");
+        }
+
+        $productCount = $store->products()->withTrashed()->count();
 
         if ($productCount > 0) {
             return back()->with('error', "Toko {$name} masih memiliki {$productCount} produk. Kosongkan atau pindahkan produk terlebih dahulu.");
+        }
+
+        $orderCount = $store->orders()->count();
+        if ($orderCount > 0) {
+            return back()->with('error', "Toko {$name} tidak dapat dihapus karena memiliki {$orderCount} riwayat pesanan.");
         }
 
         if ($store->logo && Storage::disk('public')->exists($store->logo)) {
@@ -216,26 +259,6 @@ class StoreController extends Controller
         } catch (\Exception $e) {
             return back()->with('error', 'Sistem gagal menghapus toko karena ada kendala pada database.');
         }
-    }
-
-    /**
-     * Generate a unique slug for a store.
-     */
-    private function uniqueSlug(string $name, ?int $exceptId = null): string
-    {
-        $base = Str::slug($name);
-        $slug = $base;
-        $count = 1;
-
-        while (
-            Store::where('slug', $slug)
-                ->when($exceptId, fn($q) => $q->where('id', '!=', $exceptId))
-                ->exists()
-        ) {
-            $slug = $base . '-' . $count++;
-        }
-
-        return $slug;
     }
 
     /**

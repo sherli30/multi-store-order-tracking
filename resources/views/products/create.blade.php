@@ -3,7 +3,7 @@
 @section('title', 'Tambah Produk Baru')
 
 @section('styles')
-    /* â”€â”€ PAGE HEADER â”€â”€â”€ */
+    /* ── PAGE HEADER ─── */
     .page-header {
         display: flex;
         align-items: flex-start;
@@ -51,7 +51,7 @@
         line-height: 1.5;
     }
 
-    /* â”€â”€ BUTTONS â”€â”€â”€ */
+    /* ── BUTTONS ─── */
     .btn-back {
         display: inline-flex;
         align-items: center;
@@ -81,7 +81,7 @@
         height: 16px;
     }
 
-    /* â”€â”€ FORM LAYOUT â”€â”€â”€ */
+    /* ── FORM LAYOUT ─── */
     .form-container {
         display: grid;
         grid-template-columns: 1fr 360px;
@@ -104,12 +104,12 @@
     .form-sidebar {
         display: flex;
         flex-direction: column;
-        gap: 28px;
+        gap: 12px;
         position: sticky;
         top: 32px;
     }
 
-    /* â”€â”€ FORM CARDS â”€â”€â”€ */
+    /* ── FORM CARDS ─── */
     .form-card {
         background: var(--panel);
         border: 1px solid var(--border);
@@ -177,7 +177,7 @@
         gap: 24px;
     }
 
-    /* â”€â”€ FORM FIELDS â”€â”€â”€ */
+    /* ── FORM FIELDS ─── */
     .field-group {
         display: flex;
         flex-direction: column;
@@ -240,6 +240,10 @@
         background: var(--surface-2);
     }
 
+    .field-input.is-invalid {
+        border-color: var(--red);
+    }
+
     .field-textarea {
         min-height: 130px;
         resize: vertical;
@@ -254,7 +258,7 @@
         font-weight: 500;
     }
 
-    /* â”€â”€ DYNAMIC TABLE â”€â”€â”€ */
+    /* ── DYNAMIC TABLE ─── */
     .dynamic-table-wrapper {
         overflow-x: auto;
         border: 1.5px solid var(--border);
@@ -293,7 +297,7 @@
         background: color-mix(in srgb, var(--accent) 2%, transparent);
     }
 
-    /* â”€â”€ BUTTONS (ADD/REMOVE) â”€â”€â”€ */
+    /* ── BUTTONS (ADD/REMOVE) ─── */
     .btn-add-row {
         display: inline-flex;
         align-items: center;
@@ -341,7 +345,7 @@
         transform: scale(1.05);
     }
 
-    /* â”€â”€ TOGGLE CARD â”€â”€â”€ */
+    /* ── TOGGLE CARD ─── */
     .toggle-card {
         padding: 14px 18px;
         border-radius: 10px;
@@ -403,19 +407,19 @@
         transform: translateX(20px);
     }
 
-    /* â”€â”€ FORM FOOTER â”€â”€â”€ */
-    .form-footer {
-    display:flex;
-    justify-content:flex-end;
-    align-items:center;
-    gap:16px;
-    margin-top:15px;
+    .toggle-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--text-1);
     }
 
+    /* ── BUTTONS ─── */
     .btn-primary {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 11px;
+        width: 100%;
         background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
         color: #fff;
         border: none;
@@ -458,7 +462,7 @@
         height: 20px;
     }
 
-    /* â”€â”€ IMAGE UPLOAD â”€â”€â”€ */
+    /* ── IMAGE UPLOAD ─── */
     .image-upload-zone {
         border: 2.5px dashed var(--border);
         border-radius: 13px;
@@ -491,7 +495,7 @@
         transform: scale(1.1);
     }
 
-    /* â”€â”€ IMAGE THUMBNAILS â”€â”€â”€ */
+    /* ── IMAGE THUMBNAILS ─── */
     .image-thumb {
         position: relative;
         width: 110px;
@@ -515,7 +519,7 @@
         cursor: zoom-in;
     }
 
-    /* â”€â”€ IMAGE MODAL â”€â”€â”€ */
+    /* ── IMAGE MODAL ─── */
     .image-modal {
         display: none;
         position: fixed;
@@ -554,6 +558,113 @@
         text-decoration: none;
         cursor: pointer;
     }
+
+    /* ── IMAGE ACTIONS ─── */
+    .image-actions {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        opacity: 0;
+        transition: opacity 0.2s;
+        background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        padding: 16px 4px 4px 4px;
+        gap: 4px;
+        justify-content: space-between;
+        z-index: 20;
+    }
+    .image-thumb:hover .image-actions {
+        opacity: 1;
+    }
+    .img-action-btn {
+        flex: 1;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 0;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        color: white;
+    }
+    .btn-replace { background: var(--accent); }
+    .btn-replace:hover { background: color-mix(in srgb, var(--accent) 80%, black); }
+    .btn-delete { background: var(--red); }
+    .btn-delete:hover { background: color-mix(in srgb, var(--red) 80%, black); }
+
+    /* ── WEIGHT UNIT BADGES ─── */
+    .weight-badge {
+        padding: 5px 12px;
+        background: var(--panel);
+        border: 1.5px solid var(--border);
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--text-2);
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        user-select: none;
+        margin-top: 4px;
+    }
+    .weight-badge:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-1px);
+    }
+    .weight-badge.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fff;
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+    .weight-badge.active svg {
+        color: #fff;
+    }
+    .weight-badge svg {
+        width: 12px;
+        height: 12px;
+        color: inherit;
+        transition: color 0.2s;
+    }
+
+    /* ── Delete Modal ─── */
+    .modal-overlay {
+        position: fixed; inset: 0;
+        background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px);
+        z-index: 2000; display: flex; align-items: center; justify-content: center;
+        opacity: 0; visibility: hidden; transition: all 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; visibility: visible; }
+    .modal-box {
+        background: var(--panel); border-radius: 16px; padding: 28px;
+        width: 420px; max-width: 90vw; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transform: scale(0.95) translateY(10px); transition: transform 0.2s;
+    }
+    .modal-overlay.open .modal-box { transform: scale(1) translateY(0); }
+    .modal-icon {
+        width: 52px; height: 52px; background: var(--red-dim); border-radius: 14px;
+        display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    }
+    .modal-icon svg { width: 24px; height: 24px; color: var(--red); }
+    .modal-title { font-size: 16px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
+    .modal-desc { font-size: 13px; color: var(--text-2); margin-bottom: 22px; line-height: 1.6; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-cancel {
+        padding: 9px 18px; border: 1px solid var(--border); border-radius: 8px;
+        font-family: var(--font); font-size: 13px; font-weight: 600;
+        background: var(--surface); color: var(--text-2); cursor: pointer; transition: all 0.15s;
+    }
+    .btn-cancel:hover { border-color: var(--border-2); color: var(--text-1); }
+    .btn-danger {
+        padding: 9px 18px; border: none; border-radius: 8px;
+        font-family: var(--font); font-size: 13px; font-weight: 600;
+        background: var(--red); color: #fff; cursor: pointer; transition: all 0.15s;
+        box-shadow: 0 2px 8px rgba(220,38,38,0.25);
+    }
+    .btn-danger:hover { background: #b91c1c; transform: translateY(-1px); }
 @endsection
 
 @section('content')
@@ -578,7 +689,6 @@
         </a>
     </div>
 
-
     <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" id="productForm" novalidate>
         @csrf
 
@@ -588,115 +698,79 @@
                 {{-- Card: Informasi Dasar --}}
                 <div class="form-card">
                     <div class="form-card-header">
-                        <div class="form-card-header-left">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                            </svg>
                             <span class="form-card-header-title">Informasi Produk</span>
+                        </div>
+                    </div>
+                    <div class="form-card-body">
+                        <div class="field-group">
+                            <label class="field-label" for="name">Nama Produk <span>*</span></label>
+                            <input type="text" id="name" name="name" class="field-input {{ $errors->has('name') ? 'is-invalid' : '' }}" placeholder="Contoh: Kopi Bubuk Arabika 250gr" value="{{ old('name') }}" required autofocus>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="store_id">Toko Terkait <span>*</span></label>
+                            <select id="store_id" name="store_id" class="field-input {{ $errors->has('store_id') ? 'is-invalid' : '' }}" required onchange="checkStoreStatus()">
+                                <option value="" data-active="1" disabled selected>Pilih Toko...</option>
+                                @foreach($stores as $store)
+                                    @if($store->is_active || $store->id == old('store_id'))
+                                        <option value="{{ $store->id }}" data-active="{{ $store->is_active ? '1' : '0' }}" {{ old('store_id') == $store->id ? 'selected' : '' }}>
+                                            {{ $store->name }} {{ !$store->is_active ? '(Non-aktif)' : '' }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="category_id">Kategori Produk <span>*</span></label>
+                            <select id="category_id" name="category_id" class="field-input {{ $errors->has('category_id') ? 'is-invalid' : '' }}" required disabled onchange="checkStoreStatus()">
+                                <option value="" disabled selected>Pilih Toko Dahulu...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Card: Harga, Stok & Berat --}}
+                <div class="form-card">
+                    <div class="form-card-header">
+                        <div class="form-card-header-left">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                            <span class="form-card-header-title">Harga, Stok & Berat</span>
                         </div>
                     </div>
                     <div class="form-card-body">
                         <div class="field-row">
                             <div class="field-group">
-                                <label class="field-label" for="store_id">Toko Terkait <span>*</span></label>
-                                <select id="store_id" name="store_id" class="field-input" required>
-                                    <option value="" disabled selected>Pilih Toko...</option>
-                                    @foreach($stores as $store)
-                                        <option value="{{ $store->id }}" {{ old('store_id') == $store->id ? 'selected' : '' }}>{{ $store->name }}</option>
-                                    @endforeach
-                                </select>
+                                <label class="field-label">Harga Jual (Rp) <span>*</span></label>
+                                <div style="position:relative;">
+                                    <span style="position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:14px; font-weight:700; color:var(--text-3); z-index:10; pointer-events:none;">Rp</span>
+                                    <input type="text" inputmode="numeric" name="price" id="single_price" class="field-input price-input {{ $errors->has('price') ? 'is-invalid' : '' }}" style="padding-left:42px;" placeholder="0" required value="{{ old('price') }}">
+                                </div>
                             </div>
                             <div class="field-group">
-                                <label class="field-label" for="category_id">Kategori Produk <span>*</span></label>
-                                <select id="category_id" name="category_id" class="field-input" required disabled>
-                                    <option value="" disabled selected>Pilih Toko Dahulu...</option>
-                                </select>
+                                <label class="field-label">Stok Awal <span>*</span></label>
+                                <input type="number" name="stock" id="single_stock" class="field-input {{ $errors->has('stock') ? 'is-invalid' : '' }}" placeholder="0" min="0" required value="{{ old('stock') }}">
                             </div>
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label" for="name">Nama Produk <span>*</span></label>
-                            <input type="text" id="name" name="name" class="field-input" placeholder="Contoh: Kopi Bubuk Arabika 250gr" value="{{ old('name') }}" required>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Card: Variasi --}}
-                <div class="form-card">
-                    <div class="form-card-header">
-                        <div class="form-card-header-left">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-                            <span class="form-card-header-title">Harga & Stok</span>
-                        </div>
-                    </div>
-                    <div class="form-card-body">
-                        <div class="toggle-card">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="has_variants" name="has_variants" value="1" {{ old('has_variants') ? 'checked' : '' }}>
-                                <span class="toggle-slider"></span>
-                            </label>
-                            <div>
-                                <div class="toggle-label">Gunakan Variasi Produk</div>
-                                <div class="field-hint">Aktifkan jika produk memiliki pilihan ukuran, warna, atau tipe berbeda.</div>
-                            </div>
-                        </div>
-
-                        {{-- Single Product --}}
-                        <div id="singleProductConfig">
-                            <div class="field-row">
-                                <div class="field-group">
-                                    <label class="field-label">Harga Jual (Rp) <span>*</span></label>
-                                    <div style="position:relative;">
-                                        <span style="position:absolute; left:16px; top:50%; transform:translateY(-50%); font-size:14px; font-weight:700; color:var(--text-3); z-index:10; pointer-events:none;">Rp</span>
-                                        <input type="text" inputmode="numeric" name="price" id="single_price" class="field-input price-input" style="padding-left:42px;" placeholder="0" value="{{ old('price') }}">
+                            <div class="field-group">
+                                <label class="field-label">Berat <span>*</span></label>
+                                <input type="number" step="any" id="weight_display" class="field-input {{ $errors->has('weight') ? 'is-invalid' : '' }}" placeholder="Contoh: 500" min="0" required>
+                                <div class="badge-row" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:2px;">
+                                    <div class="weight-badge" id="badge_g" onclick="selectWeightUnit('g')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></svg>
+                                        gram (g)
+                                    </div>
+                                    <div class="weight-badge" id="badge_kg" onclick="selectWeightUnit('kg')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M12 2v8M8 2h8"></path></svg>
+                                        kilogram (kg)
                                     </div>
                                 </div>
-                                <div class="field-group">
-                                    <label class="field-label">Stok Awal <span>*</span></label>
-                                    <input type="number" name="stock" id="single_stock" class="field-input" placeholder="0" min="0" value="{{ old('stock', 0) }}">
-                                </div>
-                                <div class="field-group">
-                                    <label class="field-label">Berat (Gram) <span>*</span></label>
-                                    <input type="number" name="weight" id="single_weight" class="field-input" placeholder="0" min="0" value="{{ old('weight') }}">
-                                </div>
+                                <input type="hidden" name="weight" id="single_weight" value="{{ old('weight') }}">
                             </div>
-                        </div>
-
-                        {{-- Multi Variants --}}
-                        <div id="variantsConfig" style="display: none;">
-                            <div class="dynamic-table-wrapper">
-                                <table class="dynamic-table" id="variantsTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Nama Varian <span style="color:var(--red);">*</span></th>
-                                            <th>SKU <span style="color:var(--text-4); font-weight:normal;">(Opsional)</span></th>
-                                            <th>Harga (Rp) <span style="color:var(--red);">*</span></th>
-                                            <th>Stok <span style="color:var(--red);">*</span></th>
-                                            <th>Berat (Gr) <span style="color:var(--red);">*</span></th>
-                                            <th style="width:50px;"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @if(old('variants'))
-                                            @foreach(old('variants') as $index => $variant)
-                                                <tr>
-                                                    <td><input type="text" name="variants[{{ $index }}][name]" class="field-input" required placeholder="Cth: Merah / XL" value="{{ $variant['name'] ?? '' }}"></td>
-                                                    <td><input type="text" name="variants[{{ $index }}][sku]" class="field-input" placeholder="Opsional" value="{{ $variant['sku'] ?? '' }}"></td>
-                                                    <td><input type="text" inputmode="numeric" name="variants[{{ $index }}][price]" class="field-input price-input" required placeholder="0" value="{{ $variant['price'] ?? '' }}"></td>
-                                                    <td><input type="number" name="variants[{{ $index }}][stock]" class="field-input" required min="0" placeholder="0" value="{{ $variant['stock'] ?? '' }}"></td>
-                                                    <td><input type="number" name="variants[{{ $index }}][weight]" class="field-input" required min="0" placeholder="0" value="{{ $variant['weight'] ?? '' }}"></td>
-                                                    <td>
-                                                        <button type="button" class="btn-remove-row" onclick="this.closest('tr').remove()">
-                                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        @endif
-                                    </tbody>
-                                </table>
-                            </div>
-                            <button type="button" class="btn-add-row" onclick="addVariantRow()">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                Tambah Varian Baru
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -715,12 +789,12 @@
                                 @foreach(old('descriptions') as $index => $desc)
                                     <div class="toggle-card" style="flex-direction:column; align-items:stretch;">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                                            <input type="text" name="descriptions[{{ $index }}][title]" class="field-input" style="width:70%;" placeholder="Judul * (Cth: Keunggulan)" required value="{{ $desc['title'] ?? '' }}">
+                                            <input type="text" name="descriptions[{{ $index }}][title]" class="field-input {{ ($errors->has('descriptions.'.$index.'.title') || $errors->has('descriptions')) ? 'is-invalid' : '' }}" style="width:70%;" placeholder="Judul * (Cth: Keunggulan)" required value="{{ $desc['title'] ?? '' }}">
                                             <button type="button" class="btn-remove-row" onclick="this.parentElement.parentElement.remove()">
                                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                             </button>
                                         </div>
-                                        <textarea name="descriptions[{{ $index }}][content]" class="field-input field-textarea" placeholder="Isi deskripsi bagian ini... *" required>{{ $desc['content'] ?? '' }}</textarea>
+                                        <textarea name="descriptions[{{ $index }}][content]" class="field-input field-textarea {{ ($errors->has('descriptions.'.$index.'.content') || $errors->has('descriptions')) ? 'is-invalid' : '' }}" placeholder="Isi deskripsi bagian ini... *" required>{{ $desc['content'] ?? '' }}</textarea>
                                     </div>
                                 @endforeach
                             @endif
@@ -739,42 +813,61 @@
                 {{-- Card: Status & Publikasi --}}
                 <div class="form-card">
                     <div class="form-card-header">
-                        <div class="form-card-header-left">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                            </svg>
                             <span class="form-card-header-title">Status</span>
                         </div>
                     </div>
                     <div class="form-card-body">
-                        <div class="toggle-card">
+                        <div class="toggle-card {{ $errors->has('is_active') ? 'is-invalid' : '' }}" id="activeToggleCard" style="{{ $errors->has('is_active') ? 'border-color: var(--red);' : '' }}">
                             <label class="toggle-switch">
-                                <input type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }}>
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" id="productActiveInput" value="1"
+                                    {{ old('is_active', '1') == '1' ? 'checked' : '' }} onchange="updateActiveStatusLabel(this)">
                                 <span class="toggle-slider"></span>
                             </label>
-                            <div class="toggle-label">Aktif / Publikasi</div>
+                            <div class="toggle-label" id="productActiveLabel">{{ old('is_active', '1') == '1' ? 'Produk Aktif' : 'Produk Nonaktif' }}</div>
                         </div>
-                        <div class="toggle-card">
+                        <div class="toggle-card {{ $errors->has('is_featured') ? 'is-invalid' : '' }}" style="{{ $errors->has('is_featured') ? 'border-color: var(--red);' : '' }}">
                             <label class="toggle-switch">
-                                <input type="checkbox" name="is_featured" value="1" {{ old('is_featured') ? 'checked' : '' }}>
+                                <input type="hidden" name="is_featured" value="0">
+                                <input type="checkbox" name="is_featured" id="productFeaturedInput" value="1"
+                                    {{ old('is_featured') ? 'checked' : '' }} onchange="document.getElementById('productFeaturedLabel').innerText = this.checked ? 'Produk Unggulan' : 'Produk Reguler'">
                                 <span class="toggle-slider"></span>
                             </label>
-                            <div class="toggle-label">Unggulan (Home)</div>
+                            <div class="toggle-label" id="productFeaturedLabel">{{ old('is_featured') ? 'Produk Unggulan' : 'Produk Reguler' }}</div>
                         </div>
-                        <p class="field-hint">Produk yang tidak aktif akan disembunyikan dari daftar belanja pelanggan.</p>
+                        <div id="storeInactiveWarning" style="display: none; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--red); background: color-mix(in srgb, var(--red) 8%, var(--panel)); border: 1.5px solid color-mix(in srgb, var(--red) 20%, transparent); border-radius: 10px; padding: 12px 14px; text-align: left; margin-bottom: 8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; color: var(--red);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <div>
+                                <span style="font-weight: 800; display: block; margin-bottom: 3px; font-size: 12.5px;">Toko Induk Non-Aktif</span>
+                                Status produk ini dikunci karena toko utamanya sedang dinonaktifkan di Manajemen Toko. Silakan aktifkan toko terlebih dahulu jika ingin mengaktifkan produk ini.
+                            </div>
+                        </div>
+                        <div id="categoryInactiveWarning" style="display: none; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--red); background: color-mix(in srgb, var(--red) 8%, var(--panel)); border: 1.5px solid color-mix(in srgb, var(--red) 20%, transparent); border-radius: 10px; padding: 12px 14px; text-align: left;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; color: var(--red);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <div>
+                                <span style="font-weight: 800; display: block; margin-bottom: 3px; font-size: 12.5px;">Kategori Non-Aktif</span>
+                                Status produk ini dikunci karena kategori utamanya sedang dinonaktifkan. Silakan aktifkan kategori terlebih dahulu jika ingin mengaktifkan produk ini.
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                {{-- Card: Media --}}
+                {{-- Card: Galeri Foto --}}
                 <div class="form-card">
                     <div class="form-card-header">
                         <div class="form-card-header-left">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            <span class="form-card-header-title">Media</span>
+                            <span class="form-card-header-title">Galeri Foto</span>
                         </div>
                     </div>
                     <div class="form-card-body">
                         <div class="field-group">
                             <label class="field-label">Foto Produk <span>*</span></label>
-                            <div class="image-upload-zone" onclick="document.getElementById('images').click()">
+                            <div class="image-upload-zone" onclick="document.getElementById('images').click()" style="{{ ($errors->has('images') || $errors->has('images.*')) ? 'border-color: var(--red);' : '' }}">
                                 <div class="image-upload-icon">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                                 </div>
@@ -801,8 +894,8 @@
                             @if(old('specifications'))
                                 @foreach(old('specifications') as $index => $spec)
                                     <div style="display:flex; gap:8px;">
-                                        <input type="text" name="specifications[{{ $index }}][name]" class="field-input" style="flex:1;" placeholder="Label *" required value="{{ $spec['name'] ?? '' }}">
-                                        <input type="text" name="specifications[{{ $index }}][value]" class="field-input" style="flex:1;" placeholder="Nilai *" required value="{{ $spec['value'] ?? '' }}">
+                                        <input type="text" name="specifications[{{ $index }}][name]" class="field-input {{ ($errors->has('specifications.'.$index.'.name') || $errors->has('specifications')) ? 'is-invalid' : '' }}" style="flex:1;" placeholder="Label *" required value="{{ $spec['name'] ?? '' }}">
+                                        <input type="text" name="specifications[{{ $index }}][value]" class="field-input {{ ($errors->has('specifications.'.$index.'.value') || $errors->has('specifications')) ? 'is-invalid' : '' }}" style="flex:1;" placeholder="Nilai *" required value="{{ $spec['value'] ?? '' }}">
                                         <button type="button" class="btn-remove-row" onclick="this.parentElement.remove()" style="flex-shrink:0;">
                                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                         </button>
@@ -817,43 +910,17 @@
                     </div>
                 </div>
 
-                {{-- Card: Packing --}}
-                <div class="form-card">
-                    <div class="form-card-header">
-                        <div class="form-card-header-left">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-                            <span class="form-card-header-title">Opsi Packing <span style="color:var(--text-4); font-size:12px; font-weight:normal; margin-left:4px;">(Opsional)</span></span>
-                        </div>
-                    </div>
-                    <div class="form-card-body" style="gap:12px;">
-                        <div id="packingContainer" style="display:flex; flex-direction:column; gap:12px;">
-                            @if(old('packing_options'))
-                                @foreach(old('packing_options') as $index => $pack)
-                                    <div style="display:flex; gap:8px;">
-                                        <input type="text" name="packing_options[{{ $index }}][name]" class="field-input" style="flex:1;" placeholder="Nama (Opsional)" value="{{ $pack['name'] ?? '' }}">
-                                        <input type="text" inputmode="numeric" name="packing_options[{{ $index }}][extra_price]" class="field-input price-input" style="flex:1;" placeholder="Harga (Opsional)" value="{{ $pack['extra_price'] ?? '' }}">
-                                        <button type="button" class="btn-remove-row" onclick="this.parentElement.remove()" style="flex-shrink:0;">
-                                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                        </button>
-                                    </div>
-                                @endforeach
-                            @endif
-                        </div>
-                        <button type="button" class="btn-add-row" onclick="addPackingRow()" style="width:100%; justify-content:center;">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Tambah Packing
-                        </button>
-                    </div>
-                </div>
+                {{-- Submit Button --}}
+                <button type="submit" class="btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Simpan Produk
+                </button>
 
             </div>
-        </div>
-
-        <div class="form-footer">
-            <button type="submit" class="btn-primary">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:8px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                Simpan Produk
-            </button>
         </div>
 
     </form>
@@ -864,33 +931,71 @@
         <img class="image-modal-content" id="modalImage">
     </div>
 
+    {{-- Delete Modal for Image --}}
+    <div class="modal-overlay" id="deleteImageModal">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+            </div>
+            <div class="modal-title">Hapus Foto?</div>
+            <div class="modal-desc">
+                Foto ini belum disimpan di server dan akan dihapus dari pilihan. Tindakan ini tidak dapat dibatalkan.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeDeleteImageModal()">Batalkan</button>
+                <button type="button" class="btn-danger" id="confirmDeleteImageBtn">Ya, Hapus Foto</button>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
 <script>
-    // â”€â”€ IMAGE PREVIEW & COUNTER â”€â”€
+    // ── IMAGE PREVIEW, COUNTER, REPLACE, AND DELETE ──
+    let selectedFiles = [];
+
     function previewImages(input) {
+        if (input.files && input.files.length > 0) {
+            selectedFiles = Array.from(input.files);
+            renderPreviews();
+        }
+    }
+
+    function renderPreviews() {
         const counter = document.getElementById('imageCounter');
         const container = document.getElementById('imagePreviewContainer');
-        container.innerHTML = '';
-        if (input.files && input.files.length > 0) {
-            counter.style.display = 'block';
-            counter.textContent = `${input.files.length} file dipilih`;
+        const input = document.getElementById('images');
 
-            Array.from(input.files).forEach(file => {
+        container.innerHTML = '';
+
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        input.files = dt.files;
+
+        if (selectedFiles.length > 0) {
+            counter.style.display = 'block';
+            counter.textContent = `${selectedFiles.length} file dipilih`;
+
+            selectedFiles.forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const div = document.createElement('div');
                     div.className = 'image-thumb';
+                    div.style.position = 'relative';
 
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.onclick = function(ev) {
-                        ev.stopPropagation(); // prevent triggering file upload if container wraps it
-                        openImageModal(e.target.result);
-                    };
-
-                    div.appendChild(img);
+                    div.innerHTML = `
+                        <img src="${e.target.result}" onclick="event.stopPropagation(); openImageModal('${e.target.result}')">
+                        <div class="image-actions">
+                            <button type="button" class="img-action-btn btn-replace" onclick="event.stopPropagation(); replaceSingleImage(${index})" title="Ganti Foto">Ganti</button>
+                            <button type="button" class="img-action-btn btn-delete" onclick="event.stopPropagation(); deleteSingleImage(${index})" title="Hapus Foto">Hapus</button>
+                        </div>
+                    `;
                     container.appendChild(div);
                 }
                 reader.readAsDataURL(file);
@@ -900,14 +1005,91 @@
         }
     }
 
-    // â”€â”€ STORE -> CATEGORY DYNAMIC DROPDOWN â”€â”€
+    let imageToDeleteIndex = null;
+
+    window.deleteSingleImage = function(index) {
+        imageToDeleteIndex = index;
+        document.getElementById('deleteImageModal').classList.add('open');
+    }
+
+    window.closeDeleteImageModal = function() {
+        document.getElementById('deleteImageModal').classList.remove('open');
+        imageToDeleteIndex = null;
+    }
+
+    document.getElementById('confirmDeleteImageBtn').addEventListener('click', function() {
+        if (imageToDeleteIndex !== null) {
+            selectedFiles.splice(imageToDeleteIndex, 1);
+            renderPreviews();
+            closeDeleteImageModal();
+        }
+    });
+
+    document.getElementById('deleteImageModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteImageModal();
+    });
+
+    window.replaceSingleImage = function(index) {
+        const tempInput = document.createElement('input');
+        tempInput.type = 'file';
+        tempInput.accept = 'image/*';
+        tempInput.onchange = function(e) {
+            if (e.target.files && e.target.files[0]) {
+                selectedFiles[index] = e.target.files[0];
+                renderPreviews();
+            }
+        };
+        tempInput.click();
+    }
+
+    // ── STORE STATUS CHECK ──
+    function checkStoreStatus() {
+        const storeSelect = document.getElementById('store_id');
+        const categorySelect = document.getElementById('category_id');
+        const selectedStore = storeSelect.options[storeSelect.selectedIndex];
+        const selectedCategory = categorySelect.options[categorySelect.selectedIndex];
+        
+        const warningEl = document.getElementById('storeInactiveWarning');
+        const categoryWarningEl = document.getElementById('categoryInactiveWarning');
+        const toggleCard = document.getElementById('activeToggleCard');
+        const isActiveCheckbox = document.getElementById('productActiveInput');
+        const productActiveLabel = document.getElementById('productActiveLabel');
+
+        if (!isActiveCheckbox || !toggleCard) return;
+
+        let isStoreInactive = selectedStore && selectedStore.getAttribute('data-active') === '0';
+        let isCategoryInactive = selectedCategory && selectedCategory.getAttribute('data-active') === '0';
+
+        if (warningEl) warningEl.style.display = isStoreInactive ? 'flex' : 'none';
+        if (categoryWarningEl) categoryWarningEl.style.display = (!isStoreInactive && isCategoryInactive) ? 'flex' : 'none';
+
+        if (isStoreInactive || isCategoryInactive) {
+            isActiveCheckbox.checked = false;
+            isActiveCheckbox.disabled = true;
+            toggleCard.style.opacity = '0.55';
+            toggleCard.style.pointerEvents = 'none';
+            productActiveLabel.innerText = 'Produk Nonaktif';
+        } else {
+            isActiveCheckbox.disabled = false;
+            toggleCard.style.opacity = '1';
+            toggleCard.style.pointerEvents = 'auto';
+            productActiveLabel.innerText = isActiveCheckbox.checked ? 'Produk Aktif' : 'Produk Nonaktif';
+        }
+    }
+    window.checkStoreStatus = checkStoreStatus;
+
+    function updateActiveStatusLabel(checkbox) {
+        document.getElementById('productActiveLabel').innerText = checkbox.checked ? 'Produk Aktif' : 'Produk Nonaktif';
+    }
+    window.updateActiveStatusLabel = updateActiveStatusLabel;
+
+    // ── STORE -> CATEGORY DYNAMIC DROPDOWN ──
     document.addEventListener("DOMContentLoaded", function() {
         const storeSelect = document.getElementById('store_id');
         const categorySelect = document.getElementById('category_id');
         const oldCategoryId = "{{ old('category_id') }}";
 
         function loadCategories(storeId, selectedCategoryId = null) {
-            console.log('Fetching categories for store:', storeId);
             categorySelect.innerHTML = '<option value="" disabled selected>Memuat...</option>';
             categorySelect.disabled = true;
 
@@ -921,33 +1103,44 @@
                 return res.json();
             })
             .then(data => {
-                console.log('Categories data received:', data);
                 categorySelect.innerHTML = '<option value="" disabled selected>Pilih Kategori...</option>';
-                if(data.length > 0) {
-                    categorySelect.disabled = false;
+                if (data.length > 0) {
+                    let hasOptions = false;
                     data.forEach(cat => {
-                        const option = document.createElement('option');
-                        option.value = cat.id;
-                        option.textContent = cat.name;
-                        if (selectedCategoryId == cat.id) option.selected = true;
-                        categorySelect.appendChild(option);
+                        if (cat.is_active || selectedCategoryId == cat.id) {
+                            hasOptions = true;
+                            const option = document.createElement('option');
+                            option.value = cat.id;
+                            option.setAttribute('data-active', cat.is_active ? '1' : '0');
+                            option.textContent = cat.name + (cat.is_active ? '' : ' (Non-aktif)');
+                            if (selectedCategoryId == cat.id) option.selected = true;
+                            categorySelect.appendChild(option);
+                        }
                     });
+                    
+                    if (hasOptions) {
+                        categorySelect.disabled = false;
+                    } else {
+                        categorySelect.innerHTML = '<option value="" disabled selected>Tidak ada kategori aktif untuk toko ini</option>';
+                    }
                 } else {
-                    categorySelect.innerHTML = '<option value="" disabled selected>Tidak ada kategori aktif</option>';
+                    categorySelect.innerHTML = '<option value="" disabled selected>Tidak ada kategori aktif untuk toko ini</option>';
                 }
+                // Trigger check to validate if the newly loaded category affects the active toggle
+                checkStoreStatus();
             })
             .catch(err => {
-                console.error('Error loading categories:', err);
                 categorySelect.innerHTML = '<option value="" disabled selected>Gagal memuat kategori</option>';
             });
         }
 
-        // Trigger on initial load if store is selected (e.g. after validation error)
+        checkStoreStatus();
         if (storeSelect.value) {
             loadCategories(storeSelect.value, oldCategoryId);
         }
 
         storeSelect.addEventListener('change', function() {
+            checkStoreStatus();
             if (this.value) {
                 loadCategories(this.value);
             } else {
@@ -957,49 +1150,46 @@
         });
     });
 
-    // â”€â”€ VARIANT TOGGLE â”€â”€
-    const hasVariantsCheckbox = document.getElementById('has_variants');
-    const singleConfig = document.getElementById('singleProductConfig');
-    const variantsConfig = document.getElementById('variantsConfig');
-    const inputsToToggle = ['single_price', 'single_stock', 'single_weight'];
+    // ── DYNAMIC WEIGHT UNIT AUTO-CONVERSION ──
+    (function() {
+        const hiddenWeight = document.getElementById('single_weight');
+        const displayWeight = document.getElementById('weight_display');
+        let currentUnit = null;
 
-    function toggleVariants() {
-        const isChecked = hasVariantsCheckbox.checked;
-        singleConfig.style.display = isChecked ? 'none' : 'block';
-        variantsConfig.style.display = isChecked ? 'block' : 'none';
-
-        inputsToToggle.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.required = !isChecked;
-        });
-
-        if(isChecked && document.querySelector('#variantsTable tbody').children.length === 0) {
-            addVariantRow();
+        window.selectWeightUnit = function(unit) {
+            currentUnit = unit;
+            document.getElementById('badge_g').classList.toggle('active', unit === 'g');
+            document.getElementById('badge_kg').classList.toggle('active', unit === 'kg');
+            updateHiddenWeight();
         }
-    }
-    hasVariantsCheckbox.addEventListener('change', toggleVariants);
-    toggleVariants();
 
-    // â”€â”€ DYNAMIC ROWS â”€â”€
-    let variantIndex = {{ is_array(old('variants')) ? count(old('variants')) : 0 }};
-    function addVariantRow() {
-        const tbody = document.querySelector('#variantsTable tbody');
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><input type="text" name="variants[${variantIndex}][name]" class="field-input" required placeholder="Cth: Merah / XL"></td>
-            <td><input type="text" name="variants[${variantIndex}][sku]" class="field-input" placeholder="Opsional"></td>
-            <td><input type="text" inputmode="numeric" name="variants[${variantIndex}][price]" class="field-input price-input" required placeholder="0"></td>
-            <td><input type="number" name="variants[${variantIndex}][stock]" class="field-input" required min="0" placeholder="0"></td>
-            <td><input type="number" name="variants[${variantIndex}][weight]" class="field-input" required min="0" placeholder="0"></td>
-            <td>
-                <button type="button" class="btn-remove-row" onclick="this.closest('tr').remove()">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                </button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-        variantIndex++;
-    }
+        function updateHiddenWeight() {
+            const val = parseFloat(displayWeight.value);
+            if (isNaN(val) || val <= 0 || !currentUnit) {
+                hiddenWeight.value = '';
+                return;
+            }
+            hiddenWeight.value = currentUnit === 'kg' ? Math.round(val * 1000) : Math.round(val);
+        }
+
+        function initDisplayWeight() {
+            const rawVal = parseFloat(hiddenWeight.value);
+            if (!isNaN(rawVal) && rawVal > 0) {
+                if (rawVal >= 1000) {
+                    displayWeight.value = parseFloat((rawVal / 1000).toFixed(3));
+                    selectWeightUnit('kg');
+                } else {
+                    displayWeight.value = rawVal;
+                    selectWeightUnit('g');
+                }
+            }
+        }
+
+        if (hiddenWeight && displayWeight) {
+            initDisplayWeight();
+            displayWeight.addEventListener('input', updateHiddenWeight);
+        }
+    })();
 
     let descIndex = {{ is_array(old('descriptions')) ? count(old('descriptions')) : 0 }};
     function addDescriptionRow() {
@@ -1038,23 +1228,6 @@
         specIndex++;
     }
 
-    let packingIndex = {{ is_array(old('packing_options')) ? count(old('packing_options')) : 0 }};
-    function addPackingRow() {
-        const container = document.getElementById('packingContainer');
-        const div = document.createElement('div');
-        div.style.display = 'flex';
-        div.style.gap = '8px';
-        div.innerHTML = `
-            <input type="text" name="packing_options[${packingIndex}][name]" class="field-input" style="flex:1;" placeholder="Nama (Opsional)">
-            <input type="text" inputmode="numeric" name="packing_options[${packingIndex}][extra_price]" class="field-input price-input" style="flex:1;" placeholder="Harga (Opsional)">
-            <button type="button" class="btn-remove-row" onclick="this.parentElement.remove()" style="flex-shrink:0;">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            </button>
-        `;
-        container.appendChild(div);
-        packingIndex++;
-    }
-
     // Modal Image Functions
     function openImageModal(src) {
         const modal = document.getElementById('imageModal');
@@ -1074,7 +1247,8 @@
     @if(!old('specifications'))
         addSpecificationRow();
     @endif
-    // â”€â”€ PRICE FORMATTING (Indonesian: dot as thousands separator) â”€â”€
+
+    // ── PRICE FORMATTING (Indonesian: dot as thousands separator) ──
     function fmtPrice(val) {
         const n = String(val).replace(/\D/g, '');
         return n ? n.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
@@ -1095,16 +1269,12 @@
     function initPriceInputs() {
         document.querySelectorAll('.price-input').forEach(bindPriceInput);
     }
-    // Strip dots before submit so server gets clean integers
     document.querySelector('form').addEventListener('submit', function () {
         this.querySelectorAll('.price-input').forEach(function (el) {
             el.value = el.value.replace(/\./g, '');
         });
     });
-    // Use MutationObserver so dynamically added rows also get formatted
     new MutationObserver(initPriceInputs).observe(document.body, { childList: true, subtree: true });
     initPriceInputs();
 </script>
 @endpush
-
-

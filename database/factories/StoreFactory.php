@@ -16,7 +16,7 @@ class StoreFactory extends Factory
 
         return [
             'name'        => $name,
-            'slug'        => Str::slug($name),
+
             'description' => $this->faker->optional()->paragraph(),
             'is_active'   => $this->faker->boolean(80), // 80% chance active
         ];

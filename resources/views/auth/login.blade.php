@@ -623,6 +623,15 @@
                 opacity: 0;
             }
         }
+
+        .toggle-pass svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .toggle-pass {
+            z-index: 10;
+        }
     </style>
 </head>
 
@@ -671,7 +680,7 @@
                     @csrf
 
                     <div class="field">
-                        <label class="field-label" for="email">Alamat Email</label>
+                        <label class="field-label" for="email">Alamat Email <span>*</span></label>
                         <div class="field-wrap">
                             <div class="field-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -687,7 +696,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="field-label" for="password">Kata Sandi</label>
+                        <label class="field-label" for="password">Kata Sandi <span>*</span></label>
                         <div class="field-wrap">
                             <div class="field-icon">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -698,6 +707,23 @@
                             <input id="password" class="field-input @error('password') is-invalid @enderror"
                                 type="password" name="password" placeholder="••••••••" required
                                 autocomplete="current-password" style="padding-right: 48px;" />
+                            <button type="button" id="togglePass" class="toggle-pass">
+                                <svg id="eyeShow" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+
+                                <svg id="eyeHide" viewBox="0 0 24 24" fill="none"
+                                    stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"
+                                    style="display:none;">
+                                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 19C5 19 1 12 1 12a21.77 21.77 0 0 1 5.06-5.94"></path>
+                                    <path d="M9.9 4.24A10.94 10.94 0 0 1 12 5c7 0 11 7 11 7a21.77 21.77 0 0 1-4.35 5.35"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
                         </div>
                     </div>
 
@@ -793,12 +819,15 @@
         const eyeShow = document.getElementById('eyeShow');
         const eyeHide = document.getElementById('eyeHide');
 
-        togglePass.addEventListener('click', () => {
-            const isPass = passInput.type === 'password';
-            passInput.type = isPass ? 'text' : 'password';
-            eyeShow.style.display = isPass ? 'none' : 'block';
-            eyeHide.style.display = isPass ? 'block' : 'none';
-        });
+        if (togglePass) {
+            togglePass.addEventListener('click', () => {
+                const isPass = passInput.type === 'password';
+
+                passInput.type = isPass ? 'text' : 'password';
+                eyeShow.style.display = isPass ? 'none' : 'block';
+                eyeHide.style.display = isPass ? 'block' : 'none';
+            });
+        }
     </script>
 </body>
 

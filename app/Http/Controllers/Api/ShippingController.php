@@ -4,103 +4,121 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Store;
+use App\Models\ShippingRate;
+use App\Models\ShippingService;
+use App\Models\City;
 use Illuminate\Http\Request;
 
 class ShippingController extends Controller
 {
     /**
-     * Menghitung ongkir berdasarkan berat produk
+     * Menghitung ongkir profesional berdasarkan Master Data & Kategori (Reguler/Cargo)
      */
     public function calculate(Request $request)
     {
         try {
-            // Validasi Input
+            // 1. Validasi Input
             $request->validate([
+                'store_id' => 'required|exists:stores,id',
+                'destination_city_id' => 'required|exists:cities,id',
                 'items' => 'required|array',
-                'items.*.product_id' => 'required|integer',
+                'items.*.product_id' => 'required|exists:products,id',
                 'items.*.quantity' => 'required|integer|min:1',
-                'items.*.packing' => 'nullable|string',
+            ], [
+                'store_id.required'            => 'Toko pengirim wajib dipilih.',
+                'store_id.exists'              => 'Toko pengirim tidak valid.',
+                'destination_city_id.required' => 'Kota tujuan wajib dipilih.',
+                'destination_city_id.exists'   => 'Kota tujuan tidak valid.',
+                'items.required'               => 'Daftar produk tidak boleh kosong.',
+                'items.array'                  => 'Format daftar produk tidak valid.',
+                'items.*.product_id.required'  => 'Produk wajib dipilih.',
+                'items.*.product_id.exists'    => 'Produk tidak ditemukan.',
+                'items.*.quantity.required'    => 'Jumlah produk wajib diisi.',
+                'items.*.quantity.integer'     => 'Jumlah produk harus berupa angka.',
+                'items.*.quantity.min'         => 'Jumlah produk minimal 1.',
             ]);
 
+            $store = Store::findOrFail($request->store_id);
+            $originCityId = $store->city_id;
+            $destCityId = $request->destination_city_id;
+
+            // 2. Hitung Total Berat (Grams)
             $totalGrams = 0;
-            $packingCost = 0;
-            $itemsDetails = [];
-
             foreach ($request->items as $item) {
-                $product = Product::find($item['product_id']);
-                
-                // 1. Hitung Berat
-                $weightPerItem = $product ? ($product->weight ?? 1000) : 1000;
-                $subtotalGrams = $weightPerItem * $item['quantity'];
-                $totalGrams += $subtotalGrams;
-
-                // 2. Hitung Packing (Rp 2.000 per item jika Extra)
-                $isExtraPacking = isset($item['packing']) && str_contains(strtolower($item['packing']), 'extra');
-                $itemPackingCost = $isExtraPacking ? (2000 * $item['quantity']) : 0;
-                $packingCost += $itemPackingCost;
-
-                $itemsDetails[] = [
-                    'product_id' => $item['product_id'],
-                    'name' => $product ? $product->name : 'Unknown Product',
-                    'weight_per_item' => $weightPerItem,
-                    'quantity' => $item['quantity'],
-                    'packing' => $item['packing'] ?? 'Biasa',
-                    'subtotal_grams' => $subtotalGrams,
-                    'item_packing_cost' => $itemPackingCost
-                ];
+                $product = Product::withTrashed()->find($item['product_id']);
+                $totalGrams += ($product->weight ?? 1000) * $item['quantity'];
             }
+            $totalKg = ceil($totalGrams / 1000); // Standard Logistik: Pembulatan ke atas
 
-            // 3. Hitung Ongkir Berdasarkan Wilayah (Provinsi) & Berat
-            $totalKg = $totalGrams / 1000;
-            $province = strtolower($request->province ?? '');
-            $city = strtolower($request->city ?? ''); 
-            
-            // Konfigurasi Tarif per Wilayah (Mockup Realistis)
-            $regulerRate = 25000; // Default Luar Jawa
-            $cargoRate = 12000;   // Default Luar Jawa
+            $rates = ShippingRate::with(['service.courier'])
+                ->where('origin_city_id', $originCityId)
+                ->where('destination_city_id', $destCityId)
+                ->whereHas('service', function($q) {
+                    $q->where('is_active', true)
+                      ->whereHas('courier', function($qc) {
+                          $qc->where('is_active', true);
+                      });
+                })
+                ->get();
 
-            if (str_contains($province, 'timur') || str_contains($city, 'malang') || str_contains($city, 'surabaya')) {
-                $regulerRate = 8000; 
-                $cargoRate = 3500;
-                
-                // Bonus Khusus Malang (Lokasi Toko)
-                if (str_contains($city, 'malang')) {
-                    $regulerRate = 5000;
-                    $cargoRate = 2000;
+            // Filter rates based on total weight: >= 10kg only gets Cargo, < 10kg only gets Reguler
+            $filteredRates = $rates->filter(function ($rate) use ($totalKg) {
+                $isCargoService = $rate->service->min_weight >= 10000;
+                if ($totalKg >= 10) {
+                    return $isCargoService;
+                } else {
+                    return !$isCargoService;
                 }
-            } elseif (str_contains($province, 'tengah') || str_contains($province, 'barat') || str_contains($province, 'jakarta') || str_contains($province, 'jogja') || str_contains($province, 'yogyakarta')) {
-                $regulerRate = 15000; 
-                $cargoRate = 7000;
-            } elseif (str_contains($province, 'bali')) {
-                $regulerRate = 20000; 
-                $cargoRate = 9000;
+            });
+
+            // 4. Jika data rate tidak ada di database, kembalikan error informatif
+            if ($filteredRates->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Maaf, belum ada tarif ongkos kirim yang tersedia untuk berat pesanan Anda pada rute ini.',
+                ], 404);
             }
 
-            $threshold = config('shipping.cargo_threshold', 10);
-            $type = $totalKg <= $threshold ? 'reguler' : 'cargo';
-            $ratePerKg = ($type == 'reguler') ? $regulerRate : $cargoRate;
-            
-            $shippingCost = (int) round($totalKg * $ratePerKg);
+            // 5. Filter & Format Layanan untuk Flutter
+            $availableServices = $filteredRates->map(function($rate) use ($totalKg) {
+                $service = $rate->service;
+                $courier = $service->courier;
+                
+                // Logika Penentuan Ketersediaan berdasarkan Berat (Cargo vs Reguler)
+                $isAvailable = $totalKg >= ($service->min_weight / 1000);
+                
+                return [
+                    'courier_name' => $courier->name,
+                    'courier_code' => $courier->code,
+                    'service_name' => $service->service_name,
+                    'type'         => ($service->min_weight >= 10000) ? 'Cargo' : 'Reguler',
+                    'cost'         => (int)($totalKg * $rate->cost_per_kg),
+                    'is_available' => true,
+                    'min_weight_kg' => $service->min_weight / 1000,
+                    'etd'          => "{$rate->etd_min}-{$rate->etd_max} Hari"
+                ];
+            })->values();
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Biaya pengiriman dan packing berhasil dihitung secara otomatis berdasarkan berat produk dan wilayah Anda.',
                 'data' => [
-                    'total_grams' => $totalGrams,
-                    'total_kg' => $totalKg,
-                    'shipping_type' => ucfirst($type),
-                    'rate_per_kg' => $ratePerKg,
-                    'shipping_cost' => $shippingCost,
-                    'packing_cost' => $packingCost,
-                    'items_breakdown' => $itemsDetails
+                    'origin' => $store->city->name ?? 'Unknown',
+                    'total_weight_kg' => $totalKg,
+                    'services' => $availableServices
                 ]
             ]);
 
         } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Gagal menghitung ongkir: ' . $e->getMessage()
-            ], 500);
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
         }
+    }
+
+    public function getProvinces() { return response()->json(['status' => 'success', 'data' => \App\Models\Province::all()]); }
+    public function getCities($provinceId) { 
+        $cities = \App\Models\City::where('province_id', $provinceId)->get()->map(function($c) {
+            return ['id' => $c->id, 'name' => $c->full_name];
+        });
+        return response()->json(['status' => 'success', 'data' => $cities]); 
     }
 }

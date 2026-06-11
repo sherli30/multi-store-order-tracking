@@ -17,22 +17,26 @@ class Product extends Model
         'store_id',
         'category_id',
         'name',
-        'slug',
         'is_active',
         'is_featured',
+        'price',
+        'stock',
+        'weight',
+        'sku',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'price' => 'decimal:2',
+        'stock' => 'integer',
+        'weight' => 'integer',
     ];
 
     /**
      * The accessors to append to the model's array form.
      */
     protected $appends = [
-        'price',
-        'stock',
         'sold_count',
     ];
 
@@ -41,9 +45,10 @@ class Product extends Model
      */
     public function getSoldCountAttribute(): int
     {
-        return (int) \App\Models\OrderItem::whereHas('productVariant', function ($q) {
-            $q->where('product_id', $this->id);
-        })->sum('quantity');
+        if (array_key_exists('order_items_sum_quantity', $this->attributes)) {
+            return (int) $this->attributes['order_items_sum_quantity'];
+        }
+        return (int) \App\Models\OrderItem::where('product_id', $this->id)->sum('quantity');
     }
 
     // ─────────────────────────────────────────────
@@ -83,37 +88,28 @@ class Product extends Model
     }
 
     /**
-     * Scope: products with low stock (at least one active variant has 1-10 stock).
+     * Scope: products with low stock (1-10 stock).
      */
     public function scopeLowStock(Builder $query): Builder
     {
-        return $query->whereHas('variants', function (Builder $q) {
-            $q->where('is_active', true)
-              ->where('stock', '>', 0)
-              ->where('stock', '<=', 10);
-        });
+        return $query->where('stock', '>', 0)
+            ->where('stock', '<=', 10);
     }
 
     /**
-     * Scope: products that are out of stock (all active variants have 0 stock).
+     * Scope: products that are out of stock (0 stock).
      */
     public function scopeOutOfStock(Builder $query): Builder
     {
-        return $query->whereDoesntHave('variants', function (Builder $q) {
-            $q->where('is_active', true)
-              ->where('stock', '>', 0);
-        });
+        return $query->where('stock', '=', 0);
     }
 
     /**
-     * Scope: products with available stock (at least one active variant has > 10 stock).
+     * Scope: products with available stock (> 10 stock).
      */
     public function scopeAvailableStock(Builder $query): Builder
     {
-        return $query->whereHas('variants', function (Builder $q) {
-            $q->where('is_active', true)
-              ->where('stock', '>', 10);
-        });
+        return $query->where('stock', '>', 10);
     }
 
     // ─────────────────────────────────────────────
@@ -134,14 +130,6 @@ class Product extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(ProductCategory::class, 'category_id');
-    }
-
-    /**
-     * Get the variants for this product.
-     */
-    public function variants(): HasMany
-    {
-        return $this->hasMany(ProductVariant::class);
     }
 
     /**
@@ -169,11 +157,11 @@ class Product extends Model
     }
 
     /**
-     * Get the packing options for this product.
+     * Get the order items that contain this product.
      */
-    public function packingOptions(): HasMany
+    public function orderItems(): HasMany
     {
-        return $this->hasMany(PackingOption::class);
+        return $this->hasMany(OrderItem::class);
     }
 
     // ─────────────────────────────────────────────
@@ -198,43 +186,11 @@ class Product extends Model
     }
 
     /**
-     * Get the total stock of all active variants.
-     */
-    public function getStockAttribute(): int
-    {
-        return (int) $this->variants()->where('is_active', true)->sum('stock');
-    }
-
-    /**
      * Get the base price or price range string.
      */
     public function getFormattedPriceAttribute(): string
     {
-        $activeVariants = $this->variants()->where('is_active', true)->get();
-        if ($activeVariants->isEmpty()) {
-            return 'Rp 0';
-        }
-
-        if ($activeVariants->count() === 1) {
-            return 'Rp ' . number_format($activeVariants->first()->price, 0, ',', '.');
-        }
-
-        $minPrice = $activeVariants->min('price');
-        $maxPrice = $activeVariants->max('price');
-
-        if ($minPrice === $maxPrice) {
-            return 'Rp ' . number_format($minPrice, 0, ',', '.');
-        }
-
-        return 'Rp ' . number_format($minPrice, 0, ',', '.') . ' - ' . number_format($maxPrice, 0, ',', '.');
-    }
-
-    /**
-     * Get the raw base price.
-     */
-    public function getPriceAttribute()
-    {
-        return $this->variants()->where('is_active', true)->min('price') ?? 0;
+        return 'Rp ' . number_format($this->price, 0, ',', '.');
     }
 
     /**

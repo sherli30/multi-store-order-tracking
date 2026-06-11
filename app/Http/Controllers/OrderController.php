@@ -24,17 +24,13 @@ class OrderController extends Controller
         // ── Tab counts (single query via groupBy for efficiency) ──────────
         $countQuery = Order::query();
 
-        // Apply filters so tab counts respect active store/search/date/shipping filters
         if ($storeId = $request->input('store_id')) {
             $countQuery->where('store_id', $storeId);
         }
-        if ($shippingType = $request->input('shipping_type')) {
-            $countQuery->where('shipping_type', $shippingType);
-        }
         if ($search = $request->input('search')) {
             $countQuery->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%");
+                $q->where('midtrans_order_id', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%");
             });
         }
         if ($date = $request->input('date')) {
@@ -49,18 +45,17 @@ class OrderController extends Controller
 
         $tabCounts = [
             'all'        => array_sum($statusCounts),
-            'pending'    => $statusCounts['pending']    ?? 0,
-            'perlu_diproses' => $statusCounts['perlu_diproses'] ?? 0,
-            'processing' => $statusCounts['processing'] ?? 0,
-            'shipping'   => $statusCounts['shipping']   ?? 0,
-            'completed'  => $statusCounts['completed']  ?? 0,
-            'cancelled'  => $statusCounts['cancelled']  ?? 0,
+            Order::STATUS_PENDING        => $statusCounts[Order::STATUS_PENDING]        ?? 0,
+            Order::STATUS_PERLU_DIPROSES => $statusCounts[Order::STATUS_PERLU_DIPROSES] ?? 0,
+            Order::STATUS_PROCESSING     => $statusCounts[Order::STATUS_PROCESSING]     ?? 0,
+            Order::STATUS_SHIPPING       => $statusCounts[Order::STATUS_SHIPPING]       ?? 0,
+            Order::STATUS_COMPLETED      => $statusCounts[Order::STATUS_COMPLETED]      ?? 0,
+            Order::STATUS_CANCELLED      => $statusCounts[Order::STATUS_CANCELLED]      ?? 0,
         ];
 
         // ── Main query — only load what the table needs ───────────────────
-        $query = Order::with(['store', 'orderItems.productVariant.product']);
+        $query = Order::with(['store', 'orderItems.product']);
 
-        // Sorting
         $sort = $request->input('sort', 'desc');
         if ($sort === 'asc') {
             $query->oldest();
@@ -72,39 +67,25 @@ class OrderController extends Controller
             $query->latest();
         }
 
-        // Filter by tab/status
         $tab = $request->input('tab', 'all');
-        if ($tab !== 'all' && in_array($tab, ['pending', 'perlu_diproses', 'processing', 'shipping', 'completed', 'cancelled'])) {
+        if ($tab !== 'all') {
             $query->where('status', $tab);
         }
 
-        // Filter by store
         if ($storeId) {
             $query->where('store_id', $storeId);
         }
 
-        // Filter by shipping type
-        if ($shippingType) {
-            $query->where('shipping_type', $shippingType);
-        }
-
-        // Filter by explicit status param (sidebar links)
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
-
-        // Search
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhere('customer_name', 'like', "%{$search}%")
-                  ->orWhereHas('orderItems.productVariant.product', function ($q2) use ($search) {
-                      $q2->where('name', 'like', "%{$search}%");
-                  });
+                $q->where('midtrans_order_id', 'like', "%{$search}%")
+                    ->orWhere('customer_name', 'like', "%{$search}%")
+                    ->orWhereHas('orderItems.product', function ($q2) use ($search) {
+                        $q2->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
-        // Filter by date
         if ($date) {
             $query->whereDate('created_at', $date);
         }
@@ -113,123 +94,384 @@ class OrderController extends Controller
         $orders  = $query->paginate($perPage)->appends($request->query());
 
         if ($request->ajax()) {
-            return view('orders.partials.table', compact('orders'))->render();
+            return view('orders.partials._table_rows', compact('orders'))->render();
         }
 
-        $stores = Store::orderBy('name')->get();
+        // Hanya tampilkan toko aktif yang memiliki pesanan
+        $stores = Store::where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         return view('orders.index', compact('orders', 'stores', 'tab', 'tabCounts'));
     }
 
     /**
-     * Display the specified order — fully loaded for the detail page.
+     * Display the specified order.
      */
     public function show(Order $order): View
     {
+        // Pre-load the transaction so syncPaymentWithMidtrans can read
+        // the stored transaction_id without an extra query.
+        $order->load('transaction');
+
+        // Auto-sync with Midtrans if payment is still pending or order ID is missing
+        if ($order->payment_status === 'pending' || empty($order->midtrans_order_id)) {
+            $this->syncPaymentWithMidtrans($order);
+        }
+
         $order->load([
             'store',
-            'orderItems.productVariant.product.images',
-            'trackingHistories' => fn ($q) => $q->with('admin')->latest(),
+            'transaction',
+            'orderItems.product.images',
+            'trackingHistories' => fn($q) => $q->with('admin')->latest(),
         ]);
 
-        return view('orders.show', compact('order'));
+        $couriers = \App\Models\Courier::where('is_active', true)->orderBy('name')->get();
+
+        return view('orders.show', compact('order', 'couriers'));
     }
 
     /**
-     * Update the generic status of the order.
-     * When changing to 'processing', deducts stock via OrderService.
+     * Print the shipping label (Resi Pengiriman) for the order.
      */
-    public function updateStatus(Request $request, Order $order): RedirectResponse
+    public function printShippingLabel(Order $order)
     {
-        $request->validate([
-            'status' => 'required|in:pending,perlu_diproses,processing,shipping,completed',
-        ]);
-
-        $newStatus = $request->status;
-
-        // Deduct stock when order moves to 'perlu_diproses' or 'processing' (if not already done)
-        if (in_array($newStatus, ['perlu_diproses', 'processing']) && !$order->is_stock_deducted) {
-            try {
-                $this->orderService->processOrderStock($order);
-            } catch (InsufficientStockException $e) {
-                return back()->withErrors(['stock' => $e->getMessage()]);
-            }
+        if (in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CANCELLED])) {
+            return back()->with('error', 'Label pengiriman hanya dapat dicetak untuk pesanan yang sudah dibayar (minimal status Perlu Diproses).');
         }
 
-        $order->update(['status' => $newStatus]);
+        $order->load([
+            'store',
+            'orderItems.product',
+        ]);
+
+        return view('orders.print', compact('order'));
+    }
+
+    /**
+     * Update order status.
+     */
+    public function updateStatus(\App\Http\Requests\OrderUpdateRequest $request, Order $order): RedirectResponse
+    {
+        $newStatus = $request->status;
+
+        // Wrap in transaction with pessimistic lock to prevent race with webhooks
+        try {
+            $result = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $order, $newStatus) {
+                // Re-fetch with lock to get the true current state
+                $order = Order::lockForUpdate()->find($order->id);
+
+                // Guard: block updates on cancelled orders
+                if ($order->status === Order::STATUS_CANCELLED) {
+                    return back()->with('error', "Pesanan {$order->order_number} sudah dibatalkan dan tidak dapat diubah statusnya.");
+                }
+
+                // Guard: prevent backward status transitions
+                $statusOrder = [
+                    Order::STATUS_PENDING        => 1,
+                    Order::STATUS_PERLU_DIPROSES => 2,
+                    Order::STATUS_PROCESSING     => 3,
+                    Order::STATUS_SHIPPING       => 4,
+                    Order::STATUS_COMPLETED      => 5,
+                ];
+                $currentLevel = $statusOrder[$order->status] ?? 0;
+                $newLevel     = $statusOrder[$newStatus] ?? 0;
+
+                if ($newLevel <= $currentLevel) {
+                    return back()->with('error', "Status tidak dapat diubah mundur dari \"{$order->status_label}\" ke status sebelumnya.");
+                }
+
+                // Deduct stock if moving to a status that requires it
+                if (in_array($newStatus, [Order::STATUS_PERLU_DIPROSES, Order::STATUS_PROCESSING, Order::STATUS_SHIPPING, Order::STATUS_COMPLETED]) && !$order->is_stock_deducted) {
+                    $this->orderService->processOrderStock($order);
+                }
+
+                $updateData = ['status' => $newStatus];
+
+                // If manually verifying to "Perlu Diproses", also mark payment as settlement
+                if ($newStatus === Order::STATUS_PERLU_DIPROSES && $order->payment_status !== 'settlement') {
+                    $updateData['payment_status'] = 'settlement';
+
+                    // Sync with Transaction table to ensure financial reports (revenue) are accurate
+                    $transaction = \App\Models\Transaction::firstOrNew(['order_id' => $order->id]);
+
+                    if (!$transaction->transaction_id) {
+                        $transaction->transaction_id = 'MANUAL-' . strtoupper(uniqid());
+                    }
+
+                    $transaction->status = 'paid';
+                    $transaction->amount = $order->total_amount;
+                    $transaction->payment_date = now();
+                    $transaction->payment_method = $order->payment_type ?? 'manual';
+                    $transaction->notes = 'Status pembayaran diverifikasi manual oleh Admin via Detail Pesanan.';
+
+                    $transaction->save();
+                }
+
+                $order->update($updateData);
+
+                return null; // Success — continue after transaction
+            });
+
+            // If the transaction returned a redirect (guard failure), return it immediately
+            if ($result !== null) {
+                return $result;
+            }
+
+            // Re-fetch the updated order for notifications
+            $order = $order->fresh();
+        } catch (InsufficientStockException $e) {
+            return back()->withErrors(['stock' => $e->getMessage()]);
+        }
+
+        $notes = match ($newStatus) {
+            Order::STATUS_PERLU_DIPROSES => 'Pesanan telah diverifikasi dan siap diproses.',
+            Order::STATUS_PROCESSING => 'Barang sedang dipersiapkan dan dikemas.',
+            Order::STATUS_SHIPPING => 'Pesanan telah diserahkan ke kurir.',
+            Order::STATUS_COMPLETED => 'Pesanan telah sampai dan diterima oleh pelanggan.',
+            Order::STATUS_CANCELLED => 'Pesanan dibatalkan.',
+            default => 'Status pesanan berhasil diperbarui oleh sistem Admin.',
+        };
 
         TrackingHistory::create([
             'order_id' => $order->id,
             'admin_id' => auth()->id(),
             'status'   => $newStatus,
-            'notes'    => 'Diperbarui melalui panel Manajemen Pesanan.',
+            'notes'    => $notes,
         ]);
 
-        $statusMsg = match ($newStatus) {
-            'perlu_diproses' => 'Perlu Diproses',
-            'processing' => 'Dikemas',
-            'shipping'   => 'Dikirim',
-            'completed'  => 'Selesai',
-            default      => ucfirst($newStatus),
-        };
-
-        return back()->with('success', "Status pesanan {$order->order_number} berhasil diubah menjadi {$statusMsg}.");
-    }
-
-    /**
-     * Cancel the order with a mandatory reason.
-     * Restores stock via OrderService if previously deducted.
-     */
-    public function cancel(Request $request, Order $order): RedirectResponse
-    {
-        $request->validate([
-            'cancel_reason' => 'required|string|max:1000',
-        ]);
-
-        $order->update([
-            'status'        => 'cancelled',
-            'cancel_reason' => $request->cancel_reason,
-        ]);
-
-        TrackingHistory::create([
+        // Notify Admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\GeneralOrderNotification([
             'order_id' => $order->id,
-            'admin_id' => auth()->id(),
-            'status'   => 'cancelled',
-            'notes'    => "Pesanan dibatalkan. Alasan: " . $request->cancel_reason,
-        ]);
+            'title'    => 'Status Pesanan: ' . $order->status_label . ' (' . $order->midtrans_order_id . ')',
+            'message'  => "Status pesanan {$order->midtrans_order_id} diperbarui menjadi {$order->status_label}.",
+            'type'     => 'status_update',
+        ]));
 
-        // Restore stock via OrderService (race-condition safe & logged)
-        $this->orderService->restoreOrderStock($order, 'cancellation');
+        // Notify Customer
+        if ($order->customer) {
+            $order->customer->notify(new \App\Notifications\GeneralOrderNotification([
+                'order_id' => $order->id,
+                'title'    => 'Status Pesanan Diperbarui',
+                'message'  => "Pesanan Anda ({$order->midtrans_order_id}) kini berstatus: {$order->status_label}.",
+                'type'     => 'status_update',
+            ]));
+        }
 
-        return back()->with('success', "Pesanan {$order->order_number} berhasil dibatalkan.");
+        return back()->with('success', "Proses berhasil! Status pesanan dengan nomor {$order->order_number} telah diubah menjadi {$order->status_label}.");
     }
 
     /**
-     * Update the shipping type (reguler/cargo).
+     * Cancel order.
      */
-    public function updateShipping(Request $request, Order $order): RedirectResponse
+    public function cancel(\App\Http\Requests\OrderCancelRequest $request, Order $order): RedirectResponse
     {
-        $request->validate([
-            'shipping_type' => 'required|in:reguler,cargo',
-        ]);
+        // Wrap in transaction with pessimistic lock to prevent race conditions
+        $result = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $order) {
+            // Re-fetch with lock to get the true current state
+            $order = Order::lockForUpdate()->find($order->id);
 
-        $order->update(['shipping_type' => $request->shipping_type]);
+            // Guard: prevent double-cancellation or cancelling completed orders
+            if ($order->status === Order::STATUS_CANCELLED) {
+                return back()->with('error', "Pesanan {$order->order_number} sudah dibatalkan sebelumnya.");
+            }
+            if ($order->status === Order::STATUS_COMPLETED) {
+                return back()->with('error', "Pesanan {$order->order_number} sudah selesai dan tidak dapat dibatalkan.");
+            }
 
-        return back()->with('success', "Jenis pengiriman pesanan {$order->order_number} berhasil diperbarui ke " . ucfirst($request->shipping_type) . ".");
+            $order->update([
+                'status'        => Order::STATUS_CANCELLED,
+                'cancel_reason' => $request->cancel_reason,
+            ]);
+
+            // Sync with Transaction table to ensure pending payments are failed/cancelled
+            if ($order->transaction && $order->transaction->status === 'pending') {
+                $order->transaction->update([
+                    'status' => 'failed',
+                    'notes'  => 'Dibatalkan manual oleh Admin via Detail Pesanan. Alasan: ' . $request->cancel_reason,
+                ]);
+            }
+
+            TrackingHistory::create([
+                'order_id' => $order->id,
+                'admin_id' => auth()->id(),
+                'status'   => Order::STATUS_CANCELLED,
+                'notes'    => "Pesanan dibatalkan. Alasan: " . $request->cancel_reason,
+            ]);
+
+            $this->orderService->restoreOrderStock($order, 'cancellation');
+
+            return null; // Success
+        });
+
+        if ($result !== null) {
+            return $result;
+        }
+
+        // Re-fetch for notifications (outside transaction to avoid holding locks)
+        $order = $order->fresh();
+
+        // Notify Admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\GeneralOrderNotification([
+            'order_id' => $order->id,
+            'title'    => 'Pesanan Dibatalkan: ' . $order->midtrans_order_id,
+            'message'  => "Pesanan {$order->midtrans_order_id} dibatalkan: " . $request->cancel_reason,
+            'type'     => 'cancel',
+        ]));
+
+        // Notify Customer
+        if ($order->customer) {
+            $order->customer->notify(new \App\Notifications\GeneralOrderNotification([
+                'order_id' => $order->id,
+                'title'    => 'Pesanan Dibatalkan',
+                'message'  => "Mohon maaf, pesanan Anda ({$order->midtrans_order_id}) telah dibatalkan dengan alasan: {$request->cancel_reason}.",
+                'type'     => 'cancel',
+            ]));
+        }
+
+        return back()->with('success', "Pembatalan berhasil diproses. Pesanan {$order->order_number} telah dibatalkan dengan alasan yang tercatat.");
     }
 
     /**
-     * Manual check to Midtrans API for payment status.
+     * Update shipping type.
      */
-    public function checkPaymentStatus(Order $order): RedirectResponse
+    public function updateShipping(\App\Http\Requests\OrderUpdateRequest $request, Order $order): RedirectResponse
+    {
+        $result = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $order) {
+            // Re-fetch with lock for atomicity
+            $order = Order::lockForUpdate()->find($order->id);
+
+            // Guard: prevent updates on cancelled orders
+            if ($order->status === Order::STATUS_CANCELLED) {
+                return back()->with('error', "Pesanan {$order->order_number} sudah dibatalkan dan tidak dapat diubah pengirimannya.");
+            }
+
+            // Guard: prevent updates on completed orders
+            if ($order->status === Order::STATUS_COMPLETED) {
+                return back()->with('error', "Pesanan {$order->order_number} sudah selesai dan tidak dapat diubah.");
+            }
+
+            if ($order->shipping_type === $request->shipping_type) {
+                return back()->with('info', "Jenis pengiriman tidak berubah.");
+            }
+
+            $order->update(['shipping_type' => $request->shipping_type]);
+
+            \App\Models\TrackingHistory::create([
+                'order_id' => $order->id,
+                'admin_id' => auth()->id(),
+                'status'   => $order->status,
+                'notes'    => "Jenis pengiriman diperbarui menjadi " . strtoupper($request->shipping_type) . ".",
+            ]);
+
+            return null; // Success
+        });
+
+        if ($result !== null) {
+            return $result;
+        }
+
+        $order = $order->fresh();
+        return back()->with('success', "Data logistik berhasil diperbarui. Jenis pengiriman pesanan {$order->order_number} kini menggunakan " . ucfirst($request->shipping_type) . ".");
+    }
+
+    /**
+     * Update tracking number and set status to shipping.
+     */
+    public function updateTrackingNumber(\App\Http\Requests\OrderTrackingRequest $request, Order $order): RedirectResponse
+    {
+        $result = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $order) {
+            // Re-fetch with lock for atomicity
+            $order = Order::lockForUpdate()->find($order->id);
+
+            // Guard: prevent updates on cancelled orders
+            if ($order->status === Order::STATUS_CANCELLED) {
+                return back()->with('error', "Pesanan {$order->order_number} sudah dibatalkan dan tidak dapat di-update.");
+            }
+
+            // Guard: prevent updates on completed orders
+            if ($order->status === Order::STATUS_COMPLETED) {
+                return back()->with('error', "Pesanan {$order->order_number} sudah selesai, tidak perlu update resi.");
+            }
+
+            if ($order->status === Order::STATUS_SHIPPING && 
+                $order->tracking_number === $request->tracking_number && 
+                $order->shipping_courier === $request->shipping_courier) {
+                return back()->with('info', "Resi pengiriman tidak berubah.");
+            }
+
+            $order->update([
+                'tracking_number' => $request->tracking_number,
+                'shipping_courier' => $request->shipping_courier,
+                'status'          => Order::STATUS_SHIPPING,
+            ]);
+
+            TrackingHistory::create([
+                'order_id' => $order->id,
+                'admin_id' => auth()->id(),
+                'status'   => Order::STATUS_SHIPPING,
+                'notes'    => "Pesanan telah dikirim melalui " . $request->shipping_courier . ". Nomor resi: " . $request->tracking_number,
+            ]);
+
+            return null; // Success
+        });
+
+        if ($result !== null) {
+            return $result;
+        }
+
+        $order = $order->fresh();
+
+        // Notify Admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\GeneralOrderNotification([
+            'order_id' => $order->id,
+            'title'    => 'Pesanan Dikirim (' . ($order->midtrans_order_id ?? $order->order_number) . ')',
+            'message'  => "Pesanan telah dikirim via {$request->shipping_courier} dengan resi {$request->tracking_number}.",
+            'type'     => 'shipping',
+        ]));
+
+        return back()->with('success', "Pengiriman berhasil diproses. Status pesanan diubah menjadi 'Dikirim'.");
+    }
+
+    /**
+     * Manual Midtrans check.
+     */
+    public function checkPaymentStatus(Request $request, Order $order): RedirectResponse
+    {
+        // We no longer update midtrans_id on the order model because it doesn't exist.
+        // We will pass the manual_id to the sync method which will handle saving it to Transactions.
+        $result = $this->syncPaymentWithMidtrans($order, $request->manual_id);
+
+        if ($result['success']) {
+            return back()->with($result['type'], $result['message']);
+        }
+
+        return back()->with('error', $result['message']);
+    }
+
+    /**
+     * Sync order payment status with Midtrans API.
+     */
+    private function syncPaymentWithMidtrans(Order $order, ?string $manualId = null): array
     {
         $serverKey = config('midtrans.server_key');
         $isProduction = config('midtrans.is_production');
-        $baseUrl = $isProduction 
-            ? 'https://api.midtrans.com/v2/' 
+        $baseUrl = $isProduction
+            ? 'https://api.midtrans.com/v2/'
             : 'https://api.sandbox.midtrans.com/v2/';
 
-        $midtransOrderId = $order->midtrans_order_id ?? $order->order_number;
+        // Priority for lookup ID:
+        // 1. Manual Input ID (if provided)
+        // 2. Already stored Transaction ID (UUID) - Most reliable
+        // 3. Already stored Midtrans Order ID (Long)
+        // 4. Local Order Number (Short)
+        $midtransOrderId = $manualId
+            ?? ($order->transaction->transaction_id ?? null)
+            ?? $order->midtrans_order_id
+            ?? $order->order_number;
 
         try {
             $response = Http::withHeaders([
@@ -240,39 +482,115 @@ class OrderController extends Controller
 
             if ($response->successful()) {
                 $data = $response->json();
-                
-                if (!isset($data['transaction_status'])) {
-                    return back()->with('error', 'Transaksi tidak ditemukan di Midtrans. Ini bisa terjadi jika link pembayaran belum pernah dibuka oleh pelanggan.');
+                $transactionStatus = $data['transaction_status'] ?? null;
+                $paymentType = $data['payment_type'] ?? $order->payment_type;
+                $transactionId = $data['transaction_id'] ?? null;
+
+                // Prevent downgrading already paid orders
+                if (in_array($order->payment_status, ['settlement', 'capture']) && !in_array($transactionStatus, ['settlement', 'capture', 'refund'])) {
+                    return ['success' => true, 'type' => 'info', 'message' => 'Pesanan sudah lunas sebelumnya.'];
                 }
 
-                $transactionStatus = $data['transaction_status'];
+                $txStatus = match (true) {
+                    in_array($transactionStatus, ['settlement', 'capture']) => 'paid',
+                    $transactionStatus === 'pending'                        => 'pending',
+                    in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure']) => 'failed',
+                    $transactionStatus === 'refund'                         => 'refund',
+                    default                                                 => 'pending',
+                };
 
-                if ($transactionStatus == 'settlement' || $transactionStatus == 'capture') {
-                    if ($order->status === 'pending') {
-                        $order->update([
-                            'status' => 'perlu_diproses',
-                            'payment_status' => 'settlement'
-                        ]);
+                // Sync Transaction Model
+                $transaction = \App\Models\Transaction::firstOrNew(['order_id' => $order->id]);
 
-                        TrackingHistory::create([
-                            'order_id' => $order->id,
-                            'admin_id' => auth()->id(),
-                            'status'   => 'perlu_diproses',
-                            'notes'    => 'Status diperbarui via cek status manual ke Midtrans.',
-                        ]);
-                        
-                        return back()->with('success', 'Pembayaran terverifikasi! Status pesanan diperbarui ke Perlu Diproses.');
+                if (!$transaction->transaction_id) {
+                    $transaction->transaction_id = $transactionId ?? ('SYNC-' . strtoupper(uniqid()));
+                }
+
+                $transaction->payment_method  = $paymentType;
+                $transaction->payment_details = $data;
+                $transaction->amount          = $order->total_amount;
+                $transaction->status          = $txStatus;
+                $transaction->notes           = "Auto-sync Midtrans: {$transactionStatus}";
+
+                if (in_array($transactionStatus, ['settlement', 'capture'])) {
+                    $transaction->payment_date = isset($data['transaction_time'])
+                        ? \Carbon\Carbon::parse($data['transaction_time'], 'Asia/Jakarta')
+                        : now();
+                } elseif (in_array($txStatus, ['failed', 'refund'])) {
+                    $transaction->refunded_at = now();
+                }
+
+                $transaction->save();
+
+                $orderUpdates = ['payment_status' => $transactionStatus];
+                if (empty($order->midtrans_order_id) && isset($data['order_id'])) {
+                    $orderUpdates['midtrans_order_id'] = $data['order_id'];
+                }
+                if (empty($order->payment_type) && $paymentType) {
+                    $orderUpdates['payment_type'] = $paymentType;
+                }
+
+                if (in_array($transactionStatus, ['settlement', 'capture'])) {
+                    $orderUpdates['payment_status'] = 'settlement';
+
+                    // Only advance order status if it's currently pending or cancelled
+                    if (in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_CANCELLED])) {
+                        $orderUpdates['status'] = \App\Models\Order::STATUS_PERLU_DIPROSES;
                     }
-                    return back()->with('info', 'Pembayaran sudah terverifikasi sebelumnya.');
+
+                    $order->update($orderUpdates);
+
+                    // Deduct stock safely on payment confirmation
+                    if (! $order->is_stock_deducted) {
+                        try {
+                            $this->orderService->processOrderStock($order);
+                        } catch (\App\Exceptions\InsufficientStockException $e) {
+                            \Illuminate\Support\Facades\Log::error('[CheckPayment] Insufficient stock for paid order #' . $order->id . ': ' . $e->getMessage());
+                            $order->update([
+                                'notes' => ltrim($order->notes . "\n[SISTEM] Pembayaran lunas tapi stok tidak mencukupi: " . $e->getMessage())
+                            ]);
+                        }
+                    }
+
+                    // Always add tracking history entry for successful payments
+                    \App\Models\TrackingHistory::create([
+                        'order_id' => $order->id,
+                        'admin_id' => auth() ? auth()->id() : null,
+                        'status'   => $order->fresh()->status,
+                        'notes'    => 'Terverifikasi via Auto-Sync Midtrans.',
+                    ]);
+
+                    return ['success' => true, 'type' => 'success', 'message' => 'Pembayaran terverifikasi!'];
+                } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure', 'refund'])) {
+                    if (in_array($order->status, [\App\Models\Order::STATUS_PENDING, \App\Models\Order::STATUS_PERLU_DIPROSES, \App\Models\Order::STATUS_PROCESSING, \App\Models\Order::STATUS_SHIPPING])) {
+                        $orderUpdates['status']        = \App\Models\Order::STATUS_CANCELLED;
+                        $orderUpdates['cancel_reason'] = 'Pembayaran ' . $transactionStatus . ' via Midtrans (Sync).';
+                    }
+
+                    $order->update($orderUpdates);
+
+                    // Restore stock safely using OrderService
+                    if ($order->is_stock_deducted) {
+                        $this->orderService->restoreOrderStock($order, $transactionStatus);
+                    }
+
+                    \App\Models\TrackingHistory::create([
+                        'order_id' => $order->id,
+                        'admin_id' => auth() ? auth()->id() : null,
+                        'status'   => $order->status,
+                        'notes'    => 'Pembayaran ' . $transactionStatus . ' via Auto-Sync Midtrans.',
+                    ]);
+
+                    return ['success' => true, 'type' => 'error', 'message' => "Pembayaran dibatalkan/gagal: {$transactionStatus}"];
                 }
 
-                return back()->with('info', 'Status pembayaran di Midtrans: ' . $transactionStatus);
+                $order->update($orderUpdates);
+                return ['success' => true, 'type' => 'info', 'message' => "Status Midtrans: {$transactionStatus}"];
             }
 
-            return back()->with('error', 'Gagal mendapatkan status dari Midtrans. Pesanan mungkin belum dibayar atau link pembayaran belum dibuka.');
-
+            return ['success' => false, 'message' => 'Pesanan tidak ditemukan di Midtrans.'];
         } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
         }
     }
 }

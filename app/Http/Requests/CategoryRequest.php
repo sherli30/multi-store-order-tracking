@@ -20,10 +20,10 @@ class CategoryRequest extends FormRequest
      */
     public function rules(): array
     {
-        // Mendapatkan ID kategori dari route untuk pengecekan unique saat update
         $categoryId = $this->route('product_category')?->id;
+        $isCreate = $this->isMethod('post');
 
-        return [
+        $rules = [
             'store_id' => [
                 'required',
                 'exists:stores,id'
@@ -33,7 +33,6 @@ class CategoryRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                // Nama kategori harus unik di dalam satu toko yang sama
                 Rule::unique('product_categories', 'name')
                     ->where('store_id', $this->store_id)
                     ->ignore($categoryId),
@@ -44,12 +43,15 @@ class CategoryRequest extends FormRequest
                 'string',
                 'max:500'
             ],
-
-            'is_active' => [
-                'nullable',
-                'boolean'
-            ],
         ];
+
+        if ($isCreate) {
+            $rules['is_active'] = ['accepted'];
+        } else {
+            $rules['is_active'] = ['required', 'boolean'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -74,6 +76,8 @@ class CategoryRequest extends FormRequest
             'description.max'    => 'Deskripsi terlalu panjang, maksimal 500 karakter.',
 
             // Is Active
+            'is_active.accepted' => 'Status aktif kategori wajib diaktifkan saat pendaftaran baru.',
+            'is_active.required' => 'Status aktif kategori wajib diisi.',
             'is_active.boolean'  => 'Status aktif harus berupa pilihan benar atau salah.',
         ];
     }
@@ -84,7 +88,7 @@ class CategoryRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'is_active' => $this->has('is_active') ? true : false,
+            'is_active' => $this->boolean('is_active'),
         ]);
     }
 }

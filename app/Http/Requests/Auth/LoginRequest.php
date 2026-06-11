@@ -83,8 +83,18 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        // PROTEKSI ROLE: Tegas tanpa mengarahkan ke pihak lain
+        // PROTEKSI ROLE & STATUS AKTIF
         $user = Auth::user();
+        
+        if (!$user->is_active) {
+            Auth::logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Akun Anda saat ini dinonaktifkan. Silakan hubungi Administrator sistem untuk mengaktifkannya kembali.',
+            ]);
+        }
+        
         if ($user->role !== 'admin') {
             Auth::logout();
             RateLimiter::hit($this->throttleKey());

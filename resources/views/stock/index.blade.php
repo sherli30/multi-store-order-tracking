@@ -421,17 +421,18 @@
 
             <form id="stockForm" method="POST" novalidate>
                 @csrf
+                <input type="hidden" name="stock_action" id="stockActionInput" value="{{ old('stock_action', 'add') }}">
                 <div class="stock-modal-field">
                     <label class="stock-modal-label" for="stockQtyInput">Jumlah <span>*</span></label>
                     <input type="number" id="stockQtyInput" name="qty"
-                           class="stock-modal-input" placeholder="Masukkan jumlah unit..."
-                           min="1" max="999999" required>
+                           class="stock-modal-input @error('qty') is-invalid @enderror" placeholder="Masukkan jumlah unit..."
+                           value="{{ old('qty') }}" min="1" max="999999" required>
                 </div>
                 <div class="stock-modal-field">
                     <label class="stock-modal-label" for="stockNoteInput">Catatan <span>*</span></label>
                     <input type="text" id="stockNoteInput" name="note"
-                           class="stock-modal-input" placeholder="Alasan penyesuaian stok..."
-                           maxlength="500" required>
+                           class="stock-modal-input @error('note') is-invalid @enderror" placeholder="Alasan penyesuaian stok..."
+                           value="{{ old('note') }}" maxlength="500" required>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" onclick="closeStockModal()">Batal</button>
@@ -451,7 +452,7 @@
     const _productSlug  = '{{ $product->slug }}';
     let   _stockType    = 'add';
 
-    function openStockModal(type) {
+    function openStockModal(type, isReopen = false) {
         _stockType = type;
         const isAdd = type === 'add';
 
@@ -465,14 +466,20 @@
 
         document.getElementById('stockForm').action =
             `/products/${_productSlug}/stock/${isAdd ? 'add' : 'deduct'}`;
+            
+        document.getElementById('stockActionInput').value = type;
 
-        document.getElementById('stockQtyInput').value = '';
-        document.getElementById('stockNoteInput').value = '';
-        document.getElementById('stockQtyInput').classList.remove('is-invalid');
+        if (!isReopen) {
+            document.getElementById('stockQtyInput').value = '';
+            document.getElementById('stockNoteInput').value = '';
+            document.getElementById('stockQtyInput').classList.remove('is-invalid');
+            document.getElementById('stockNoteInput').classList.remove('is-invalid');
+        }
 
         document.getElementById('stockModal').classList.add('open');
         setTimeout(() => document.getElementById('stockQtyInput').focus(), 200);
     }
+    
 
     function closeStockModal() {
         document.getElementById('stockModal').classList.remove('open');

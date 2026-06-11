@@ -18,7 +18,7 @@ class ProductCategoryFactory extends Factory
         return [
             'store_id'    => Store::factory(),
             'name'        => ucwords($name),
-            'slug'        => Str::slug($name),
+
             'description' => $this->faker->optional()->sentence(),
             'is_active'   => $this->faker->boolean(85),
         ];

@@ -3,7 +3,6 @@
         <td class="cell-no">{{ $index + 1 }}</td>
         <td>
             <div class="cat-name">{{ $category->name }}</div>
-            <div class="cat-slug">{{ $category->slug }}</div>
         </td>
         <td>
             <div style="font-size:12.5px; font-weight:600; color:var(--text-1);">{{ $category->store->name }}</div>
@@ -32,10 +31,12 @@
             </div>
         </td>
         <td>
-            @if($category->is_active)
+            @if(!$category->store->is_active)
+                <span class="badge badge-inactive" style="background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15);" title="Toko ini sedang dinonaktifkan di Manajemen Toko">Non-aktif (Toko Non-aktif)</span>
+            @elseif($category->is_active)
                 <span class="badge badge-active">Aktif</span>
             @else
-                <span class="badge badge-inactive">Nonaktif</span>
+                <span class="badge badge-inactive">Non-aktif</span>
             @endif
         </td>
         <td>

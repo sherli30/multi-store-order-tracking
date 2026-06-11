@@ -54,109 +54,165 @@
         @if(request()->routeIs('dashboard'))
             Dashboard
 
-            {{-- OPERASIONAL: Pesanan --}}
+            {{-- PENJUALAN --}}
         @elseif(request()->routeIs('orders.show'))
-            Pesanan
+            Penjualan
             <span>/ Detail Pesanan</span>
         @elseif(request()->routeIs('orders.*'))
-            Pesanan
-            <span>/ Manajemen Pesanan</span>
-
-            {{-- OPERASIONAL: Transaksi --}}
+            Penjualan
+            <span>/ Daftar Pesanan</span>
         @elseif(request()->routeIs('transactions.*'))
-            Transaksi
-            <span>/ Riwayat Transaksi</span>
+            Penjualan
+            <span>/ Daftar Transaksi</span>
 
-            {{-- OPERASIONAL: Pengiriman & Tracking --}}
+            {{-- LOGISTIK --}}
         @elseif(request()->routeIs('deliveries.scan'))
-            Pengiriman & Tracking
-            <span>/ Scan Barcode</span>
+            Logistik
+            <span>/ Cek Resi</span>
         @elseif(request()->routeIs('deliveries.history'))
-            Pengiriman & Tracking
+            Logistik
             <span>/ Riwayat Tracking</span>
         @elseif(request()->routeIs('deliveries.print'))
-            Pengiriman & Tracking
+            Logistik
             <span>/ Cetak Label</span>
         @elseif(request()->routeIs('deliveries.*'))
-            Pengiriman & Tracking
-            <span>/ Update Status</span>
+            Logistik
+            <span>/ Riwayat Status</span>
 
-            {{-- PRODUK: Produk & Toko --}}
+            {{-- MASTER LOGISTIK --}}
+        @elseif(request()->routeIs('couriers.*'))
+            Master Logistik
+            <span>/ Master Kurir</span>
+        @elseif(request()->routeIs('shipping-services.*'))
+            Master Logistik
+            <span>/ Master Layanan</span>
+        @elseif(request()->routeIs('provinces.*'))
+            Master Logistik
+            <span>/ Master Provinsi</span>
+        @elseif(request()->routeIs('cities.*'))
+            Master Logistik
+            <span>/ Master Kota & Kabupaten</span>
+        @elseif(request()->routeIs('shipping-rates.*'))
+            Master Logistik
+            <span>/ Master Ongkir</span>
+
+            {{-- KATALOG --}}
         @elseif(request()->routeIs('products.create'))
-            Produk & Toko
+            Katalog
             <span>/ Tambah Produk</span>
         @elseif(request()->routeIs('products.edit'))
-            Produk & Toko
+            Katalog
             <span>/ Edit Produk</span>
         @elseif(request()->routeIs('products.*'))
-            Produk & Toko
-            <span>/ Manajemen Produk</span>
+            Katalog
+            <span>/ Daftar Produk</span>
 
-            {{-- PRODUK: Kategori Produk --}}
         @elseif(request()->routeIs('product-categories.create'))
-            Produk & Toko
+            Katalog
             <span>/ Tambah Kategori</span>
-
         @elseif(request()->routeIs('product-categories.edit'))
-            Produk & Toko
+            Katalog
             <span>/ Edit Kategori</span>
-
         @elseif(request()->routeIs('product-categories.*'))
-            Produk & Toko
+            Katalog
             <span>/ Kategori Produk</span>
 
         @elseif(request()->routeIs('stores.create'))
-            Produk & Toko
+            Katalog
             <span>/ Tambah Toko</span>
         @elseif(request()->routeIs('stores.edit'))
-            Produk & Toko
+            Katalog
             <span>/ Edit Toko</span>
         @elseif(request()->routeIs('stores.*'))
-            Produk & Toko
-            <span>/ Manajemen Toko</span>
+            Katalog
+            <span>/ Daftar Toko</span>
 
-            {{-- LAPORAN --}}
-        @elseif(request()->routeIs('reports.stores'))
-            Laporan
-            <span>/ Per Toko</span>
-        @elseif(request()->routeIs('reports.consolidated'))
-            Laporan
-            <span>/ Konsolidasi</span>
-        @elseif(request()->routeIs('reports.export'))
-            Laporan
-            <span>/ Ekspor Data</span>
+            {{-- ANALISIS --}}
         @elseif(request()->routeIs('reports.*'))
-            Laporan
-            <span>/ Laporan</span>
+            Analisis
+            <span>/ Laporan Penjualan</span>
 
-            {{-- DATA: Pelanggan --}}
+            {{-- LAINNYA --}}
         @elseif(request()->routeIs('customers.show'))
-            Customer
-            <span>/ Detail Customer</span>
+            Lainnya
+            <span>/ Detail Pelanggan</span>
         @elseif(request()->routeIs('customers.*'))
-            Customer
-            <span>/ Manajemen Customer</span>
-
-            {{-- PENGATURAN --}}
+            Lainnya
+            <span>/ Pelanggan</span>
         @elseif(request()->routeIs('profile.*'))
-            Profil Admin
+            Lainnya
+            <span>/ Profil Admin</span>
 
         @else
-            {{ request()->route()?->getName() }}
-            <span>/ Halaman</span>
+            Sistem
+            <span>/ {{ str_replace('.', ' ', request()->route()?->getName()) }}</span>
         @endif
     </div>
 
     <div class="topbar-actions">
         <div class="topbar-date" id="dateDisplay">—</div>
 
-        <div class="topbar-btn" title="Notifikasi">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            <div class="notif-dot"></div>
+        <div class="profile-dropdown-wrap" id="notifDropdown">
+            @php
+                $unreadCount = auth()->user()->unreadNotifications->count();
+            @endphp
+            <div class="topbar-btn" title="Notifikasi" onclick="toggleNotifDropdown()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg>
+                @if($unreadCount > 0)
+                    <div class="notif-dot"></div>
+                @endif
+            </div>
+
+            <div class="profile-menu" style="width: 320px;">
+                <div class="profile-menu-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="profile-menu-name">Notifikasi</div>
+                    @if($unreadCount > 0)
+                        <form method="POST" action="{{ route('notifications.markAllAsRead') }}" style="margin: 0;">
+                            @csrf
+                            <button type="submit" style="background:none; border:none; color:var(--accent); font-size:11px; font-weight:700; cursor:pointer;">
+                                Tandai Semua Dibaca
+                            </button>
+                        </form>
+                    @endif
+                </div>
+                <div class="profile-menu-body" style="max-height: 300px; overflow-y: auto; padding: 0;">
+                    @forelse(auth()->user()->unreadNotifications->take(5) as $notif)
+                        <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px;">
+                            <div style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; background: var(--accent-dim); color: var(--accent); display: flex; align-items: center; justify-content: center;">
+                                @if($notif->data['type'] == 'new_order')
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                                @elseif($notif->data['type'] == 'payment')
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                @else
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                @endif
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 12.5px; font-weight: 700; color: var(--text-1);">{{ $notif->data['title'] }}</div>
+                                <div style="font-size: 11.5px; color: var(--text-2); margin-top: 2px;">{{ $notif->data['message'] }}</div>
+                                <div style="font-size: 10px; color: var(--text-4); margin-top: 4px;">{{ $notif->created_at->diffForHumans() }}</div>
+                            </div>
+                            <form method="POST" action="{{ route('notifications.markAsRead', $notif->id) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" title="Tandai dibaca" style="background:none; border:none; cursor:pointer; color:var(--text-3); padding:4px;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                    @empty
+                        <div style="padding: 30px 20px; text-align: center; color: var(--text-3); font-size: 12.5px;">
+                            Tidak ada notifikasi baru.
+                        </div>
+                    @endforelse
+                </div>
+                <div style="padding: 10px; border-top: 1px solid var(--border); text-align: center;">
+                    <a href="{{ route('notifications.index') }}" style="font-size: 12px; font-weight: 700; color: var(--accent); text-decoration: none;">Lihat Semua Notifikasi</a>
+                </div>
+            </div>
         </div>
 
         <div class="topbar-btn" onclick="location.reload()" title="Refresh">
@@ -233,23 +289,39 @@
         dateElement.textContent = today;
     }
 
-    // 2. LOGIKA DROPDOWN PROFIL
+    // 2. LOGIKA DROPDOWN PROFIL & NOTIFIKASI
     function toggleProfileDropdown() {
         const dropdown = document.getElementById('profileDropdown');
         dropdown.classList.toggle('active');
+        document.getElementById('notifDropdown').classList.remove('active');
+    }
+
+    function toggleNotifDropdown() {
+        const dropdown = document.getElementById('notifDropdown');
+        dropdown.classList.toggle('active');
+        document.getElementById('profileDropdown').classList.remove('active');
     }
 
     window.addEventListener('click', function (e) {
-        const dropdown = document.getElementById('profileDropdown');
-        if (dropdown && !dropdown.contains(e.target)) {
-            dropdown.classList.remove('active');
+        const profileDropdown = document.getElementById('profileDropdown');
+        const notifDropdown = document.getElementById('notifDropdown');
+        
+        if (profileDropdown && !profileDropdown.contains(e.target)) {
+            profileDropdown.classList.remove('active');
+        }
+        if (notifDropdown && !notifDropdown.contains(e.target)) {
+            notifDropdown.classList.remove('active');
         }
     });
 
     // 3. LOGIKA SIDEBAR MOBILE
     function toggleSidebar() {
         const sidebar = document.querySelector('.sidebar');
-        if (sidebar) sidebar.classList.toggle('active');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) {
+            sidebar.classList.toggle('mobile-open');
+            if (overlay) overlay.classList.toggle('open');
+        }
     }
 
     // 4. JALANKAN FUNGSI SAAT HALAMAN SELESAI DIMUAT

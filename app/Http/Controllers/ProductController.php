@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Store;
 use App\Services\StockService;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,9 +17,7 @@ use Illuminate\View\View;
 
 class ProductController extends Controller
 {
-    public function __construct(private readonly StockService $stockService)
-    {
-    }
+    public function __construct(private readonly StockService $stockService) {}
 
     /**
      * Display a listing of all products.
@@ -32,11 +31,7 @@ class ProductController extends Controller
 
     public function index(Request $request)
     {
-        // Only load products if both their category and store are active.
-        $query = Product::with(['store', 'category', 'variants'])
-            ->whereHas('store', fn($q) => $q->active())
-            ->whereHas('category', fn($q) => $q->active())
-            ->latest();
+        $query = Product::with(['store', 'category'])->latest();
 
         // ── Filter: store — primary scope ─────────────────────────────────
         $query->when($request->filled('store_id'), function ($q) use ($request) {
@@ -60,15 +55,12 @@ class ProductController extends Controller
 
         // ── Filter: price ─────────────────────────────────────────────────
         $query->when($request->filled('price'), function ($q) use ($request) {
-            $q->whereHas('variants', function ($v) use ($request) {
-                $v->where('is_active', true);
-                if ($request->price == 'low')
-                    $v->where('price', '<', 50000);
-                elseif ($request->price == 'medium')
-                    $v->whereBetween('price', [50000, 200000]);
-                elseif ($request->price == 'high')
-                    $v->where('price', '>', 200000);
-            });
+            if ($request->price == 'low')
+                $q->where('price', '<', 50000);
+            elseif ($request->price == 'medium')
+                $q->whereBetween('price', [50000, 200000]);
+            elseif ($request->price == 'high')
+                $q->where('price', '>', 200000);
         });
 
         // ── Filter: status ────────────────────────────────────────────────
@@ -83,19 +75,22 @@ class ProductController extends Controller
             return view('products._table_rows', compact('products'))->render();
         }
 
-        // For the filter dropdowns: active stores, active categories scoped to store
-        $stores = Store::active()->orderBy('name')->get();
+        // For the filter dropdowns
+        $stores = Store::orderBy('name')->get();
 
-        $categoriesQuery = ProductCategory::available()->orderBy('name');
+        $categoriesQuery = ProductCategory::where('is_active', true)
+            ->whereHas('store', fn($q) => $q->where('is_active', true))
+            ->orderBy('name');
         if ($request->filled('store_id')) {
             $categoriesQuery->where('store_id', $request->store_id);
         }
         $categories = $categoriesQuery->get();
 
-        // Base query for stats (applying the active parent rule)
-        $statsQuery = Product::query()
-            ->whereHas('store', fn($q) => $q->active())
-            ->whereHas('category', fn($q) => $q->active());
+        // Base query for stats
+        $statsQuery = Product::query();
+        if ($request->filled('store_id')) {
+            $statsQuery->where('store_id', $request->store_id);
+        }
 
         $stats = [
             'total' => (clone $statsQuery)->count(),
@@ -127,52 +122,24 @@ class ProductController extends Controller
             DB::beginTransaction();
 
             $data = $request->validated();
-            $data['slug'] = $this->uniqueSlug($data['store_id'], $data['name']);
 
             $product = Product::create([
                 'store_id' => $data['store_id'],
                 'category_id' => $data['category_id'],
                 'name' => $data['name'],
-                'slug' => $data['slug'],
                 'is_active' => $data['is_active'],
+                'is_featured' => $data['is_featured'] ?? false,
+                'price' => $data['price'],
+                'stock' => 0,
+                'weight' => $data['weight'],
             ]);
 
-            // Save Variants
-            if ($request->has_variants) {
-                foreach ($data['variants'] as $variantData) {
-                    $variant = $product->variants()->create([
-                        'name' => $variantData['name'],
-                        'sku' => $variantData['sku'] ?? null,
-                        'price' => $variantData['price'],
-                        'stock' => 0, // Stock will be added via StockService
-                        'weight' => $variantData['weight'],
-                        'is_active' => true,
-                    ]);
-
-                    if ($variantData['stock'] > 0) {
-                        $this->stockService->addStock(
-                            variant: $variant,
-                            qty: (int) $variantData['stock'],
-                            source: 'initial_stock'
-                        );
-                    }
-                }
-            } else {
-                $variant = $product->variants()->create([
-                    'name' => 'Default',
-                    'price' => $data['price'],
-                    'stock' => 0,
-                    'weight' => $data['weight'],
-                    'is_active' => true,
-                ]);
-
-                if ($data['stock'] > 0) {
-                    $this->stockService->addStock(
-                        variant: $variant,
-                        qty: (int) $data['stock'],
-                        source: 'initial_stock'
-                    );
-                }
+            if ($data['stock'] > 0) {
+                $this->stockService->addStock(
+                    product: $product,
+                    qty: (int) $data['stock'],
+                    source: 'initial_stock'
+                );
             }
 
             // Save Images
@@ -209,28 +176,29 @@ class ProductController extends Controller
                 }
             }
 
-            // Save Packing Options
-            if (!empty($data['packing_options'])) {
-                foreach ($data['packing_options'] as $po) {
-                    $product->packingOptions()->create([
-                        'name' => $po['name'],
-                        'extra_price' => $po['extra_price'],
-                        'is_active' => true,
-                    ]);
-                }
-            }
+            // Log audit trail for product creation
+            AuditService::logProductChange(
+                auth()->id(),
+                $product->id,
+                'create',
+                null,
+                [
+                    'name' => $product->name,
+                    'store_id' => $product->store_id,
+                    'category_id' => $product->category_id,
+                    'price' => $product->price,
+                    'stock' => $data['stock'] ?? 0,
+                    'weight' => $product->weight,
+                    'is_active' => $product->is_active,
+                ]
+            );
 
             DB::commit();
 
             // ── MULTI NOTIFICATION (TOAST) — store ───────────────────────────
             $messages = [];
 
-            if ($request->has_variants) {
-                $variantCount = count($data['variants']);
-                $messages[] = "{$variantCount} varian produk berhasil disimpan.";
-            } else {
-                $messages[] = 'Varian default berhasil disimpan.';
-            }
+            $messages[] = 'Produk berhasil disimpan.';
 
             if ($request->hasFile('images')) {
                 $imageCount = count($request->file('images'));
@@ -243,10 +211,6 @@ class ProductController extends Controller
 
             if (!empty($data['specifications'])) {
                 $messages[] = count($data['specifications']) . ' spesifikasi produk berhasil disimpan.';
-            }
-
-            if (!empty($data['packing_options'])) {
-                $messages[] = count($data['packing_options']) . ' opsi packing berhasil disimpan.';
             }
 
             return redirect()
@@ -266,12 +230,11 @@ class ProductController extends Controller
      */
     public function edit(Product $product): View
     {
-        $product->load(['variants', 'images', 'descriptions', 'specifications', 'packingOptions']);
+        $product->load(['images', 'descriptions', 'specifications']);
 
-        $stores = Store::active()->orderBy('name')->get();
+        $stores = Store::orderBy('name')->get();
 
         $categories = ProductCategory::where('store_id', $product->store_id)
-            ->active()
             ->orderBy('name')
             ->get();
 
@@ -301,24 +264,9 @@ class ProductController extends Controller
             $currentPrimary    = $product->images()->where('is_primary', true)->first();
             $primaryChanged    = isset($data['primary_image_id']) && (!$currentPrimary || (int)$currentPrimary->id !== (int)$data['primary_image_id']);
 
-            // Compare Variants / Single Price & Weight
-            $singlePriceChanged  = false;
-            $singleWeightChanged = false;
-            $variantsChanged     = false;
-
-            if (!$request->has_variants) {
-                $defaultVariant = $product->variants()->first();
-                if ($defaultVariant) {
-                    $singlePriceChanged  = (int) $defaultVariant->price !== (int) $data['price'];
-                    $singleWeightChanged = (int) $defaultVariant->weight !== (int) $data['weight'];
-                } else {
-                    $singlePriceChanged = true;
-                }
-            } else {
-                $oldVariants = $product->variants->where('name', '!=', 'Default')->map(fn($v) => ['name' => $v->name, 'sku' => $v->sku, 'price' => (int) $v->price, 'weight' => (int) $v->weight])->values()->toArray();
-                $newVariants = collect($data['variants'] ?? [])->map(fn($v) => ['name' => $v['name'], 'sku' => $v['sku'] ?? null, 'price' => (int) $v['price'], 'weight' => (int) $v['weight']])->values()->toArray();
-                $variantsChanged = json_encode($oldVariants) !== json_encode($newVariants);
-            }
+            // Compare Single Price & Weight
+            $singlePriceChanged  = (int) $product->price !== (int) $data['price'];
+            $singleWeightChanged = (int) $product->weight !== (int) $data['weight'];
 
             // Compare Descriptions
             $oldDesc = $product->descriptions->map(fn($d) => ['title' => $d->title, 'content' => $d->content])->values()->toArray();
@@ -330,67 +278,17 @@ class ProductController extends Controller
             $newSpec = collect($data['specifications'] ?? [])->map(fn($s) => ['name' => $s['name'], 'value' => $s['value']])->values()->toArray();
             $specificationsChanged = json_encode($oldSpec) !== json_encode($newSpec);
 
-            // Compare Packing Options
-            $oldPack = $product->packingOptions->map(fn($p) => ['name' => $p->name, 'extra_price' => (int) $p->extra_price])->values()->toArray();
-            $newPack = collect($data['packing_options'] ?? [])->map(fn($p) => ['name' => $p['name'], 'extra_price' => (int) $p['extra_price']])->values()->toArray();
-            $packingChanged = json_encode($oldPack) !== json_encode($newPack);
-
-            if ($data['name'] !== $product->name || $data['store_id'] != $product->store_id) {
-                $data['slug'] = $this->uniqueSlug($data['store_id'], $data['name'], $product->id);
-            }
+            // Remove slug handling
 
             $product->update([
                 'store_id' => $data['store_id'],
                 'category_id' => $data['category_id'],
                 'name' => $data['name'],
-                'slug' => $data['slug'] ?? $product->slug,
                 'is_active' => $data['is_active'],
+                'is_featured' => $data['is_featured'] ?? false,
+                'price' => $data['price'],
+                'weight' => $data['weight'],
             ]);
-
-            // Sync Variants
-            // For simplicity in update: delete omitted variants or update existing, create new
-            $existingVariantIds = $product->variants()->pluck('id')->toArray();
-            $keptVariantIds = [];
-
-            if ($request->has_variants) {
-                foreach ($data['variants'] as $variantData) {
-                    if (!empty($variantData['id']) && in_array($variantData['id'], $existingVariantIds)) {
-                        // Update existing
-                        $variant = $product->variants()->find($variantData['id']);
-                        $variant->update([
-                            'name' => $variantData['name'],
-                            'sku' => $variantData['sku'] ?? null,
-                            'price' => $variantData['price'],
-                            'weight' => $variantData['weight'],
-                        ]);
-                        $keptVariantIds[] = $variant->id;
-                    } else {
-                        // Create new
-                        $variant = $product->variants()->create([
-                            'name' => $variantData['name'],
-                            'sku' => $variantData['sku'] ?? null,
-                            'price' => $variantData['price'],
-                            'stock' => 0,
-                            'weight' => $variantData['weight'],
-                            'is_active' => true,
-                        ]);
-                        $keptVariantIds[] = $variant->id;
-                    }
-                }
-            } else {
-                // Single default variant
-                $defaultVariant = $product->variants()->first() ?? $product->variants()->create(['name' => 'Default', 'stock' => 0]);
-                $defaultVariant->update([
-                    'name' => 'Default',
-                    'price' => $data['price'],
-                    'weight' => $data['weight'],
-                ]);
-                $keptVariantIds[] = $defaultVariant->id;
-            }
-
-            // Remove deleted variants (if safe)
-            // Ideally, we shouldn't delete variants if they have order_items. We should just deactivate them.
-            $product->variants()->whereNotIn('id', $keptVariantIds)->update(['is_active' => false]);
 
             // Sync Images: Delete requested images
             if (!empty($data['deleted_images'])) {
@@ -456,16 +354,50 @@ class ProductController extends Controller
                 }
             }
 
-            // Sync Packing Options
-            $product->packingOptions()->delete();
-            if (!empty($data['packing_options'])) {
-                foreach ($data['packing_options'] as $po) {
-                    $product->packingOptions()->create([
-                        'name' => $po['name'],
-                        'extra_price' => $po['extra_price'],
-                        'is_active' => true,
-                    ]);
-                }
+            // Packing options removed
+
+            // Build changes array for audit trail
+            $oldValues = [];
+            $newValues = [];
+
+            if ($nameChanged) {
+                $oldValues['name'] = $product->getOriginal('name');
+                $newValues['name'] = $data['name'];
+            }
+            if ($singlePriceChanged) {
+                $oldValues['price'] = $product->getOriginal('price');
+                $newValues['price'] = $data['price'];
+            }
+            if ($statusChanged) {
+                $oldValues['is_active'] = $product->getOriginal('is_active');
+                $newValues['is_active'] = $data['is_active'];
+            }
+            if ($featuredChanged) {
+                $oldValues['is_featured'] = $product->getOriginal('is_featured');
+                $newValues['is_featured'] = $data['is_featured'];
+            }
+            if ($storeChanged) {
+                $oldValues['store_id'] = $product->getOriginal('store_id');
+                $newValues['store_id'] = $data['store_id'];
+            }
+            if ($categoryChanged) {
+                $oldValues['category_id'] = $product->getOriginal('category_id');
+                $newValues['category_id'] = $data['category_id'];
+            }
+            if ($singleWeightChanged) {
+                $oldValues['weight'] = $product->getOriginal('weight');
+                $newValues['weight'] = $data['weight'];
+            }
+
+            // Log audit trail only if changes detected
+            if (!empty($oldValues)) {
+                AuditService::logProductChange(
+                    auth()->id(),
+                    $product->id,
+                    'update',
+                    $oldValues,
+                    $newValues
+                );
             }
 
             DB::commit();
@@ -486,6 +418,7 @@ class ProductController extends Controller
             }
 
             if ($statusChanged) {
+                $statusLabel = $product->is_active ? 'Aktif' : 'Non-aktif';
                 $messages[] = "Status produk berhasil diubah menjadi <strong>{$statusLabel}</strong>.";
             }
 
@@ -502,9 +435,7 @@ class ProductController extends Controller
                 $messages[] = "Berat produk berhasil diperbarui menjadi <strong>{$data['weight']} gram</strong>.";
             }
 
-            if ($variantsChanged) {
-                $messages[] = 'Data varian produk berhasil diperbarui.';
-            }
+
 
             if ($imagesDeleted) {
                 $messages[] = count($data['deleted_images']) . ' foto produk berhasil dihapus.';
@@ -531,9 +462,7 @@ class ProductController extends Controller
                 $messages[] = 'Spesifikasi produk berhasil diperbarui.';
             }
 
-            if ($packingChanged) {
-                $messages[] = 'Opsi packing produk berhasil diperbarui.';
-            }
+
 
             // Fallback jika tidak ada perubahan terdeteksi
             if (empty($messages)) {
@@ -563,11 +492,22 @@ class ProductController extends Controller
         $name = $product->name;
 
         try {
-            // Delete images
-            foreach ($product->images as $image) {
-                Storage::disk('public')->delete($image->image_path);
-                $image->delete();
-            }
+            // Log deletion audit trail BEFORE soft-delete
+            AuditService::logProductChange(
+                auth()->id(),
+                $product->id,
+                'delete',
+                [
+                    'name' => $product->name,
+                    'store_id' => $product->store_id,
+                    'category_id' => $product->category_id,
+                    'price' => $product->price,
+                    'stock' => $product->stock,
+                    'is_active' => $product->is_active,
+                ],
+                null,
+                'Soft delete via admin dashboard'
+            );
 
             $product->delete();
 
@@ -587,27 +527,6 @@ class ProductController extends Controller
             ->get(['id', 'name']);
 
         return response()->json($categories);
-    }
-
-    /**
-     * Generate a slug that is unique within the given store.
-     */
-    private function uniqueSlug(int $storeId, string $name, ?int $exceptId = null): string
-    {
-        $base = Str::slug($name);
-        $slug = $base;
-        $count = 1;
-
-        while (
-            Product::where('store_id', $storeId)
-                ->where('slug', $slug)
-                ->when($exceptId, fn($q) => $q->where('id', '!=', $exceptId))
-                ->exists()
-        ) {
-            $slug = $base . '-' . $count++;
-        }
-
-        return $slug;
     }
 
     /**

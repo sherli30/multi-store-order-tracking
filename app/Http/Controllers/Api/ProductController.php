@@ -14,8 +14,9 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Product::with(['store', 'category', 'variants', 'images', 'descriptions', 'specifications'])
-                ->where('is_active', true);
+            $query = Product::with(['store', 'category', 'images', 'descriptions', 'specifications'])
+                ->withSum('orderItems', 'quantity')
+                ->available();
 
             // Filter by store
             if ($request->has('store_id')) {

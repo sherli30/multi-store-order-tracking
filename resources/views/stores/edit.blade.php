@@ -507,18 +507,20 @@
     }
 
     /* ── FORM FOOTER ─── */
-    .form-footer {
+    <!-- .form-footer {
     display: flex;
     justify-content: flex-end;
     align-items: center;
     gap: 16px;
     margin-top: 15px;
-    }
+    } -->
 
     .btn-primary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 11px;
+    width: 100%;
     background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
     color: #fff;
     border: none;
@@ -555,6 +557,96 @@
     .btn-primary svg {
     width: 20px;
     height: 20px;
+    }
+
+    /* ── OPERATIONAL HOURS ENHANCEMENT ── */
+    .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    }
+    .input-with-icon .field-input {
+    padding-left: 42px;
+    }
+    .input-icon {
+    position: absolute;
+    left: 14px;
+    width: 18px;
+    height: 18px;
+    color: var(--text-4);
+    pointer-events: none;
+    transition: color 0.25s;
+    }
+    .field-input:focus + .input-icon {
+    color: var(--accent);
+    }
+    .template-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 14px;
+    padding: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    }
+    .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    }
+    .badge-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--text-4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    width: 100%;
+    margin-bottom: 2px;
+    }
+    .template-badge {
+    padding: 5px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    }
+    .template-badge:hover, .template-badge.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    transform: translateY(-1px);
+    }
+    .template-badge.active svg {
+    color: #fff;
+    }
+    .template-badge svg {
+    width: 12px;
+    height: 12px;
+    }
+    .fade-in-quick {
+    animation: fadeInQuick 0.4s ease-out;
+    }
+    @keyframes fadeInQuick {
+    from { opacity: 0.5; transform: translateY(2px); }
+    to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in-animated {
+    animation: fadeIn 0.4s ease-out;
+    }
+
+    @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
     }
 @endsection
 
@@ -608,9 +700,86 @@
                         </div>
 
                         <div class="field-group">
+                            <label class="field-label" for="phone">Nomor Telepon <span>*</span></label>
+                            <input type="text" id="phone" name="phone"
+                                class="field-input {{ $errors->has('phone') ? 'is-invalid' : '' }}" placeholder="Contoh: 08123456789"
+                                value="{{ old('phone', $store->phone) }}" required>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="operational_hours">Jam Operasional <span>*</span></label>
+                            <div class="input-with-icon">
+                                <input type="text" id="operational_hours" name="operational_hours"
+                                    class="field-input {{ $errors->has('operational_hours') ? 'is-invalid' : '' }}"
+                                    placeholder="Contoh: Senin - Sabtu • 08:00 - 17:00 WIB"
+                                    value="{{ old('operational_hours', $store->operational_hours) }}" required>
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                            <div class="template-group">
+                                <div class="badge-row">
+                                    <div class="badge-label">Pilih Hari Operasional:</div>
+                                    <div class="template-badge" onclick="updateOpHours('day', 'Senin - Jumat')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                        Senin - Jumat
+                                    </div>
+                                    <div class="template-badge" onclick="updateOpHours('day', 'Senin - Sabtu')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                        Senin - Sabtu
+                                    </div>
+                                    <div class="template-badge" onclick="updateOpHours('day', 'Setiap Hari')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                        Setiap Hari
+                                    </div>
+                                </div>
+                                <div class="badge-row">
+                                    <div class="badge-label">Pilih Jam Operasional:</div>
+                                    <div class="template-badge" onclick="updateOpHours('time', '08:00 - 17:00 WIB')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                        08:00 - 17:00
+                                    </div>
+                                    <div class="template-badge" onclick="updateOpHours('time', '09:00 - 21:00 WIB')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                        09:00 - 21:00
+                                    </div>
+                                    <div class="template-badge" onclick="updateOpHours('time', 'Buka 24 Jam')">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                        24 Jam
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="province_id">Provinsi <span>*</span></label>
+                            <select id="province_id" name="province_id" class="field-input {{ $errors->has('province_id') ? 'is-invalid' : '' }}" required onchange="loadCities(this.value)">
+                                <option value="">-- Pilih Provinsi --</option>
+                                @foreach($provinces as $province)
+                                    <option value="{{ $province->id }}" {{ old('province_id', $store->province_id) == $province->id ? 'selected' : '' }}>{{ $province->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="city_id">Kota / Kabupaten <span>*</span></label>
+                            <select id="city_id" name="city_id" class="field-input {{ $errors->has('city_id') ? 'is-invalid' : '' }}" required disabled>
+                                <option value="">-- Pilih Kota --</option>
+                            </select>
+                        </div>
+
+
+                        <div class="field-group">
+                            <label class="field-label" for="address">Alamat Lengkap <span>*</span></label>
+                            <textarea id="address" name="address"
+                                class="field-input field-textarea {{ $errors->has('address') ? 'is-invalid' : '' }}" placeholder="Contoh: Jl. Merdeka No. 123...">{{ old('address', $store->address) }}</textarea>
+                        </div>
+
+                        <div class="field-group">
                             <label class="field-label" for="description">Deskripsi Toko <span>*</span></label>
                             <textarea id="description" name="description"
-                                class="field-input field-textarea {{ $errors->has('description') ? 'is-invalid' : '' }}" placeholder="Deskripsi">{{ old('description', $store->description) }}</textarea>
+                                class="field-input field-textarea {{ $errors->has('description') ? 'is-invalid' : '' }}" placeholder="Deskripsi" required>{{ old('description', $store->description) }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -625,15 +794,15 @@
                         </div>
                     </div>
                     <div class="form-card-body">
-                        <div class="toggle-card">
+                        <div class="toggle-card {{ $errors->has('is_active') ? 'is-invalid' : '' }}" style="{{ $errors->has('is_active') ? 'border-color: var(--red);' : '' }}">
                             <label class="toggle-switch">
-                                <input type="checkbox" name="is_active" value="1"
-                                    {{ old('is_active', $store->is_active) ? 'checked' : '' }}>
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" id="storeActiveInput" value="1"
+                                    {{ old('is_active', $store->is_active) ? 'checked' : '' }} onchange="document.getElementById('storeActiveLabel').innerText = this.checked ? 'Toko Aktif' : 'Toko Nonaktif'">
                                 <span class="toggle-slider"></span>
                             </label>
-                            <div class="toggle-label">Aktif</div>
+                            <div class="toggle-label" id="storeActiveLabel">{{ old('is_active', $store->is_active) ? 'Toko Aktif' : 'Toko Nonaktif' }}</div>
                         </div>
-                        <p class="field-hint">Toko yang aktif dapat mengelola produk dan kategori.</p>
                     </div>
                 </div>
             </div>
@@ -672,13 +841,13 @@
                                 <circle cx="8.5" cy="8.5" r="1.5" />
                                 <polyline points="21 15 16 10 5 21" />
                             </svg>
-                            <span class="form-card-header-title">Logo Toko</span>
+                            <span class="form-card-header-title">Logo Toko <span>*</span></span>
                         </div>
                     </div>
                     <div class="form-card-body" style="gap:16px;">
                         <div id="logoContainer">
                             @if ($store->logo)
-                                <div class="image-thumb" id="logo-card">
+                                <div class="image-thumb {{ $errors->has('logo') ? 'is-invalid' : '' }}" id="logo-card" style="{{ $errors->has('logo') ? 'border-color: var(--red);' : '' }}">
                                     <img src="{{ asset('storage/' . $store->logo) }}" id="logo-preview"
                                         onclick="openImageModal(this.src)">
                                     <div class="image-actions">
@@ -693,7 +862,7 @@
                         </div>
 
                         {{-- Upload zone: hanya muncul jika belum ada logo --}}
-                        <div class="image-upload-zone" id="uploadZone" style="{{ $store->logo ? 'display:none;' : '' }}"
+                        <div class="image-upload-zone {{ $errors->has('logo') ? 'is-invalid' : '' }}" id="uploadZone" style="{{ $store->logo ? 'display:none;' : '' }} {{ $errors->has('logo') ? 'border-color: var(--red);' : '' }}"
                             onclick="document.getElementById('logo').click()">
                             <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor"
                                 stroke-width="1.5" style="color:var(--text-4); margin-bottom:8px;">
@@ -706,23 +875,19 @@
                             </div>
                         </div>
 
-                        {{-- Input file utama (hanya 1 elemen untuk mencegah duplikasi name/id) --}}
                         <input type="file" id="logo" name="logo" style="display:none;" accept="image/*" onchange="previewLogo(this)">
                     </div>
                 </div>
+                <button type="submit" class="btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Simpan Perubahan
+                </button>
             </div>
-        </div>
-
-        <div class="form-footer">
-            <button type="submit" class="btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                </svg>
-                Simpan Perubahan
-            </button>
         </div>
     </form>
 
@@ -753,6 +918,29 @@
         </div>
     </div>
 
+    {{-- Delete Modal for Selected Logo (Unsaved) --}}
+    <div class="modal-overlay" id="deleteSelectedLogoModal">
+        <div class="modal-box">
+            <div class="modal-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                    <path d="M10 11v6M14 11v6" />
+                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                </svg>
+            </div>
+            <div class="modal-title">Hapus Logo Toko?</div>
+            <div class="modal-desc">
+                Logo ini akan dihapus secara permanen dari server. Tindakan ini tidak dapat dibatalkan.
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="closeDeleteSelectedLogoModal()">Batalkan</button>
+                <button type="button" class="btn-danger" id="confirmDeleteSelectedLogoBtn">Ya, Hapus Logo</button>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @push('scripts')
@@ -773,6 +961,70 @@
             document.getElementById('imageModal').style.display = 'none';
         }
 
+        function updateOpHours(type, value) {
+            const input = document.getElementById('operational_hours');
+            let current = input.value.trim();
+
+            let days = "[Pilih Hari]";
+            let hours = "[Pilih Jam]";
+
+            if (current.includes('•')) {
+                const parts = current.split('•');
+                days = parts[0].trim();
+                hours = parts[1].trim();
+            } else if (current === "Buka 24 Jam") {
+                days = "Setiap Hari";
+                hours = "Buka 24 Jam";
+            } else if (current) {
+                // Deteksi apakah input manual saat ini lebih mirip hari atau jam
+                if (current.includes(':')) {
+                    hours = current;
+                } else {
+                    days = current;
+                }
+            }
+
+            if (type === 'day') {
+                days = value;
+            } else if (type === 'time') {
+                hours = value;
+            }
+
+            // Logika Penggabungan
+            if (hours === 'Buka 24 Jam' && days === 'Setiap Hari') {
+                input.value = "Buka 24 Jam";
+            } else {
+                input.value = `${days} • ${hours}`;
+            }
+
+            // Feedback visual & Refresh State
+            input.classList.remove('fade-in-quick');
+            void input.offsetWidth;
+            input.classList.add('fade-in-quick');
+            refreshBadgeStates();
+        }
+
+        function refreshBadgeStates() {
+            const input = document.getElementById('operational_hours');
+            const current = input.value.trim();
+            const badges = document.querySelectorAll('.template-badge');
+
+            badges.forEach(badge => {
+                const text = badge.innerText.trim();
+                if (current.includes(text)) {
+                    badge.classList.add('active');
+                } else {
+                    badge.classList.remove('active');
+                }
+            });
+        }
+
+        // Jalankan saat pertama kali muat & saat input diketik manual
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshBadgeStates();
+            document.getElementById('operational_hours').addEventListener('input', refreshBadgeStates);
+        });
+
         function previewLogo(input) {
             const container = document.getElementById('logoContainer');
             const uploadZone = document.getElementById('uploadZone');
@@ -787,7 +1039,7 @@
                                 <img src="${e.target.result}" id="logo-preview" onclick="openImageModal(this.src)">
                                 <div class="image-actions">
                                     <button type="button" class="img-action-btn btn-replace" onclick="document.getElementById('logo').click()" title="Ganti Logo">Ganti</button>
-                                    <button type="button" class="img-action-btn btn-delete" onclick="removeExistingLogo()" title="Hapus Logo">Hapus</button>
+                                    <button type="button" class="img-action-btn btn-delete" onclick="removeSelectedLogo()" title="Hapus Logo">Hapus</button>
                                 </div>
                             </div>
                         `;
@@ -800,6 +1052,29 @@
             }
         }
 
+        function removeSelectedLogo() {
+            document.getElementById('deleteSelectedLogoModal').classList.add('open');
+        }
+
+        function closeDeleteSelectedLogoModal() {
+            document.getElementById('deleteSelectedLogoModal').classList.remove('open');
+        }
+
+        document.getElementById('confirmDeleteSelectedLogoBtn').addEventListener('click', function() {
+            const input = document.getElementById('logo');
+            const container = document.getElementById('logoContainer');
+            const uploadZone = document.getElementById('uploadZone');
+
+            input.value = "";
+            container.innerHTML = "";
+            uploadZone.style.display = 'block';
+            closeDeleteSelectedLogoModal();
+        });
+
+        document.getElementById('deleteSelectedLogoModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDeleteSelectedLogoModal();
+        });
+
         function removeExistingLogo() {
             document.getElementById('deleteLogoModal').classList.add('open');
         }
@@ -810,6 +1085,48 @@
 
         document.getElementById('deleteLogoModal').addEventListener('click', function(e) {
             if (e.target === this) closeDeleteLogoModal();
+        });
+
+        async function loadCities(provinceId, selectedCityId = null) {
+            const citySelect = document.getElementById('city_id');
+            citySelect.innerHTML = '<option value="">-- Loading... --</option>';
+            citySelect.disabled = true;
+
+            if (!provinceId) {
+                citySelect.innerHTML = '<option value="">-- Pilih Kota --</option>';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/shipping/cities/${provinceId}`);
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    citySelect.innerHTML = '<option value="">-- Pilih Kota --</option>';
+                    result.data.forEach(city => {
+                        const option = document.createElement('option');
+                        option.value = city.id;
+                        option.textContent = city.name;
+                        if (selectedCityId && city.id == selectedCityId) {
+                            option.selected = true;
+                        }
+                        citySelect.appendChild(option);
+                    });
+                    citySelect.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error loading cities:', error);
+                citySelect.innerHTML = '<option value="">-- Gagal memuat data --</option>';
+            }
+        }
+
+        // Initialize cities on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const provinceId = document.getElementById('province_id').value;
+            const cityId = "{{ old('city_id', $store->city_id) }}";
+            if (provinceId) {
+                loadCities(provinceId, cityId);
+            }
         });
     </script>
 @endpush

@@ -87,22 +87,5 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Memperbarui kata sandi pengguna.
-     */
-    public function updatePassword(ProfileUpdateRequest $request): RedirectResponse
-    {
-        try {
-            $request->user()->update([
-                'password' => Hash::make($request->password),
-            ]);
 
-            return back()->with(
-                'password_success',
-                'Kata sandi berhasil diperbarui. Akun Anda sekarang lebih aman dengan kredensial baru.'
-            );
-        } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui kata sandi. Terjadi kesalahan pada sistem, silakan coba lagi.');
-        }
-    }
 }

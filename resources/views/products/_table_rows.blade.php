@@ -16,7 +16,7 @@
     $isOutOfStock   = $product->stock === 0;
 @endphp
 
-<tr class="{{ !$fullyActive ? 'row-unavailable' : '' }}" data-product-id="{{ $product->id }}">
+<tr class="fade-in-animated" data-product-id="{{ $product->id }}">
 
     {{-- No --}}
     <td class="cell-no"></td>
@@ -51,7 +51,7 @@
                class="category-pill {{ !$categoryActive ? 'pill-inactive' : '' }}">
                 {{ $product->category->name }}
                 @if(!$categoryActive)
-                    <span class="inactive-dot" title="Kategori nonaktif">●</span>
+                    <span title="Kategori nonaktif"> ⚠</span>
                 @endif
             </a>
         @else
@@ -77,14 +77,8 @@
     {{-- Stok — with visual indicator + quick-stock buttons --}}
     <td>
         <div class="stock-cell">
-            @php
-                $variantCount = $product->variants()->where('name', '!=', 'Default')->count();
-            @endphp
             <div class="stock-value {{ $stockClass }}">{{ number_format($product->stock) }}</div>
             <div class="stock-label">
-                @if($variantCount > 0)
-                    <span class="stock-tag" style="background:var(--surface-2); color:var(--text-3); margin-right:4px;">{{ $variantCount }} Varian</span>
-                @endif
 
                 @if($isOutOfStock)
                     <span class="stock-tag stock-tag-empty">Habis</span>
@@ -95,20 +89,20 @@
                 @endif
             </div>
 
-            {{-- Quick Stock Buttons removed. Stok dikelola via halaman Riwayat Stok --}}
+            {{-- Quick Stock Buttons removed. Stok dikelola via halaman Manajemen Stok --}}
         </div>
     </td>
 
     {{-- Status — multi-level badge --}}
     <td>
-        @if(!$product->is_active)
-            <span class="badge badge-inactive">Nonaktif</span>
+        @if(!$storeActive)
+            <span class="badge badge-inactive" style="background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15);" title="Toko ini sedang dinonaktifkan di Manajemen Toko">Non-aktif (Toko Non-aktif)</span>
         @elseif(!$categoryActive)
-            <span class="badge badge-warning" title="Kategori nonaktif menyebabkan produk tidak terlihat">Kat. Nonaktif</span>
-        @elseif(!$storeActive)
-            <span class="badge badge-warning" title="Toko nonaktif menyebabkan produk tidak terlihat">Toko Nonaktif</span>
-        @else
+            <span class="badge badge-inactive" style="background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15);" title="Kategori produk ini sedang dinonaktifkan">Non-aktif (Kat. Non-aktif)</span>
+        @elseif($product->is_active)
             <span class="badge badge-active">Aktif</span>
+        @else
+            <span class="badge badge-inactive">Non-aktif</span>
         @endif
     </td>
 
@@ -121,13 +115,13 @@
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
             </a>
-            <a href="{{ route('products.stock.index', $product) }}" class="btn-sm" title="Riwayat Stok">
+            <a href="{{ route('products.stock.index', $product) }}" class="btn-sm" title="Manajemen Stok">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
             </a>
             <button class="btn-sm danger"
-                    onclick="openDeleteModal('{{ $product->slug }}', '{{ addslashes($product->name) }}')"
+                    onclick="openDeleteModal('{{ $product->id }}', '{{ addslashes($product->name) }}')"
                     title="Hapus Produk">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"/>

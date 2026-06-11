@@ -93,7 +93,7 @@
             </div>
 
             <div class="form-group" style="max-width: 400px;">
-                <label for="current_password" class="form-label">Kata Sandi Saat Ini</label>
+                <label for="current_password" class="form-label">Kata Sandi Saat Ini <span>*</span></label>
                 <div style="position: relative;">
                     <span
                         style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-3); display:flex; pointer-events:none;">
@@ -103,9 +103,12 @@
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
                     </span>
-                    <input type="password" id="current_password" name="current_password" class="form-input"
+                    <input type="password" id="current_password" name="current_password" class="form-input @error('current_password', 'updatePassword') is-invalid @enderror"
                         style="padding-left: 36px; padding-right: 40px; -webkit-appearance: none; appearance: none;"
                         autocomplete="current-password" placeholder="••••••••">
+                    @error('current_password', 'updatePassword')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
                     <button type="button" onclick="togglePassword('current_password', this)"
                         style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-3); display:flex; padding:0;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -118,7 +121,7 @@
             </div>
 
             <div class="form-group" style="max-width: 400px;">
-                <label for="password" class="form-label">Kata Sandi Baru</label>
+                <label for="password" class="form-label">Kata Sandi Baru <span>*</span></label>
                 <div style="position: relative;">
                     <span
                         style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-3); display:flex; pointer-events:none;">
@@ -129,10 +132,13 @@
                             </path>
                         </svg>
                     </span>
-                    <input type="password" id="password" name="password" class="form-input"
+                    <input type="password" id="password" name="password" class="form-input @error('password', 'updatePassword') is-invalid @enderror"
                         style="padding-left: 36px; padding-right: 40px; -webkit-appearance: none; appearance: none;"
                         autocomplete="new-password" placeholder="Min. 8 karakter"
                         oninput="checkPasswordStrength(this.value)">
+                    @error('password', 'updatePassword')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
                     <button type="button" onclick="togglePassword('password', this)"
                         style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-3); display:flex; padding:0;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -145,7 +151,7 @@
             </div>
 
             <div class="form-group" style="max-width: 400px;">
-                <label for="password_confirmation" class="form-label">Konfirmasi Kata Sandi Baru</label>
+                <label for="password_confirmation" class="form-label">Konfirmasi Kata Sandi Baru <span>*</span></label>
                 <div style="position: relative;">
                     <span
                         style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-3); display:flex; pointer-events:none;">
@@ -154,9 +160,12 @@
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
                     </span>
-                    <input type="password" id="password_confirmation" name="password_confirmation" class="form-input"
+                    <input type="password" id="password_confirmation" name="password_confirmation" class="form-input @error('password_confirmation', 'updatePassword') is-invalid @enderror"
                         style="padding-left: 36px; padding-right: 40px; -webkit-appearance: none; appearance: none;"
                         autocomplete="new-password" placeholder="Ulangi kata sandi baru">
+                    @error('password_confirmation', 'updatePassword')
+                        <span class="error-text">{{ $message }}</span>
+                    @enderror
                     <button type="button" onclick="togglePassword('password_confirmation', this)"
                         style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-3); display:flex; padding:0;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"

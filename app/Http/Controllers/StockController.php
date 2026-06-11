@@ -7,6 +7,7 @@ use App\Http\Requests\StockRequest;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Services\StockService;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,110 +21,116 @@ class StockController extends Controller
      */
     public function index(Request $request, Product $product): View
     {
-        // Untuk sementara kita gunakan variant pertama (Default)
-        $variant = $product->variants()->first();
-
-        if (!$variant) {
-            abort(404, 'Product has no variants.');
-        }
-
-        $movements = StockMovement::where('product_variant_id', $variant->id)
+        $movements = StockMovement::where('product_id', $product->id)
             ->latest()
             ->paginate(20);
 
+        $rawOut = StockMovement::where('product_id', $product->id)
+            ->where('type', 'out')
+            ->sum('quantity');
+
+        $reversals = StockMovement::where('product_id', $product->id)
+            ->where('type', 'in')
+            ->whereNotIn('source', ['initial_stock', 'manual_adjustment'])
+            ->sum('quantity');
+
+        $totalOut = max(0, $rawOut - $reversals);
+
+        $totalIn = StockMovement::where('product_id', $product->id)
+            ->where('type', 'in')
+            ->whereIn('source', ['initial_stock', 'manual_adjustment'])
+            ->sum('quantity');
+
         $stats = [
-            'total_in'  => StockMovement::where('product_variant_id', $variant->id)->where('type', 'in')->sum('quantity'),
-            'total_out' => StockMovement::where('product_variant_id', $variant->id)->where('type', 'out')->sum('quantity'),
-            'current'   => $variant->stock,
+            'total_in'  => $totalIn,
+            'total_out' => $totalOut,
+            'current'   => $product->stock,
         ];
 
-        return view('stock.index', compact('product', 'variant', 'movements', 'stats'));
+        return view('stock.index', compact('product', 'movements', 'stats'));
     }
 
     /**
-     * Add stock to a product variant (type: in).
+     * Add stock to a product (type: in).
      */
     public function add(StockRequest $request, Product $product): RedirectResponse
     {
-        $variant = $product->variants()->first();
-
-        if (!$variant) {
-            return back()->with('error', [
-                'title' => 'Produk Tidak Valid',
-                'message' => 'Produk ini tidak memiliki variasi stok.'
-            ]);
-        }
-
-        $qty = (int) $request->validated('qty');
+        $data = $request->validated();
+        $qty = (int) $data['qty'];
+        $note = $data['note'];
+        $oldStock = $product->stock;
 
         try {
             $this->stockService->addStock(
-                variant:     $variant,
-                qty:         $qty,
-                source:      'manual_adjustment',
+                product: $product,
+                qty: $qty,
+                source: 'manual_adjustment',
                 referenceId: null,
+                note: $note
+            );
+
+            // Log audit trail for stock addition
+            AuditService::logStockAdjustment(
+                auth()->id(),
+                $product->id,
+                $oldStock,
+                $oldStock + $qty,
+                'Manual stock addition: ' . $note
             );
         } catch (\Exception $e) {
-            return back()->with('error', [
-                'title' => 'Stok Gagal Ditambahkan',
-                'message' => 'Terjadi kesalahan saat menambahkan stok. Silakan coba lagi.'
-            ]);
+            return back()->with('error', 'Gagal menambahkan stok: ' . $e->getMessage())->withInput();
         }
 
-        // ── MULTI NOTIFICATION (TOAST) — add stock ────────────────────────
-        $messages = [];
-        $messages[] = "Jumlah sebanyak <strong>{$qty} unit</strong> berhasil ditambahkan ke varian <strong>{$variant->name}</strong>.";
-        $messages[] = "Total stok saat ini: <strong>{$variant->fresh()->stock} unit</strong>.";
-
         return back()->with('success', [
-            'title' => "Stok \"{$product->name}\" Berhasil Ditambahkan",
-            'list' => $messages
+            'title' => "Stok Berhasil Ditambahkan",
+            'list' => [
+                "Produk: <strong>{$product->name}</strong>",
+                "Jumlah: <strong>+{$qty} unit</strong>",
+                "Catatan: {$note}"
+            ]
         ]);
     }
 
     /**
-     * Deduct stock from a product variant (type: out).
+     * Deduct stock from a product (type: out).
      */
     public function deduct(StockRequest $request, Product $product): RedirectResponse
     {
-        $variant = $product->variants()->first();
-
-        if (!$variant) {
-            return back()->with('error', [
-                'title' => 'Produk Tidak Valid',
-                'message' => 'Produk ini tidak memiliki variasi stok.'
-            ]);
-        }
-
-        $qty = (int) $request->validated('qty');
+        $data = $request->validated();
+        $qty = (int) $data['qty'];
+        $note = $data['note'];
+        $oldStock = $product->stock;
 
         try {
             $this->stockService->deductStock(
-                variant:     $variant,
-                qty:         $qty,
-                source:      'manual_adjustment',
+                product: $product,
+                qty: $qty,
+                source: 'manual_adjustment',
                 referenceId: null,
+                note: $note
+            );
+
+            // Log audit trail for stock deduction
+            AuditService::logStockAdjustment(
+                auth()->id(),
+                $product->id,
+                $oldStock,
+                $oldStock - $qty,
+                'Manual stock deduction: ' . $note
             );
         } catch (InsufficientStockException $e) {
-            return back()->with('error', [
-                'title'   => 'Stok Gagal Dikurangi',
-                'message' => $e->getMessage()
-            ]);
+            return back()->withErrors(['qty' => $e->getMessage()])->withInput();
         } catch (\Exception $e) {
-            return back()->with('error', [
-                'title'   => 'Stok Gagal Dikurangi',
-                'message' => 'Terjadi kesalahan saat mengurangi stok. Silakan coba lagi.'
-            ]);
+            return back()->with('error', 'Gagal mengurangi stok: ' . $e->getMessage())->withInput();
         }
 
-        // ── MULTI NOTIFICATION (TOAST) — deduct stock ─────────────────────
-        $messages = [];
-        $messages[] = "Jumlah sebanyak <strong>{$qty} unit</strong> berhasil dikurangi dari varian <strong>{$variant->name}</strong>.";
-        $messages[] = "Total stok saat ini: <strong>{$variant->fresh()->stock} unit</strong>.";
-
         return back()->with('success', [
-            'title' => "Stok \"{$product->name}\" Berhasil Dikurangi",
-            'list' => $messages
+            'title' => "Stok Berhasil Dikurangi",
+            'list' => [
+                "Produk: <strong>{$product->name}</strong>",
+                "Jumlah: <strong>-{$qty} unit</strong>",
+                "Catatan: {$note}"
+            ]
         ]);
     }
 }

@@ -25,7 +25,7 @@ class CustomerController extends Controller
             });
         }
 
-        // 🔘 Filter status (active / non-active)
+        // 🔘 Filter status (active / blocked)
         if ($status = $request->get('status')) {
             $query->where('is_active', $status === 'active' ? 1 : 0);
         }
@@ -45,27 +45,37 @@ class CustomerController extends Controller
             });
         }
 
+        // 🔢 Filter minimum jumlah pesanan
+        if ($request->filled('min_orders') && is_numeric($request->min_orders) && $request->min_orders >= 0) {
+            $query->having('orders_count', '>=', (int) $request->min_orders);
+        }
+
         // ↕️ Sorting
         $sortBy = $request->get('sort_by', 'newest');
         match ($sortBy) {
-            'oldest' => $query->oldest(),
+            'oldest'  => $query->oldest(),
             'name_az' => $query->orderBy('name', 'asc'),
             'name_za' => $query->orderBy('name', 'desc'),
-            'orders' => $query->orderByDesc('orders_count'),
-            default => $query->latest(),
+            'orders'  => $query->orderByDesc('orders_count'),
+            default   => $query->latest(),
         };
 
         $customers = $query->get();
+
+        // AJAX: return only the table rows partial
+        if ($request->ajax()) {
+            return view('customers._table_rows', compact('customers'))->render();
+        }
 
         // 🏪 Data toko (untuk filter dropdown)
         $stores = Store::orderBy('name')->get();
 
         // 📊 Stats (opsional dashboard)
         $stats = [
-            'total' => User::where('role', 'customer')->count(),
-            'active' => User::where('role', 'customer')->where('is_active', 1)->count(),
-            'blocked' => User::where('role', 'customer')->where('is_active', 0)->count(),
-            'total_spent' => \App\Models\Order::whereIn('status', ['processing', 'shipping', 'completed'])->sum('total_amount'),
+            'total'       => User::where('role', 'customer')->count(),
+            'active'      => User::where('role', 'customer')->where('is_active', 1)->count(),
+            'blocked'     => User::where('role', 'customer')->where('is_active', 0)->count(),
+            'total_spent' => \App\Models\Order::whereIn('payment_status', ['settlement', 'capture', 'paid'])->sum('total_amount'),
         ];
 
         return view('customers.index', compact('customers', 'stores', 'stats'));
@@ -86,7 +96,7 @@ class CustomerController extends Controller
         $totalOrders = $customer->orders()->count();
 
         $totalSpent = $customer->orders()
-            ->whereIn('status', ['processing', 'shipping', 'completed'])
+            ->whereIn('payment_status', ['settlement', 'capture', 'paid'])
             ->sum('total_amount');
 
         return view('customers.show', compact(
@@ -98,22 +108,12 @@ class CustomerController extends Controller
     }
 
     /**
-     * UPDATE STATUS — Aktif / Nonaktif
-     */
-    /**
      * UPDATE STATUS — Aktif / Nonaktif (Blokir)
      */
-    public function updateStatus(Request $request, $id)
+    public function updateStatus(\App\Http\Requests\CustomerStatusRequest $request, $id)
     {
         try {
             $customer = User::where('role', 'customer')->findOrFail($id);
-
-            $request->validate([
-                'is_active' => 'required|in:0,1'
-            ], [
-                'is_active.required' => 'Status tidak boleh kosong. Sistem membutuhkan nilai untuk melanjutkan proses.',
-                'is_active.in' => 'Status tidak valid. Hanya diperbolehkan nilai aktif atau nonaktif.',
-            ]);
 
             $customer->update([
                 'is_active' => $request->is_active

@@ -10,25 +10,31 @@ class Store extends Model
 {
     protected $fillable = [
         'name',
-        'slug',
         'logo',
+        'address',
+        'province_id',
+        'city_id',
+        'phone',
+        'operational_hours',
         'description',
         'is_active',
     ];
+
+    public function province()
+    {
+        return $this->belongsTo(Province::class);
+    }
+
+    public function city()
+    {
+        return $this->belongsTo(City::class);
+    }
 
     protected $casts = [
         'is_active' => 'boolean',
     ];
 
-    protected $appends = ['address', 'logo_url'];
-
-    /**
-     * Karena semua toko memiliki alamat yang sama, kita kembalikan alamat default.
-     */
-    public function getAddressAttribute(): string
-    {
-        return "Jl. Kaliurang No. 45, Sleman, Yogyakarta";
-    }
+    protected $appends = ['logo_url'];
 
     /**
      * Mengembalikan URL lengkap untuk logo toko.
@@ -36,7 +42,7 @@ class Store extends Model
     public function getLogoUrlAttribute(): string
     {
         if ($this->logo) {
-            return "http://192.168.2.11:8000/storage/" . $this->logo;
+            return asset("storage/" . $this->logo);
         }
         // Fallback jika logo kosong
         return "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&background=random&size=128";
@@ -56,9 +62,6 @@ class Store extends Model
         return $query->where('is_active', true);
     }
 
-    // ─────────────────────────────────────────────
-    // Relationships
-    // ─────────────────────────────────────────────
 
     /**
      * Get all categories that belong to this store.
@@ -92,6 +95,14 @@ class Store extends Model
     public function activeProducts(): HasMany
     {
         return $this->hasMany(Product::class)->where('is_active', true);
+    }
+
+    /**
+     * Get the orders associated with the store.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 
     /**

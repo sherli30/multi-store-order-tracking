@@ -11,11 +11,12 @@ class StockMovement extends Model
     use HasFactory;
 
     protected $fillable = [
-        'product_variant_id',
+        'product_id',
         'type',        // 'in' | 'out'
         'quantity',    // amount moved
         'source',      // 'initial_stock' | 'purchase' | 'cancellation' | 'refund' | 'manual_adjustment'
         'reference_id', // Order ID or null
+        'note',         // reason for movement
     ];
 
     protected $casts = [
@@ -28,11 +29,11 @@ class StockMovement extends Model
     // ─────────────────────────────────────────────
 
     /**
-     * The product variant that this stock movement belongs to.
+     * The product that this stock movement belongs to.
      */
-    public function productVariant(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(ProductVariant::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 
     // ─────────────────────────────────────────────
@@ -50,6 +51,11 @@ class StockMovement extends Model
             'cancellation'     => 'Pembatalan Pesanan',
             'refund'           => 'Refund',
             'manual_adjustment'=> 'Penyesuaian Manual',
+            'failed'           => 'Pembayaran Gagal',
+            'deny'             => 'Pembayaran Ditolak',
+            'cancel'           => 'Pembayaran Dibatalkan',
+            'expire'           => 'Pembayaran Kedaluwarsa',
+            'failure'          => 'Pembayaran Gagal',
             default            => ucfirst(str_replace('_', ' ', $this->source)),
         };
     }

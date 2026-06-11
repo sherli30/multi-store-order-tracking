@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Order;
 use App\Models\Product;
-use App\Models\ProductVariant;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\DB;
 
@@ -31,89 +30,86 @@ class OrderService
 
     /**
      * Deduct stock for all items in the given order.
+     * Atomically checks is_stock_deducted under lock to prevent double-deduction.
      */
     public function processOrderStock(Order $order): void
     {
-        if ($order->is_stock_deducted) {
-            return;
-        }
-
-        $order->loadMissing('orderItems.productVariant.product');
-
-        foreach ($order->orderItems as $item) {
-            $variant = $item->productVariant;
-            if (!$variant) continue;
-
-            if ($variant->stock < $item->quantity) {
-                throw new InsufficientStockException(
-                    $variant->product->name . ' (' . $variant->name . ')',
-                    $item->quantity,
-                    $variant->stock,
-                );
-            }
-        }
+        $order->loadMissing('orderItems.product');
 
         DB::transaction(function () use ($order) {
-            foreach ($order->orderItems as $item) {
-                $variant = $item->productVariant;
-                if (!$variant) continue;
+            // Re-fetch with lock FIRST, then check is_stock_deducted atomically
+            $lockedOrder = Order::lockForUpdate()->find($order->id);
 
-                $lockedVariant = ProductVariant::lockForUpdate()->find($variant->id);
+            if ($lockedOrder->is_stock_deducted) {
+                return;
+            }
 
-                if (!$lockedVariant || $lockedVariant->stock < $item->quantity) {
+            $sortedItems = $lockedOrder->orderItems->sortBy('product_id');
+            foreach ($sortedItems as $item) {
+                $product = $item->product;
+                if (!$product) continue;
+
+                $lockedProduct = Product::lockForUpdate()->withTrashed()->find($product->id);
+
+                if (!$lockedProduct || $lockedProduct->stock < $item->quantity) {
                     throw new InsufficientStockException(
-                        $lockedVariant->product->name ?? 'Unknown',
+                        $lockedProduct->name ?? 'Unknown',
                         $item->quantity,
-                        $lockedVariant->stock ?? 0,
+                        $lockedProduct->stock ?? 0,
                     );
                 }
 
-                $lockedVariant->decrement('stock', $item->quantity);
+                $lockedProduct->decrement('stock', $item->quantity);
 
                 StockMovement::create([
-                    'product_variant_id' => $lockedVariant->id,
-                    'type'               => 'out',
-                    'quantity'           => $item->quantity,
-                    'source'             => 'purchase',
-                    'reference_id'       => $order->id,
+                    'product_id'   => $lockedProduct->id,
+                    'type'         => 'out',
+                    'quantity'     => $item->quantity,
+                    'source'       => 'purchase',
+                    'reference_id' => $lockedOrder->id,
                 ]);
             }
 
-            $order->update(['is_stock_deducted' => true]);
+            $lockedOrder->update(['is_stock_deducted' => true]);
         });
     }
 
     /**
      * Restore stock for all items in an order (cancellation / refund).
+     * Atomically checks is_stock_deducted under lock to prevent double-restoration.
      */
     public function restoreOrderStock(Order $order, string $source = 'cancellation'): void
     {
-        if (!$order->is_stock_deducted) {
-            return;
-        }
-
-        $order->loadMissing('orderItems.productVariant');
+        $order->loadMissing('orderItems.product');
 
         DB::transaction(function () use ($order, $source) {
-            foreach ($order->orderItems as $item) {
-                $variant = $item->productVariant;
-                if (!$variant) continue;
+            // Re-fetch with lock FIRST, then check is_stock_deducted atomically
+            $lockedOrder = Order::lockForUpdate()->find($order->id);
 
-                $lockedVariant = ProductVariant::lockForUpdate()->find($variant->id);
-                if (!$lockedVariant) continue;
+            if (!$lockedOrder->is_stock_deducted) {
+                return;
+            }
 
-                $lockedVariant->increment('stock', $item->quantity);
+            $sortedItems = $lockedOrder->orderItems->sortBy('product_id');
+            foreach ($sortedItems as $item) {
+                $product = $item->product;
+                if (!$product) continue;
+
+                $lockedProduct = Product::lockForUpdate()->withTrashed()->find($product->id);
+                if (!$lockedProduct) continue;
+
+                $lockedProduct->increment('stock', $item->quantity);
 
                 StockMovement::create([
-                    'product_variant_id' => $lockedVariant->id,
-                    'type'               => 'in',
-                    'quantity'           => $item->quantity,
-                    'source'             => $source,
-                    'reference_id'       => $order->id,
+                    'product_id'   => $lockedProduct->id,
+                    'type'         => 'in',
+                    'quantity'     => $item->quantity,
+                    'source'       => $source,
+                    'reference_id' => $lockedOrder->id,
                 ]);
             }
 
-            $order->update(['is_stock_deducted' => false]);
+            $lockedOrder->update(['is_stock_deducted' => false]);
         });
     }
 }

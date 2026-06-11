@@ -24,7 +24,7 @@ class ProductFactory extends Factory
             'store_id'    => $category->store_id,
             'category_id' => $category->id,
             'name'        => ucwords($name),
-            'slug'        => Str::slug($name),
+
             'description' => $this->faker->optional()->paragraph(),
             'price'       => $this->faker->randomFloat(2, 5000, 500000),
             'stock'       => $this->faker->numberBetween(0, 200),

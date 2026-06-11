@@ -16,27 +16,27 @@ class StoreSeeder extends Seeder
         $stores = [
             [
                 'name'        => 'ayambebek.com',
-                'slug'        => 'ayambebek-com',
                 'description' => 'Toko spesialis ayam dan bebek segar berkualitas tinggi. Melayani pemesanan dalam jumlah kecil maupun besar.',
+                'phone'       => '085850062823',
                 'is_active'   => true,
             ],
             [
                 'name'        => 'pakanayam.com',
-                'slug'        => 'pakanayam-com',
                 'description' => 'Toko pakan ayam terlengkap. Menyediakan berbagai jenis pakan berkualitas untuk kebutuhan peternakan ayam Anda.',
+                'phone'       => '085850062823',
                 'is_active'   => true,
             ],
             [
                 'name'        => 'pakankucing.com',
-                'slug'        => 'pakankucing-com',
                 'description' => 'Toko pakan dan aksesori kucing pilihan. Produk pilihan untuk nutrisi dan kesehatan kucing kesayangan Anda.',
+                'phone'       => '085850062823',
                 'is_active'   => true,
             ],
         ];
 
         foreach ($stores as $store) {
-            Store::firstOrCreate(
-                ['slug' => $store['slug']],
+            Store::updateOrCreate(
+                ['name' => $store['name']],
                 $store
             );
         }

@@ -24,7 +24,7 @@ class OrderFactory extends Factory
             'customer_name'    => fake()->name(),
             'customer_email'   => fake()->unique()->safeEmail(),
             'customer_phone'   => fake()->phoneNumber(),
-            'order_number'     => 'ORD-' . fake()->unique()->numerify('######') . '-' . strtoupper(fake()->lexify('???')),
+            'midtrans_order_id' => 'ORD-' . strtoupper(substr(uniqid(), -8)) . '-' . time(),
             'shipping_address' => fake()->address(),
             'shipping_type'    => $shippingType,
             'status'           => $status,

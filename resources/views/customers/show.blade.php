@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Customer — ' . $customer->name)
+@section('title', 'Detail Pelanggan — ' . $customer->name)
 
 @section('styles')
     /* =============================================
@@ -301,6 +301,8 @@
     .order-status-pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
     .status-pending { background: var(--amber-dim); color: var(--amber); }
     .status-pending::before { background: var(--amber); }
+    .status-perlu_diproses { background: rgba(14,165,233,0.1); color: #0ea5e9; }
+    .status-perlu_diproses::before { background: #0ea5e9; }
     .status-processing { background: rgba(59,130,246,0.1); color: #3b82f6; }
     .status-processing::before { background: #3b82f6; }
     .status-shipping { background: rgba(139,92,246,0.1); color: #8b5cf6; }
@@ -425,7 +427,7 @@
             stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6" />
         </svg>
-        <a href="{{ route('customers.index') }}">Manajemen Customer</a>
+        <a href="{{ route('customers.index') }}">Manajemen Pelanggan</a>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
             stroke-linejoin="round">
             <polyline points="9 18 15 12 9 6" />
@@ -444,7 +446,7 @@
                 </svg>
             </div>
             <div class="cust-page-header-text">
-                <h1>Profil Customer</h1>
+                <h1>Profil Pelanggan</h1>
                 <p>Terdaftar {{ $customer->created_at->diffForHumans() }} · {{ $customer->created_at->format('d M Y') }}</p>
             </div>
         </div>
@@ -499,7 +501,7 @@
                     </div>
                     <div class="mini-stat">
                         <div class="mini-stat-value green" style="font-size:15px;">
-                            Rp {{ number_format($totalSpent / 1000, 0, ',', '.') }}K
+                            Rp {{ number_format($totalSpent, 0, ',', '.') }}
                         </div>
                         <div class="mini-stat-label">Total Belanja</div>
                     </div>
@@ -515,7 +517,7 @@
                                 <line x1="8" y1="9" x2="16" y2="9" />
                                 <line x1="8" y1="13" x2="14" y2="13" />
                             </svg>
-                            ID Customer
+                            ID Pelanggan
                         </div>
                         <div class="info-value mono">#{{ $customer->id }}</div>
                     </div>
@@ -526,7 +528,7 @@
                                 <path
                                     d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" />
                             </svg>
-                            Nomor Handphone
+                            WhatsApp / No. HP
                         </div>
                         <div class="info-value {{ $customer->phone ? '' : 'muted' }}">
                             {{ $customer->phone ?: 'Belum diisi' }}
@@ -644,7 +646,7 @@
                     @endif
 
                     <p class="control-note">
-                        {{ $customer->is_active ? 'Customer yang diblokir tidak dapat login ke aplikasi.' : 'Mengaktifkan kembali akses customer ke aplikasi.' }}
+                        {{ $customer->is_active ? 'Pelanggan yang diblokir tidak dapat login ke aplikasi.' : 'Mengaktifkan kembali akses pelanggan ke aplikasi.' }}
                     </p>
 
                     <div class="control-divider"></div>
@@ -693,7 +695,7 @@
                         </div>
                         <div>
                             <div class="card-title">Riwayat Pesanan</div>
-                            <div class="card-subtitle">Semua transaksi yang pernah dilakukan customer ini</div>
+                            <div class="card-subtitle">Semua transaksi yang pernah dilakukan pelanggan ini</div>
                         </div>
                     </div>
                     <span class="card-badge">{{ $totalOrders }} Pesanan</span>
@@ -711,7 +713,7 @@
                             </svg>
                         </div>
                         <div class="empty-orders-title">Belum Ada Riwayat Pesanan</div>
-                        <div class="empty-orders-desc">Customer ini belum pernah melakukan transaksi.</div>
+                        <div class="empty-orders-desc">Pelanggan ini belum pernah melakukan transaksi.</div>
                     </div>
                 @else
                     <div style="overflow-x: auto;">
@@ -729,7 +731,7 @@
                                 @foreach($orders as $order)
                                     <tr>
                                         <td>
-                                            <a href="{{ route('orders.show', $order->id) }}" class="order-num">
+                                            <a href="{{ route('orders.show', $order->id) }}" class="order-num" style="font-size: 11px;">
                                                 {{ $order->order_number }}
                                             </a>
                                             <div class="order-date">{{ $order->created_at->format('d M Y') }}</div>
@@ -741,17 +743,8 @@
                                             <div class="amount-val">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</div>
                                         </td>
                                         <td>
-                                            @php
-                                                $statusMap = [
-                                                    'pending' => 'Menunggu',
-                                                    'processing' => 'Diproses',
-                                                    'shipping' => 'Dikirim',
-                                                    'completed' => 'Selesai',
-                                                    'cancelled' => 'Dibatalkan',
-                                                ];
-                                            @endphp
                                             <span class="order-status-pill status-{{ $order->status }}">
-                                                {{ $statusMap[$order->status] ?? ucfirst($order->status) }}
+                                                {{ \App\Services\StatusService::getOrderLabel($order->status) }}
                                             </span>
                                         </td>
                                         <td style="font-size: 12px; color: var(--text-3); white-space: nowrap;">
@@ -780,15 +773,18 @@
                 <div class="card-header">
                     <div class="card-header-left">
                         <div class="card-header-icon green">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="1" x2="12" y2="23" />
-                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                            </svg>
+                            <span style="
+                                font-size: 16px;
+                                font-weight: 800;
+                                color: currentColor;
+                                line-height: 1;
+                            ">
+                                Rp
+                            </span>
                         </div>
                         <div>
                             <div class="card-title">Ringkasan Belanja</div>
-                            <div class="card-subtitle">Statistik transaksi keseluruhan customer</div>
+                            <div class="card-subtitle">Statistik transaksi keseluruhan pelanggan</div>
                         </div>
                     </div>
                 </div>
@@ -804,14 +800,14 @@
                         </div>
                         <div class="summary-stat">
                             <div class="summary-stat-value" style="color: var(--green); font-size:17px;">
-                                Rp {{ number_format($totalSpent / 1000, 0, ',', '.') }}K
+                                Rp {{ number_format($totalSpent, 0, ',', '.') }}
                             </div>
                             <div class="summary-stat-label">Total Belanja</div>
                         </div>
                         <div class="summary-stat">
                             <div class="summary-stat-value" style="color: var(--accent); font-size:17px;">
                                 Rp
-                                {{ $totalOrders > 0 ? number_format($totalSpent / $totalOrders / 1000, 0, ',', '.') . 'K' : '0' }}
+                                {{ $totalOrders > 0 ? number_format($totalSpent / $totalOrders, 0, ',', '.') : '0' }}
                             </div>
                             <div class="summary-stat-label">Rata-rata/Pesanan</div>
                         </div>
@@ -820,13 +816,23 @@
                     {{-- Status Breakdown --}}
                     @php
                         $statusBreakdown = $orders->getCollection()->groupBy('status');
-                        $allStatuses = [
-                            'pending' => ['label' => 'Menunggu', 'color' => 'var(--amber)'],
-                            'processing' => ['label' => 'Diproses', 'color' => '#3b82f6'],
-                            'shipping' => ['label' => 'Dikirim', 'color' => '#8b5cf6'],
-                            'completed' => ['label' => 'Selesai', 'color' => 'var(--green)'],
-                            'cancelled' => ['label' => 'Dibatalkan', 'color' => 'var(--text-3)'],
+                        $allStatuses = [];
+                        
+                        $colors = [
+                            'pending' => 'var(--amber)',
+                            'perlu_diproses' => '#0ea5e9',
+                            'processing' => '#3b82f6',
+                            'shipping' => '#8b5cf6',
+                            'completed' => 'var(--green)',
+                            'cancelled' => 'var(--text-3)'
                         ];
+                        
+                        foreach(\App\Services\StatusService::getOrderStatuses() as $st) {
+                            $allStatuses[$st] = [
+                                'label' => \App\Services\StatusService::getOrderLabel($st),
+                                'color' => $colors[$st] ?? 'var(--text-3)'
+                            ];
+                        }
                     @endphp
 
                     <div style="padding-top: 18px; border-top: 1px solid var(--border);">

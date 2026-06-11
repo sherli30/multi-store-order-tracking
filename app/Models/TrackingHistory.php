@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\StatusService;
 
 class TrackingHistory extends Model
 {
@@ -14,6 +15,14 @@ class TrackingHistory extends Model
         'admin_id',
         'status',
         'notes',
+        'refund_method',
+        'refund_reason',
+        'payment_method',
+        'metadata',
+    ];
+
+    protected $casts = [
+        'metadata' => 'array',
     ];
 
     public function order()
@@ -23,6 +32,23 @@ class TrackingHistory extends Model
 
     public function admin()
     {
-        return $this->belongsTo(User::class, 'admin_id');
+        return $this->belongsTo(User::class, 'admin_id')->withTrashed();
+    }
+
+    /**
+     * Get human-readable status label (Indonesian).
+     */
+    public function getStatusLabelAttribute(): string
+    {
+        return StatusService::getOrderLabel($this->status);
+    }
+
+    /**
+     * Get badge CSS class for this status.
+     */
+    public function getStatusBadgeClassAttribute(): string
+    {
+        return StatusService::getOrderBadgeClass($this->status);
     }
 }
+

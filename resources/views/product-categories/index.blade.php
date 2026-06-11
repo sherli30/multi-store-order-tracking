@@ -665,9 +665,10 @@
         <div class="page-header-left">
             <h1>
                 <span class="page-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polygon points="2 17 12 22 22 17"></polygon>
+                        <polygon points="2 12 12 17 22 12"></polygon>
                     </svg>
                 </span>
                 Kategori Produk
@@ -758,7 +759,7 @@
                 <label class="form-label">Toko</label>
                 <select id="dtFilterStore" class="form-input">
                     <option value="">Semua Toko</option>
-                    @foreach ($stores as $store)
+                    @foreach ($stores->where('is_active', true) as $store)
                         <option value="{{ $store->id }}">{{ $store->name }}</option>
                     @endforeach
                 </select>
@@ -904,7 +905,7 @@
                 responsive: true,
                 autoWidth: false,
                 language: {
-                    search: "Cari:",
+                    search: "",
                     searchPlaceholder: "Cari Data...",
                     lengthMenu: "Tampilkan _MENU_ data",
                     info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
@@ -913,7 +914,9 @@
                 <div class="empty-state" style="padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; width: 100%; border-bottom: none;">
                     <div class="empty-icon" style="margin-bottom: 20px;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                            <polygon points="2 17 12 22 22 17"></polygon>
+                            <polygon points="2 12 12 17 22 12"></polygon>
                         </svg>
                     </div>
                     <div class="empty-title" style="margin-bottom: 6px;">Tidak Ada Kategori Ditemukan</div>
@@ -923,7 +926,9 @@
                 <div class="empty-state" style="padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; width: 100%; border-bottom: none;">
                     <div class="empty-icon" style="margin-bottom: 20px;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                            <polygon points="2 17 12 22 22 17"></polygon>
+                            <polygon points="2 12 12 17 22 12"></polygon>
                         </svg>
                     </div>
                     <div class="empty-title" style="margin-bottom: 6px;">Tidak Ada Kategori Ditemukan</div>
@@ -991,12 +996,26 @@
                             table.destroy();
                         }
                         $('#categoryTable tbody').html(html);
+                        // FIX 5: fade-in-animated is applied here via JS (after AJAX),
+                        // removing reliance on the server-side class in the partial.
+                        // The partial (_table_rows) should no longer include
+                        // class="fade-in-animated" on <tr> elements so that the
+                        // initial page load renders without the animation class,
+                        // and only AJAX-refreshed rows receive it.
                         $('#categoryTable tbody tr').addClass('fade-in-animated');
                         table = initDataTable();
                         $('.dataTables_filter').show();
                         $('#categoryTable tbody').css('opacity', '1');
 
                         checkResetVisibility();
+                    },
+                    // FIX 4: Restore opacity on AJAX failure so the table does not
+                    // remain stuck at 40% opacity when the request fails.
+                    error: function() {
+                        $('#categoryTable tbody').css('opacity', '1');
+                        if (typeof showToast === 'function') {
+                            showToast('Gagal memuat data. Silakan coba lagi.', 'error');
+                        }
                     }
                 });
             });

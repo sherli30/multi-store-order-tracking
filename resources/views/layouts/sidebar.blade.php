@@ -60,8 +60,7 @@
         <!-- UTAMA -->
         <div class="nav-section">
             <a href="{{ route('dashboard') }}" class="nav-item {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="7" height="7"></rect>
                     <rect x="14" y="3" width="7" height="7"></rect>
                     <rect x="14" y="14" width="7" height="7"></rect>
@@ -71,146 +70,149 @@
             </a>
         </div>
 
-        <!-- OPERASIONAL -->
+        <!-- PENJUALAN -->
         <div class="nav-section">
-            <div class="nav-section-label">Operasional</div>
-
-            {{-- Pesanan (Simplified to a flat link with badge) --}}
+            <div class="nav-section-label">Penjualan</div>
             <a href="{{ route('orders.index') }}" class="nav-item {{ request()->routeIs('orders.*') ? 'active' : '' }}">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
-                    <path
-                        d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-                    </path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    <path d="M12 11h4"></path>
+                    <path d="M12 16h4"></path>
+                    <path d="M8 11h.01"></path>
+                    <path d="M8 16h.01"></path>
                 </svg>
-                Pesanan
+                Manajemen Pesanan
             </a>
-
-            {{-- Transaksi (Simplified to a flat link) --}}
-            <a href="{{ route('transactions.index') }}"
-                class="nav-item {{ request()->routeIs('transactions.*') ? 'active' : '' }}">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <a href="{{ route('transactions.index') }}" class="nav-item {{ request()->routeIs('transactions.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="2" y="5" width="20" height="14" rx="2" ry="2"></rect>
                     <line x1="2" y1="10" x2="22" y2="10"></line>
                 </svg>
-                Transaksi
+                Riwayat Transaksi
             </a>
+        </div>
 
-            {{-- Pengiriman & Tracking (Accordion kept) --}}
-            @php $isDeliveries = request()->routeIs('deliveries.*'); @endphp
-            <a href="#" class="nav-item nav-item-has-submenu {{ $isDeliveries ? 'active' : '' }}">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+        <!-- LOGISTIK -->
+        <div class="nav-section">
+            <div class="nav-section-label">Logistik</div>
+            <a href="{{ route('deliveries.index') }}" class="nav-item {{ request()->routeIs('deliveries.index') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                    <line x1="8" y1="2" x2="8" y2="18"></line>
+                    <line x1="16" y1="6" x2="16" y2="22"></line>
+                </svg>
+                Monitoring Pengiriman
+            </a>
+            <a href="{{ route('deliveries.scan') }}" class="nav-item {{ request()->routeIs('deliveries.scan') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 7V4h3"></path>
+                    <path d="M4 17v3h3"></path>
+                    <path d="M20 7V4h-3"></path>
+                    <path d="M20 17v3h-3"></path>
+                    <line x1="12" y1="8" x2="12" y2="16" style="stroke: var(--accent); stroke-width: 2.5px;"></line>
+                    <rect x="9" y="8" width="6" height="8"></rect>
+                </svg>
+                Cek Resi
+            </a>
+        </div>
+
+        <!-- MASTER LOGISTIK -->
+        <div class="nav-section">
+            <div class="nav-section-label">Master Logistik</div>
+            <a href="{{ route('couriers.index') }}" class="nav-item {{ request()->routeIs('couriers.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="1" y="3" width="15" height="13"></rect>
                     <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
                     <circle cx="5.5" cy="18.5" r="2.5"></circle>
                     <circle cx="18.5" cy="18.5" r="2.5"></circle>
                 </svg>
-                Pengiriman & Tracking
-                <svg class="chevron" style="transform: {{ $isDeliveries ? 'rotate(180deg)' : 'rotate(0deg)' }};"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+                Master Kurir
             </a>
-            <div class="nav-submenu" style="display: {{ $isDeliveries ? 'flex' : 'none' }};">
-                <a href="{{ route('deliveries.index') }}"
-                    class="nav-submenu-item {{ request()->routeIs('deliveries.index') ? 'active' : '' }}">Update
-                    Status</a>
-                <a href="{{ route('deliveries.scan') }}"
-                    class="nav-submenu-item {{ request()->routeIs('deliveries.scan') ? 'active' : '' }}">Scan
-                    Barcode</a>
-                <a href="#" class="nav-submenu-item">Cetak Label</a>
-                <a href="{{ route('deliveries.history') }}"
-                    class="nav-submenu-item {{ request()->routeIs('deliveries.history') ? 'active' : '' }}">Riwayat
-                    Tracking</a>
+            <a href="{{ route('shipping-services.index') }}" class="nav-item {{ request()->routeIs('shipping-services.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+                    <polygon points="12 22.08 12 12 3 6.92 3 17.08 12 22.08"></polygon>
+                    <polygon points="12 22.08 12 12 21 6.92 21 17.08 12 22.08"></polygon>
+                    <polygon points="12 2 3 6.92 12 12 21 6.92 12 2"></polygon>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                Master Layanan
+            </a>
+            <div class="nav-item nav-item-has-submenu {{ request()->routeIs('provinces.*') || request()->routeIs('cities.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                Master Wilayah
+                <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </div>
+            <div class="nav-submenu" style="display: {{ request()->routeIs('provinces.*') || request()->routeIs('cities.*') ? 'flex' : 'none' }};">
+                <a href="{{ route('provinces.index') }}" class="nav-submenu-item {{ request()->routeIs('provinces.*') ? 'active' : '' }}">Provinsi</a>
+                <a href="{{ route('cities.index') }}" class="nav-submenu-item {{ request()->routeIs('cities.*') ? 'active' : '' }}">Kota / Kabupaten</a>
+            </div>
+            <a href="{{ route('shipping-rates.index') }}" class="nav-item {{ request()->routeIs('shipping-rates.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                </svg>
+                Master Ongkir
+            </a>
         </div>
 
-        <!-- PRODUK -->
+        <!-- KATALOG -->
         <div class="nav-section">
-            <div class="nav-section-label">Produk</div>
-
-            @php
-                $isProducts = request()->routeIs('products.*')
-                    || request()->routeIs('stores.*')
-                    || request()->routeIs('product-categories.*');
-            @endphp
-            <a href="#" class="nav-item nav-item-has-submenu {{ $isProducts ? 'active' : '' }}">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <div class="nav-section-label">Katalog</div>
+            <a href="{{ route('products.index') }}" class="nav-item {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                     <line x1="3" y1="6" x2="21" y2="6"></line>
                     <path d="M16 10a4 4 0 0 1-8 0"></path>
                 </svg>
-                Produk & Toko
-                <svg class="chevron" style="transform: {{ $isProducts ? 'rotate(180deg)' : 'rotate(0deg)' }};"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+                Manajemen Produk
             </a>
-            <div class="nav-submenu" style="display: {{ $isProducts ? 'flex' : 'none' }};">
-                <a href="{{ route('products.index') }}"
-                    class="nav-submenu-item {{ request()->routeIs('products.*') ? 'active' : '' }}">Manajemen Produk</a>
-                <a href="{{ route('product-categories.index') }}"
-                    class="nav-submenu-item {{ request()->routeIs('product-categories.*') ? 'active' : '' }}">
-                    Kategori Produk
-                </a>
-                <a href="{{ route('stores.index') }}"
-                    class="nav-submenu-item {{ request()->routeIs('stores.*') ? 'active' : '' }}">Manajemen Toko</a>
-            </div>
+            <a href="{{ route('product-categories.index') }}" class="nav-item {{ request()->routeIs('product-categories.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polygon points="2 17 12 22 22 17"></polygon>
+                    <polygon points="2 12 12 17 22 12"></polygon>
+                </svg>
+                Kategori Produk
+            </a>
+            <a href="{{ route('stores.index') }}" class="nav-item {{ request()->routeIs('stores.*') ? 'active' : '' }}">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h2.25m-2.25 0v-13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75V21m12 0V15m-12 6V15m12 0a.75.75 0 00-.75-.75H7.5a.75.75 0 00-.75.75V15m12 0h-12" />
+                </svg>
+                Manajemen Toko
+            </a>
         </div>
 
-        <!-- LAPORAN -->
+        <!-- ANALISIS -->
         <div class="nav-section">
-            <div class="nav-section-label">Laporan</div>
-            @php $isReports = request()->routeIs('reports.*'); @endphp
-            <a href="#" class="nav-item nav-item-has-submenu {{ $isReports ? 'active' : '' }}">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            <div class="nav-section-label">Analisis</div>
+            <a href="{{ route('reports.index') }}" class="nav-item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
                 </svg>
-                Laporan
-                <svg class="chevron" style="transform: {{ $isReports ? 'rotate(180deg)' : 'rotate(0deg)' }};"
-                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <polyline points="6 9 12 15 18 9"></polyline>
-                </svg>
+                Laporan Penjualan
             </a>
-            <div class="nav-submenu" style="display: {{ $isReports ? 'flex' : 'none' }};">
-                <a href="{{ route('reports.stores') }}"
-                    class="nav-submenu-item {{ request()->routeIs('reports.stores') ? 'active' : '' }}">Laporan Per
-                    Toko</a>
-                <a href="{{ route('reports.consolidated') }}"
-                    class="nav-submenu-item {{ request()->routeIs('reports.consolidated') ? 'active' : '' }}">Laporan
-                    Konsolidasi</a>
-                <a href="{{ route('reports.export') }}"
-                    class="nav-submenu-item {{ request()->routeIs('reports.export') ? 'active' : '' }}">Ekspor Data</a>
-            </div>
         </div>
 
-        <!-- DATA -->
+        <!-- LAINNYA -->
         <div class="nav-section">
-            <div class="nav-section-label">Data</div>
-            <a href="{{ route('customers.index') }}"
-                class="nav-item {{ request()->routeIs('customers.*') ? 'active' : '' }}">
-                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
+            <div class="nav-section-label">Lainnya</div>
+
+            {{-- Pelanggan --}}
+            <a href="{{ route('customers.index') }}" class="nav-item {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                     <circle cx="9" cy="7" r="4"></circle>
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
-                Customer
+                Pelanggan
             </a>
-        </div>
 
+        </div>
     </nav>
 
     <script>

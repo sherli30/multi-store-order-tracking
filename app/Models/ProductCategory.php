@@ -14,7 +14,6 @@ class ProductCategory extends Model
     protected $fillable = [
         'store_id',   // every category is owned by exactly one store
         'name',
-        'slug',
         'description',
         'is_active',
     ];

@@ -20,7 +20,7 @@ class TransactionFactory extends Factory
         
         return [
             'order_id'         => \App\Models\Order::factory(),
-            'transaction_code' => 'TRX-' . fake()->unique()->numerify('######') . '-' . strtoupper(fake()->lexify('???')),
+            'transaction_id' => 'TRX-' . fake()->unique()->numerify('######') . '-' . strtoupper(fake()->lexify('???')),
             'payment_method'   => fake()->randomElement(['Transfer Bank (BCA)', 'Transfer Bank (Mandiri)', 'OVO', 'GoPay', 'Qris']),
             'amount'           => 0, // This will be overriden in Seeder to match Order total
             'status'           => $status,

@@ -104,7 +104,7 @@
     .form-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 12px;
     position: sticky;
     top: 32px;
     }
@@ -322,19 +322,13 @@
     font-weight: 500;
     }
 
-    /* ── FORM FOOTER ─── */
-    .form-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 16px;
-    margin-top: 15px;
-    }
-
+    /* ── BUTTONS ─── */
     .btn-primary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 11px;
+    width: 100%;
     background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
     color: #fff;
     border: none;
@@ -452,13 +446,15 @@
                         <div class="field-group">
                             <label class="field-label" for="store_id">Toko <span>*</span></label>
                             <select id="store_id" name="store_id"
-                                class="field-input {{ $errors->has('store_id') ? 'is-invalid' : '' }}" required>
-                                <option value="">Pilih Toko...</option>
+                                class="field-input {{ $errors->has('store_id') ? 'is-invalid' : '' }}" required onchange="checkStoreStatus()">
+                                <option value="" data-active="1" disabled selected>Pilih Toko...</option>
                                 @foreach ($stores as $store)
-                                    <option value="{{ $store->id }}"
-                                        {{ old('store_id', $productCategory->store_id) == $store->id ? 'selected' : '' }}>
-                                        {{ $store->name }}
-                                    </option>
+                                    @if($store->is_active || $store->id == old('store_id', $productCategory->store_id))
+                                        <option value="{{ $store->id }}" data-active="{{ $store->is_active ? '1' : '0' }}"
+                                            {{ old('store_id', $productCategory->store_id) == $store->id ? 'selected' : '' }}>
+                                            {{ $store->name }} {{ !$store->is_active ? '(Non-aktif)' : '' }}
+                                        </option>
+                                    @endif
                                 @endforeach
                             </select>
                         </div>
@@ -518,31 +514,70 @@
                         </div>
                     </div>
                     <div class="form-card-body">
-                        <div class="toggle-card">
+                        <div class="toggle-card {{ $errors->has('is_active') ? 'is-invalid' : '' }}" id="activeToggleCard" style="{{ $errors->has('is_active') ? 'border-color: var(--red);' : '' }}">
                             <label class="toggle-switch">
-                                <input type="checkbox" name="is_active" value="1"
-                                    {{ old('is_active', $productCategory->is_active) ? 'checked' : '' }}>
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" id="categoryActiveInput" value="1"
+                                    {{ old('is_active', $productCategory->is_active) ? 'checked' : '' }} onchange="document.getElementById('categoryActiveLabel').innerText = this.checked ? 'Kategori Aktif' : 'Kategori Nonaktif'">
                                 <span class="toggle-slider"></span>
                             </label>
-                            <div class="toggle-label">Aktif</div>
+                            <div class="toggle-label" id="categoryActiveLabel">{{ old('is_active', $productCategory->is_active) ? 'Kategori Aktif' : 'Kategori Nonaktif' }}</div>
                         </div>
-                        <p class="field-hint">Nonaktifkan untuk menyembunyikan kategori ini saat pembuatan produk.</p>
+                        <div id="storeInactiveWarning" style="display: none; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--red); background: color-mix(in srgb, var(--red) 8%, var(--panel)); border: 1.5px solid color-mix(in srgb, var(--red) 20%, transparent); border-radius: 10px; padding: 12px 14px; text-align: left;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; color: var(--red);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <div>
+                                <span style="font-weight: 800; display: block; margin-bottom: 3px; font-size: 12.5px;">Toko Induk Non-Aktif</span>
+                                Status kategori ini dikunci karena toko utamanya sedang dinonaktifkan di Manajemen Toko. Silakan aktifkan toko terlebih dahulu jika ingin mengaktifkan kategori ini.
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                {{-- Submit Button --}}
+                <button type="submit" class="btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Simpan Perubahan
+                </button>
             </div>
         </div>
 
-        <div class="form-footer">
-            <button type="submit" class="btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                </svg>
-                Simpan Perubahan
-            </button>
-        </div>
     </form>
 
 @endsection
+
+@push('scripts')
+<script>
+    function checkStoreStatus() {
+        const storeSelect = document.getElementById('store_id');
+        const selectedOption = storeSelect.options[storeSelect.selectedIndex];
+        const warningEl = document.getElementById('storeInactiveWarning');
+        const toggleCard = document.getElementById('activeToggleCard');
+        const isActiveCheckbox = document.getElementById('categoryActiveInput');
+        const categoryActiveLabel = document.getElementById('categoryActiveLabel');
+
+        if (selectedOption && selectedOption.getAttribute('data-active') === '0') {
+            warningEl.style.display = 'flex';
+            isActiveCheckbox.checked = false;
+            isActiveCheckbox.disabled = true;
+            toggleCard.style.opacity = '0.55';
+            toggleCard.style.pointerEvents = 'none';
+            categoryActiveLabel.innerText = 'Kategori Nonaktif';
+        } else {
+            warningEl.style.display = 'none';
+            isActiveCheckbox.disabled = false;
+            toggleCard.style.opacity = '1';
+            toggleCard.style.pointerEvents = 'auto';
+            categoryActiveLabel.innerText = isActiveCheckbox.checked ? 'Kategori Aktif' : 'Kategori Nonaktif';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        checkStoreStatus();
+    });
+</script>
+@endpush

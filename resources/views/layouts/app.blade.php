@@ -1373,7 +1373,7 @@
             }
         }
 
-        @media (max-width: 900px) {
+        @media (max-width: 992px) {
             :root {
                 --sidebar-w: 0px;
             }
@@ -1384,10 +1384,12 @@
 
             .sidebar.mobile-open {
                 transform: translateX(0);
+                width: 248px !important;
             }
-
-            .alert-grid {
-                grid-template-columns: 1fr;
+            
+            .main-wrap {
+                margin-left: 0 !important;
+                width: 100% !important;
             }
         }
 
@@ -1701,6 +1703,21 @@
                 @else
                     showToast(@json($genErrors[0]), 'error');
                 @endif
+            @endif
+
+            // 🔄 BUKA KEMBALI MODAL JIKA ADA ERROR VALIDASI
+            @if (session('open_modal'))
+                const modalId = @json(session('open_modal'));
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('open');
+                    
+                    // Khusus untuk modal stok yang memiliki action dinamis (add/deduct)
+                    if (modalId === 'stockModal' && typeof window.openStockModal === 'function') {
+                        const action = '{{ old("stock_action", "add") }}';
+                        window.openStockModal(action, true);
+                    }
+                }
             @endif
 
         });

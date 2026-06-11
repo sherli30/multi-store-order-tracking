@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Courier;
 use App\Models\Order;
 use App\Models\TrackingHistory;
 use Illuminate\Http\Request;
@@ -14,99 +15,118 @@ class DeliveryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Order::with('store', 'trackingHistories')
-            ->whereIn('status', ['perlu_diproses', 'processing', 'shipping', 'completed', 'cancelled'])
-            ->latest();
+        $tab     = $request->get('tab', 'all');
+        $storeId = $request->get('store_id');
 
-        $query->when($request->filled('search'), function ($q) use ($request) {
-            $q->where('order_number', 'like', "%{$request->search}%")
-              ->orWhere('tracking_number', 'like', "%{$request->search}%")
-              ->orWhere('customer_name', 'like', "%{$request->search}%");
-        });
+        $activeStatuses = [
+            Order::STATUS_PERLU_DIPROSES,
+            Order::STATUS_PROCESSING,
+            Order::STATUS_SHIPPING,
+            Order::STATUS_COMPLETED,
+        ];
 
-        $query->when($request->filled('status'), function ($q) use ($request) {
-            $q->where('status', $request->status);
-        });
+        $query = Order::with(['store', 'trackingHistories' => function ($q) {
+            $q->with('admin')->latest();
+        }])->whereIn('status', $activeStatuses);
 
-        $orders = $query->paginate(10)->appends($request->query());
+        // ── Filter: store (active stores only) ───────────────────────────────
+        if ($request->filled('store_id')) {
+            $query->where('store_id', $storeId);
+        }
 
-        return view('deliveries.index', compact('orders'));
+        // ── Filter: shipping_courier ──────────────────────────────────────────
+        if ($request->filled('courier')) {
+            $query->where('shipping_courier', $request->courier);
+        }
+
+        // ── Filter: date (based on updated_at / last tracking update) ─────────
+        if ($request->filled('date')) {
+            $query->whereDate('updated_at', $request->date);
+        }
+
+        // ── Filter: status tab ────────────────────────────────────────────────
+        if ($tab !== 'all' && in_array($tab, $activeStatuses)) {
+            $query->where('status', $tab);
+        }
+
+        // ── Search ────────────────────────────────────────────────────────────
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('midtrans_order_id', 'like', "%{$search}%")
+                ->orWhere('tracking_number', 'like', "%{$search}%")
+                ->orWhere('customer_name', 'like', "%{$search}%");
+            });
+        }
+
+        $orders = $query->latest('updated_at')->get();
+
+        // ── Stores: active only, for filter dropdown ──────────────────────────
+        $stores = \App\Models\Store::where('is_active', true)->orderBy('name')->get();
+
+        // ── Couriers: from master couriers table ──────────────────────────────
+        $couriers = Courier::where('is_active', true)->orderBy('name')->get();
+
+        // ── Tab counts (respects store + courier + date filter) ────────────────
+        $countQuery = Order::query();
+        if ($request->filled('store_id')) {
+            $countQuery->where('store_id', $storeId);
+        }
+        if ($request->filled('courier')) {
+            $countQuery->where('shipping_courier', $request->courier);
+        }
+        if ($request->filled('date')) {
+            $countQuery->whereDate('updated_at', $request->date);
+        }
+
+        $tabCounts = [
+            'all'                        => (clone $countQuery)->whereIn('status', $activeStatuses)->count(),
+            Order::STATUS_PERLU_DIPROSES => (clone $countQuery)->where('status', Order::STATUS_PERLU_DIPROSES)->count(),
+            Order::STATUS_PROCESSING     => (clone $countQuery)->where('status', Order::STATUS_PROCESSING)->count(),
+            Order::STATUS_SHIPPING       => (clone $countQuery)->where('status', Order::STATUS_SHIPPING)->count(),
+            Order::STATUS_COMPLETED      => (clone $countQuery)->where('status', Order::STATUS_COMPLETED)->count(),
+        ];
+
+        // ── AJAX: return only table rows ──────────────────────────────────────
+        if ($request->ajax()) {
+            return view('deliveries._table_rows', compact('orders'))->render();
+        }
+
+        return view('deliveries.index', compact('orders', 'stores', 'couriers', 'tab', 'tabCounts'));
     }
 
     /**
-     * Halaman UI Scanner Barcode / Update Manual.
+     * Halaman UI Scanner Barcode untuk pencarian resi/pesanan.
      */
-    public function scan()
+    public function scan(Request $request)
     {
-        return view('deliveries.scan');
-    }
+        $order = null;
+        if ($request->filled('identifier')) {
+            $order = Order::with(['trackingHistories.admin', 'store', 'orderItems.product', 'transaction'])
+                ->where(function ($q) use ($request) {
+                    $q->where('midtrans_order_id', $request->identifier)
+                      ->orWhere('tracking_number', $request->identifier);
+                })
+                ->first();
 
-    /**
-     * Proses pemindaian barcode / input resi & update ke tracking.
-     */
-    public function updateTracking(Request $request)
-    {
-        $request->validate([
-            'identifier'       => 'required|string', // order_number atau tracking_number
-            'status'           => 'required|in:processing,shipping,completed',
-            'shipping_courier' => 'nullable|string',
-            'tracking_number'  => 'nullable|string',
-            'notes'            => 'nullable|string',
-        ]);
-
-        $order = Order::where('order_number', $request->identifier)
-                      ->orWhere('tracking_number', $request->identifier)
-                      ->first();
-
-        if (!$order) {
-            return back()->with('error', "Pesanan / Resi '{$request->identifier}' tidak ditemukan.")->withInput();
-        }
-
-        // Kalau status berubah ke shipping, bisa sekalian save courier & resi
-        if ($request->status === 'shipping') {
-            if ($request->filled('shipping_courier')) {
-                $order->shipping_courier = $request->shipping_courier;
-            }
-            if ($request->filled('tracking_number')) {
-                // cegah duplicate di order lain
-                $exists = Order::where('tracking_number', $request->tracking_number)
-                               ->where('id', '!=', $order->id)
-                               ->exists();
-                if($exists) {
-                    return back()->with('error', "Nomor Resi '{$request->tracking_number}' sudah digunakan pesanan lain.")->withInput();
-                }
-                $order->tracking_number = $request->tracking_number;
+            if (!$order) {
+                return back()->with('error', "Pesanan atau resi '{$request->identifier}' tidak ditemukan.");
             }
         }
-
-        $order->status = $request->status;
-        
-        DB::transaction(function () use ($order, $request) {
-            $order->save();
-
-            // Insert into history
-            TrackingHistory::create([
-                'order_id' => $order->id,
-                'admin_id' => auth()->id(),
-                'status'   => $request->status,
-                'notes'    => $request->notes,
-            ]);
-        });
-
-        $statusLabel = [
-            'processing' => 'Dikemas',
-            'shipping'   => 'Dikirim',
-            'completed'  => 'Selesai',
-        ][$request->status] ?? $request->status;
-
-        return back()->with('success', "Status pesanan {$order->order_number} berhasil diperbarui menjadi {$statusLabel}!");
+        return view('deliveries.scan', compact('order'));
     }
+
+    // Method updateTracking removed as per instructions: "use scanning only for order lookup"
 
     /**
      * Cetak Label Pengiriman
      */
     public function printLabel(Order $order)
     {
+        if (in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CANCELLED])) {
+            return back()->with('error', 'Label pengiriman hanya dapat dicetak untuk pesanan yang sudah dibayar (minimal status Perlu Diproses).');
+        }
+
         $order->load('store', 'orderItems.product');
         return view('deliveries.label', compact('order'));
     }
@@ -121,13 +141,23 @@ class DeliveryController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->whereHas('order', function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                  ->orWhere('tracking_number', 'like', "%{$search}%");
+                $q->where('midtrans_order_id', 'like', "%{$search}%")
+                  ->orWhere('tracking_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%");
             });
         }
 
         $histories = $query->paginate(20)->appends($request->query());
 
         return view('deliveries.history', compact('histories'));
+    }
+
+    /**
+     * Get tracking history modal content for AJAX.
+     */
+    public function getTrackingModal(Order $order)
+    {
+        $order->load(['trackingHistories.admin', 'store']);
+        return view('deliveries.partials.tracking_modal_content', compact('order'));
     }
 }

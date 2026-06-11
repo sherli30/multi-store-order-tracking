@@ -13,7 +13,6 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'product_id',
-        'product_variant_id',
         'quantity',
         'price',
         'packing',
@@ -28,6 +27,7 @@ class OrderItem extends Model
     {
         return [
             'price' => 'decimal:2',
+            'packing_cost' => 'decimal:2',
         ];
     }
 
@@ -40,25 +40,10 @@ class OrderItem extends Model
     }
 
     /**
-     * Get the product associated with the order item (through the variant).
+     * Get the product associated with the order item.
      */
-    public function product()
+    public function product(): BelongsTo
     {
-        return $this->hasOneThrough(
-            Product::class,
-            ProductVariant::class,
-            'id',         // Foreign key on variants table...
-            'id',         // Foreign key on products table...
-            'product_variant_id', // Local key on order_items table...
-            'product_id'  // Local key on variants table...
-        );
-    }
-
-    /**
-     * Get the product variant associated with the order item.
-     */
-    public function productVariant(): BelongsTo
-    {
-        return $this->belongsTo(ProductVariant::class);
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }

@@ -104,7 +104,7 @@
     .form-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 12px;
     position: sticky;
     top: 32px;
     }
@@ -322,19 +322,13 @@
     font-weight: 500;
     }
 
-    /* ── FORM FOOTER ─── */
-    .form-footer {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 16px;
-    margin-top: 15px;
-    }
-
+    /* ── BUTTONS ─── */
     .btn-primary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 11px;
+    width: 100%;
     background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
     color: #fff;
     border: none;
@@ -385,9 +379,9 @@
         <div class="page-header-left">
             <h1>
                 <span class="page-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 5v14M5 12h14"/>
                     </svg>
                 </span>
                 Tambah Kategori
@@ -426,7 +420,7 @@
                             <label class="field-label" for="store_id">Toko <span>*</span></label>
                             <select id="store_id" name="store_id"
                                 class="field-input {{ $errors->has('store_id') ? 'is-invalid' : '' }}" required>
-                                <option value="">Pilih Toko...</option>
+                                <option value="" disabled selected>Pilih Toko...</option>
                                 @foreach ($stores as $store)
                                     <option value="{{ $store->id }}"
                                         {{ old('store_id') == $store->id ? 'selected' : '' }}>
@@ -434,7 +428,6 @@
                                     </option>
                                 @endforeach
                             </select>
-                            <span class="field-hint">Kategori ini akan eksklusif milik toko yang dipilih.</span>
                         </div>
 
                         {{-- Nama Kategori --}}
@@ -443,8 +436,6 @@
                             <input type="text" id="name" name="name"
                                 class="field-input {{ $errors->has('name') ? 'is-invalid' : '' }}"
                                 placeholder="Contoh: Elektronik, Pakaian, Makanan..." value="{{ old('name') }}" required>
-                            <span class="field-hint">Nama kategori harus unik dalam toko yang dipilih dan maksimal 100
-                                karakter.</span>
                         </div>
 
                         {{-- Deskripsi --}}
@@ -453,7 +444,6 @@
                             <textarea id="description" name="description"
                                 class="field-input field-textarea {{ $errors->has('description') ? 'is-invalid' : '' }}"
                                 placeholder="Jelaskan jenis produk yang masuk dalam kategori ini...">{{ old('description') }}</textarea>
-                            <span class="field-hint">Opsional. Maksimal 500 karakter.</span>
                         </div>
                     </div>
                 </div>
@@ -472,30 +462,29 @@
                         </div>
                     </div>
                     <div class="form-card-body">
-                        <div class="toggle-card">
+                        <div class="toggle-card {{ $errors->has('is_active') ? 'is-invalid' : '' }}" style="{{ $errors->has('is_active') ? 'border-color: var(--red);' : '' }}">
                             <label class="toggle-switch">
-                                <input type="checkbox" name="is_active" value="1"
-                                    {{ old('is_active', '1') ? 'checked' : '' }}>
+                                <input type="hidden" name="is_active" value="0">
+                                <input type="checkbox" name="is_active" id="categoryActiveInput" value="1"
+                                    {{ old('is_active', '1') == '1' ? 'checked' : '' }} onchange="document.getElementById('categoryActiveLabel').innerText = this.checked ? 'Kategori Aktif' : 'Kategori Nonaktif'">
                                 <span class="toggle-slider"></span>
                             </label>
-                            <div class="toggle-label">Aktif</div>
+                            <div class="toggle-label" id="categoryActiveLabel">{{ old('is_active', '1') == '1' ? 'Kategori Aktif' : 'Kategori Nonaktif' }}</div>
                         </div>
-                        <p class="field-hint">Kategori aktif dapat dipilih saat membuat produk.</p>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <div class="form-footer">
-            <button type="submit" class="btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                    stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                </svg>
-                Simpan Kategori
-            </button>
+                {{-- Submit Button --}}
+                <button type="submit" class="btn-primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Simpan Kategori
+                </button>
+            </div>
         </div>
 
     </form>

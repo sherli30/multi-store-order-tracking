@@ -51,18 +51,18 @@ class StockRequest extends FormRequest
         return [
             // Quantity (qty)
             'qty.required' => 'Jumlah stok wajib diisi. Masukkan angka unit yang ingin ditambah atau dikurangi.',
-            'qty.integer'  => 'Jumlah stok harus berupa angka bulat, bukan desimal (contoh: 10, bukan 10.5).',
-            'qty.min'      => 'Jumlah stok minimal adalah 1 unit. Nilai 0 tidak diperbolehkan untuk penyesuaian stok.',
-            'qty.max'      => 'Jumlah stok terlalu besar. Maksimal penyesuaian sekaligus adalah 999.999 unit.',
+            'qty.integer' => 'Jumlah stok harus berupa angka bulat, bukan desimal (contoh: 10, bukan 10.5).',
+            'qty.min' => 'Jumlah stok minimal adalah 1 unit. Nilai 0 tidak diperbolehkan untuk penyesuaian stok.',
+            'qty.max' => 'Jumlah stok terlalu besar. Maksimal penyesuaian sekaligus adalah 999.999 unit.',
 
             // Note (Catatan)
             'note.required' => 'Catatan penyesuaian stok wajib diisi. Tuliskan alasan perubahan stok ini (contoh: Restok dari supplier, Barang rusak).',
-            'note.string'   => 'Catatan harus berupa teks biasa.',
-            'note.max'      => 'Catatan terlalu panjang. Maksimal 500 karakter, cukup tuliskan poin penting saja.',
+            'note.string' => 'Catatan harus berupa teks biasa.',
+            'note.max' => 'Catatan terlalu panjang. Maksimal 500 karakter, cukup tuliskan poin penting saja.',
 
             // Type (Opsional jika digunakan)
-            'type.string'   => 'Tipe transaksi harus berupa teks.',
-            'type.in'       => 'Tipe transaksi tidak valid. Pilihan yang tersedia hanya "in" (stok masuk) atau "out" (stok keluar).',
+            'type.string' => 'Tipe transaksi harus berupa teks.',
+            'type.in' => 'Tipe transaksi tidak valid. Pilihan yang tersedia hanya "in" (stok masuk) atau "out" (stok keluar).',
         ];
     }
 
@@ -84,5 +84,16 @@ class StockRequest extends FormRequest
                 'qty' => $qty,
             ]);
         }
+    }
+
+    protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        $response = redirect()
+            ->back()
+            ->withInput()
+            ->withErrors($validator, $this->errorBag)
+            ->with('open_modal', 'stockModal');
+
+        throw new \Illuminate\Validation\ValidationException($validator, $response);
     }
 }

@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreRequest extends FormRequest
 {
@@ -17,78 +16,87 @@ class StoreRequest extends FormRequest
 
     /**
      * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
-        // Mengambil ID toko dari route untuk pengecekan unique saat update
-        $storeId = $this->route('store')?->id;
+        $isCreate = $this->isMethod('post');
+        $store = $this->route('store');
+        
+        // Logo wajib jika:
+        // 1. Sedang membuat toko baru (Create)
+        // 2. Sedang mengedit tapi toko tersebut belum punya logo di database
+        $logoRequired = $isCreate || ($store && !$store->logo);
 
-        return [
-            'name' => [
-                'required',
-                'string',
-                'max:255',
-                // Nama toko harus unik, mengabaikan ID toko ini sendiri saat update
-                Rule::unique('stores', 'name')->ignore($storeId),
-            ],
-
-            'description' => [
-                'required',
-                'string',
-                'max:5000'
-            ],
-
-            'is_active' => [
-                'nullable',
-                'boolean'
-            ],
-
-            'logo' => [
-                // Logo wajib saat tambah, opsional saat update
-                $this->isMethod('POST') ? 'required' : 'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2048', // Maksimal 2MB
-            ],
+        $rules = [
+            'name'              => ['required', 'string', 'max:255'],
+            'description'       => ['required', 'string'],
+            'phone'             => ['required', 'numeric', 'digits_between:10,15'],
+            'operational_hours' => ['required', 'string', 'max:255'],
+            'province_id'       => ['required', 'exists:provinces,id'],
+            'city_id'           => ['required', 'exists:cities,id'],
+            'address'           => ['required', 'string'],
+            'logo'              => [$logoRequired ? 'required' : 'nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
+
+        if ($isCreate) {
+            $rules['is_active'] = ['accepted'];
+        } else {
+            $rules['is_active'] = ['required', 'boolean'];
+        }
+
+        return $rules;
     }
 
     /**
-     * Get custom validation messages with detailed breakdown.
+     * Get the error messages for the defined validation rules.
      */
     public function messages(): array
     {
         return [
-            // Name
-            'name.required' => 'Nama toko tidak boleh kosong.',
-            'name.string'   => 'Nama toko harus berupa teks.',
-            'name.max'      => 'Nama toko terlalu panjang, maksimal 255 karakter.',
-            'name.unique'   => 'Nama toko ini sudah terdaftar. Silakan gunakan nama lain.',
-
-            // Description
-            'description.required' => 'Deskripsi toko tidak boleh kosong.',
+            'name.required' => 'Nama toko wajib diisi untuk identitas operasional.',
+            'name.string' => 'Nama toko harus berupa karakter teks yang valid.',
+            'name.max' => 'Nama toko tidak boleh lebih dari 255 karakter.',
+            
+            'logo.required' => 'Logo toko wajib diunggah untuk kelengkapan identitas visual profil.',
+            'logo.image' => 'File logo harus berupa gambar (JPEG, PNG, JPG, atau WEBP).',
+            'logo.mimes' => 'Format file logo yang didukung hanya: jpeg, png, jpg, webp.',
+            'logo.max' => 'Ukuran file logo tidak boleh lebih dari 2MB agar loading halaman tetap cepat.',
+            
+            'address.required' => 'Alamat lengkap toko wajib diisi untuk keperluan pengiriman.',
+            'address.string' => 'Alamat lengkap harus berupa teks.',
+            
+            'province_id.required' => 'Provinsi asal toko wajib dipilih.',
+            'province_id.exists' => 'Provinsi yang dipilih tidak terdaftar dalam sistem.',
+            
+            'city_id.required' => 'Kota atau kabupaten asal toko wajib dipilih.',
+            'city_id.exists' => 'Kota atau kabupaten yang dipilih tidak terdaftar dalam sistem.',
+            
+            'phone.required' => 'Nomor telepon toko wajib diisi untuk koordinasi pengiriman.',
+            'phone.numeric' => 'Nomor telepon harus berupa angka (0-9).',
+            'phone.digits_between' => 'Nomor telepon harus berjumlah antara 10 sampai 15 digit.',
+            
+            'operational_hours.required' => 'Jam operasional toko wajib diisi sebagai informasi bagi pelanggan.',
+            'operational_hours.string' => 'Jam operasional harus berupa teks.',
+            'operational_hours.max' => 'Jam operasional tidak boleh lebih dari 255 karakter.',
+            
+            'description.required' => 'Deskripsi toko wajib diisi untuk memberikan informasi detail mengenai toko.',
             'description.string' => 'Deskripsi harus berupa teks.',
-            'description.max'    => 'Deskripsi terlalu panjang, maksimal 5000 karakter.',
-
-            // Is Active
-            'is_active.boolean'  => 'Status aktif harus berupa nilai benar atau salah.',
-
-            // Logo
-            'logo.required' => 'Logo toko wajib diunggah.',
-            'logo.image'    => 'File yang diunggah harus berupa gambar.',
-            'logo.mimes'    => 'Format logo yang diizinkan hanya: JPG, JPEG, PNG, dan Webp.',
-            'logo.max'      => 'Ukuran logo terlalu besar, maksimal adalah 2MB.',
+            
+            'is_active.accepted' => 'Status aktif toko wajib diaktifkan saat pendaftaran baru.',
+            'is_active.required' => 'Status aktif toko wajib diisi.',
+            'is_active.boolean' => 'Format status operasional tidak valid.',
         ];
     }
-
+    
     /**
      * Prepare the data for validation.
-     * Membersihkan status checkbox agar konsisten sebagai boolean.
      */
-    protected function prepareForValidation(): void
+    protected function prepareForValidation()
     {
         $this->merge([
-            'is_active' => $this->has('is_active') ? true : false,
+            'is_active' => $this->boolean('is_active'),
         ]);
     }
 }

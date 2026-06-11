@@ -22,7 +22,6 @@ class ProductCategoryController extends Controller
     {
         // 1. Base Query untuk Tabel
         $query = ProductCategory::with('store')
-            ->whereHas('store', fn($q) => $q->active())
             ->withCount('products');
 
         // ── Filter (Tetap gunakan logika asli Anda) ──
@@ -52,7 +51,7 @@ class ProductCategoryController extends Controller
         }
 
         // 3. Statistik (VERSI FIX: Sinkron dengan Filter Toko)
-        $statsQuery = ProductCategory::whereHas('store', fn($q) => $q->active());
+        $statsQuery = ProductCategory::query();
         if ($request->filled('store_id')) {
             $statsQuery->where('store_id', $request->store_id);
         }
@@ -62,7 +61,6 @@ class ProductCategoryController extends Controller
             'active' => (clone $statsQuery)->where('is_active', true)->count(),
             'inactive' => (clone $statsQuery)->where('is_active', false)->count(),
             'total_products' => \App\Models\Product::whereHas('category', function ($q) use ($request) {
-                $q->whereHas('store', fn($s) => $s->active());
                 // Tambahkan filter ini agar angka produk sinkron dengan toko yang dipilih
                 if ($request->filled('store_id')) {
                     $q->where('store_id', $request->store_id);
@@ -70,7 +68,7 @@ class ProductCategoryController extends Controller
             })->count(),
         ];
 
-        $stores = Store::active()->orderBy('name')->get();
+        $stores = Store::where('is_active', true)->orderBy('name')->get();
 
         return view('product-categories.index', compact('categories', 'stats', 'stores'));
     }
@@ -96,9 +94,6 @@ class ProductCategoryController extends Controller
             $data = $request->validated();
             $store = Store::findOrFail($data['store_id']); // Untuk ambil nama toko
 
-            $data['slug'] = $this->uniqueSlug((int) $data['store_id'], Str::slug($data['name']));
-            $data['is_active'] = $request->has('is_active');
-
             $category = ProductCategory::create($data);
 
             // ── MULTI NOTIFICATION (TOAST) — store ───────────────────────────
@@ -119,12 +114,9 @@ class ProductCategoryController extends Controller
         }
     }
 
-    /**
-     * Show the edit form for a category.
-     */
     public function edit(ProductCategory $productCategory): View
     {
-        $stores = Store::where('is_active', true)->orderBy('name')->get();
+        $stores = Store::orderBy('name')->get();
 
         return view('product-categories.edit', compact('productCategory', 'stores'));
     }
@@ -145,14 +137,10 @@ class ProductCategoryController extends Controller
             // Deteksi perubahan SEBELUM update() agar perbandingan akurat
             $nameChanged   = $oldName !== $data['name'];
             $storeChanged  = (int) $oldStoreId !== (int) $data['store_id'];
-            $statusChanged = (bool) $wasActive !== (bool) $request->has('is_active');
+            $statusChanged = (bool) $wasActive !== (bool) $data['is_active'];
 
-            // Logika Slug: Hanya re-generate jika nama atau toko berubah
-            if ($data['name'] !== $oldName || (int) $data['store_id'] !== $productCategory->store_id) {
-                $data['slug'] = $this->uniqueSlug((int) $data['store_id'], Str::slug($data['name']), $productCategory->id);
-            }
+            // Slug handling removed
 
-            $data['is_active'] = $request->has('is_active');
             $productCategory->update($data);
 
             // ── MULTI NOTIFICATION (TOAST) — update ──────────────────────────
@@ -164,12 +152,23 @@ class ProductCategoryController extends Controller
 
             if ($storeChanged) {
                 $newStore = Store::find($data['store_id']);
+                
+                // Pindahkan juga semua produk di kategori ini ke toko baru
+                $productCategory->products()->update(['store_id' => $data['store_id']]);
+                
                 $messages[] = "Toko kategori berhasil dipindahkan ke <strong>{$newStore->name}</strong>.";
+                $messages[] = "Semua produk di dalamnya otomatis dipindahkan ke toko baru.";
             }
 
             if ($statusChanged) {
                 $statusLabel = $data['is_active'] ? 'Aktif' : 'Nonaktif';
                 $messages[] = "Status kategori berhasil diubah menjadi <strong>{$statusLabel}</strong>.";
+                
+                if (!$data['is_active']) {
+                    $messages[] = "Semua produk dalam kategori ini akan tidak tersedia bagi pelanggan.";
+                } else {
+                    $messages[] = "Semua produk aktif dalam kategori ini kembali tersedia bagi pelanggan.";
+                }
             }
 
             // Fallback jika tidak ada perubahan terdeteksi
@@ -197,8 +196,8 @@ class ProductCategoryController extends Controller
      */
     public function destroy(ProductCategory $productCategory): RedirectResponse
     {
-        // Cek relasi produk
-        $productCount = $productCategory->products()->count();
+        // Cek relasi produk (termasuk yang ada di tong sampah / soft deleted)
+        $productCount = $productCategory->products()->withTrashed()->count();
 
         if ($productCount > 0) {
             return back()->with('error', "Kategori \"{$productCategory->name}\" masih memiliki {$productCount} produk. Hapus atau pindahkan produk tersebut sebelum menghapus kategori ini.");
@@ -224,35 +223,9 @@ class ProductCategoryController extends Controller
     public function byStore(Store $store): JsonResponse
     {
         $categories = $store->productCategories()
-            ->active()
             ->orderBy('name')
-            ->get(['id', 'name']);
+            ->get(['id', 'name', 'is_active']);
 
         return response()->json($categories);
-    }
-
-    // ─────────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────────
-
-    /**
-     * Generate a slug that is unique within the given store.
-     */
-    private function uniqueSlug(int $storeId, string $base, ?int $exceptId = null): string
-    {
-        $base = $base ?: 'category';
-        $slug = $base;
-        $count = 1;
-
-        while (
-            ProductCategory::where('store_id', $storeId)
-                ->where('slug', $slug)
-                ->when($exceptId, fn($q) => $q->where('id', '!=', $exceptId))
-                ->exists()
-        ) {
-            $slug = $base . '-' . $count++;
-        }
-
-        return $slug;
     }
 }

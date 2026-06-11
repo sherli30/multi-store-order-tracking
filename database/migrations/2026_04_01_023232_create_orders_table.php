@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('customer_phone')->nullable();
             
             // Order Details
-            $table->string('order_number')->unique();
+            $table->string('midtrans_order_id')->unique();
             $table->text('shipping_address');
             $table->enum('shipping_type', ['reguler', 'cargo'])->default('reguler');
             $table->enum('status', ['pending', 'processing', 'shipping', 'completed', 'cancelled'])->default('pending');

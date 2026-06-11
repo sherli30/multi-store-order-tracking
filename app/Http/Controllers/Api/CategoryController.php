@@ -14,7 +14,7 @@ class CategoryController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = ProductCategory::where('is_active', true);
+            $query = ProductCategory::available();
 
             // Filter by store if provided
             if ($request->has('store_id')) {
