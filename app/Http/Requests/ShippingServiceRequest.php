@@ -29,10 +29,25 @@ class ShippingServiceRequest extends FormRequest
                 'string',
                 'max:255'
             ],
+            'service_code' => [
+                'required',
+                'string',
+                'regex:/^[A-Z0-9\-]+$/',
+                $this->route('shipping_service') ? 'unique:shipping_services,service_code,' . $this->route('shipping_service')->id : 'unique:shipping_services,service_code'
+            ],
             'min_weight' => [
                 'required',
-                'integer',
+                'numeric',
                 'min:0'
+            ],
+            'description' => [
+                'nullable',
+                'string'
+            ],
+            'estimated_delivery' => [
+                'required',
+                'string',
+                'max:50'
             ],
         ];
 
@@ -57,14 +72,25 @@ class ShippingServiceRequest extends FormRequest
             'courier_id.exists' => 'Ekspedisi logistik yang Anda pilih tidak terdaftar di sistem kami.',
 
             // Nama Layanan (service_name)
-            'service_name.required' => 'Nama layanan wajib diisi. Silakan masukkan nama jenis pengiriman (contoh: Reguler, Cargo, OKE).',
-            'service_name.string' => 'Nama layanan harus berupa karakter teks biasa yang valid.',
-            'service_name.max' => 'Nama layanan terlalu panjang. Maksimal adalah 255 karakter.',
+            'service_name.required' => 'Nama layanan pengiriman wajib diisi. Silakan masukkan nama jenis pengiriman (contoh: Reguler, Cargo, OKE).',
+            'service_name.string' => 'Nama layanan pengiriman harus berupa karakter teks biasa yang valid.',
+            'service_name.max' => 'Nama layanan pengiriman maksimal 255 karakter.',
+
+            // Kode Layanan (service_code)
+            'service_code.required' => 'Kode layanan wajib diisi.',
+            'service_code.string' => 'Format kode layanan tidak valid.',
+            'service_code.regex' => 'Format kode layanan tidak valid. Hanya gunakan huruf kapital, angka, dan strip (contoh: REG, JTR-01).',
+            'service_code.unique' => 'Kode layanan sudah digunakan. Silakan gunakan kode lain yang unik.',
 
             // Minimal Berat (min_weight)
             'min_weight.required' => 'Batas minimal berat wajib diisi. Masukkan angka 0 jika tidak ada batas minimal.',
-            'min_weight.integer' => 'Batas minimal berat harus berupa bilangan bulat (angka).',
-            'min_weight.min' => 'Batas minimal berat tidak boleh bernilai negatif. Minimal adalah 0 gram.',
+            'min_weight.numeric' => 'Batas minimal berat harus berupa angka (mendukung desimal/koma).',
+            'min_weight.min' => 'Batas minimal berat tidak boleh bernilai negatif. Minimal adalah 0 kg.',
+
+            // Estimasi Pengiriman (estimated_delivery)
+            'estimated_delivery.required' => 'Estimasi pengiriman wajib diisi.',
+            'estimated_delivery.string' => 'Estimasi pengiriman tidak valid.',
+            'estimated_delivery.max' => 'Estimasi pengiriman maksimal 50 karakter.',
 
             // Status Aktif (is_active)
             'is_active.accepted' => 'Status aktif layanan pengiriman wajib diaktifkan saat penambahan baru.',

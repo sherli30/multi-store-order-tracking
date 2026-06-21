@@ -59,7 +59,7 @@
         @if($customer->is_active)
             <span class="badge badge-active">Aktif</span>
         @else
-            <span class="badge badge-inactive">Diblokir</span>
+            <span class="badge badge-inactive">Nonaktif</span>
         @endif
     </td>
 

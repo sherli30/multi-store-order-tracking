@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Profil Admin')
+@section('title', 'Profil Administrator')
 
 @section('styles')
     <style>
@@ -377,9 +377,15 @@
                             FOTO</span>
                     </label>
                 </div>
+                
+                @error('avatar')
+                    <div style="color: var(--red); font-size: 11px; font-weight: 700; text-align: center; margin-top: -10px; margin-bottom: 16px; padding: 0 16px; line-height: 1.4;">
+                        {{ $message }}
+                    </div>
+                @enderror
 
                 <div class="profile-name-text">{{ auth()->user()->name }}</div>
-                <div class="profile-role-badge">{{ ucfirst(auth()->user()->role) }}</div>
+                <div class="profile-role-badge">{{ auth()->user()->role === 'administrator' ? 'Administrator' : (auth()->user()->role === 'logistics' ? 'Tim Logistik' : ucfirst(auth()->user()->role)) }}</div>
 
                 <div class="profile-stats">
                     <div class="profile-stat">

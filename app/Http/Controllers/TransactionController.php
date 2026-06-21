@@ -33,7 +33,7 @@ class TransactionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Transaction::with(['order.store']);
+        $query = Transaction::with(['order.store', 'invoice.orders.store', 'invoice.user']);
 
         // 1. Filter by status tab
         $tab = $request->input('tab', 'all');
@@ -41,9 +41,12 @@ class TransactionController extends Controller
             $query->where('status', $tab);
         }
 
-        // 2. Filter by store (via the related order)
+        // 2. Filter by store (via the related order or invoice orders)
         if ($storeId = $request->input('store_id')) {
-            $query->whereHas('order', fn($q) => $q->where('store_id', $storeId));
+            $query->where(function ($q) use ($storeId) {
+                $q->whereHas('order', fn($q2) => $q2->where('store_id', $storeId))
+                  ->orWhereHas('invoice.orders', fn($q2) => $q2->where('store_id', $storeId));
+            });
         }
 
         // 3. Filter by specific date
@@ -71,7 +74,10 @@ class TransactionController extends Controller
         $baseCountQuery = Transaction::query();
 
         if ($storeId) {
-            $baseCountQuery->whereHas('order', fn($q) => $q->where('store_id', $storeId));
+            $baseCountQuery->where(function ($q) use ($storeId) {
+                $q->whereHas('order', fn($q2) => $q2->where('store_id', $storeId))
+                  ->orWhereHas('invoice.orders', fn($q2) => $q2->where('store_id', $storeId));
+            });
         }
         if ($date) {
             $baseCountQuery->whereDate('created_at', $date);
@@ -100,11 +106,18 @@ class TransactionController extends Controller
 
         $transactions = $query->get();
 
-        // Active stores that have at least one transaction, for the Store filter dropdown
+        // Active stores that have at least one transaction
         $stores = Store::where('is_active', true)
-            ->whereIn('id', Order::select('store_id')
-                ->whereIn('id', Transaction::select('order_id')->distinct())
-                ->distinct())
+            ->where(function ($q) {
+                $q->whereIn('id', Order::select('store_id')
+                        ->whereIn('id', Transaction::select('order_id')->whereNotNull('order_id')->distinct())
+                        ->distinct()
+                    )
+                  ->orWhereIn('id', Order::select('store_id')
+                        ->whereIn('invoice_id', Transaction::select('invoice_id')->whereNotNull('invoice_id')->distinct())
+                        ->distinct()
+                    );
+            })
             ->orderBy('name')
             ->get();
 
@@ -116,142 +129,9 @@ class TransactionController extends Controller
      */
     public function show(Transaction $transaction): View
     {
-        $transaction->load(['order.store', 'order.orderItems.product']);
+        $transaction->load(['order.store', 'order.orderItems.product', 'invoice.orders.store', 'invoice.orders.orderItems.product']);
 
         return view('transactions.show', compact('transaction'));
     }
 
-    /**
-     * Update the generic status of the transaction manually.
-     */
-    public function updateStatus(\App\Http\Requests\TransactionStatusRequest $request, Transaction $transaction): RedirectResponse
-    {
-        $result = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $transaction) {
-            $order = $transaction->order;
-
-            // Lock order if exists to prevent race with webhooks
-            if ($order) {
-                $order = Order::lockForUpdate()->find($order->id);
-            }
-
-            $updates = [
-                'status' => $request->status,
-                'notes'  => $request->notes,
-            ];
-
-            if ($request->status === 'paid') {
-                $updates['payment_date'] = now();
-            }
-
-            if (in_array($request->status, ['failed', 'refund'])) {
-                $updates['refunded_at'] = now();
-            }
-
-            $transaction->update($updates);
-
-            // Auto-sync: If paid, advance the associated Order status
-            if ($request->status === 'paid') {
-                if ($order && in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CANCELLED])) {
-                    $order->update([
-                        'status'         => Order::STATUS_PERLU_DIPROSES,
-                        'payment_status' => 'settlement',
-                    ]);
-
-                    $order->load('orderItems.product');
-                    if (! $order->is_stock_deducted) {
-                        try {
-                            $this->orderService->processOrderStock($order);
-                        } catch (InsufficientStockException $e) {
-                            $transaction->update(['status' => 'pending', 'payment_date' => null]);
-                            $order->update(['status' => Order::STATUS_PENDING, 'payment_status' => 'pending']);
-
-                            return back()->withErrors(['stock' => $e->getMessage()]);
-                        }
-                    }
-                } elseif ($order) {
-                    $order->update(['payment_status' => 'settlement']);
-                }
-
-                if ($order) {
-                    TrackingHistory::create([
-                        'order_id'       => $order->id,
-                        'admin_id'       => auth()->id(),
-                        'status'         => $order->fresh()->status,
-                        'notes'          => 'Status pembayaran diperbarui menjadi Lunas oleh Admin.',
-                        'payment_method' => $transaction->payment_method,
-                    ]);
-
-                    AuditService::logOrderRefund(
-                        auth()->id(),
-                        $order->id,
-                        'manual_payment_confirmation',
-                        $request->notes ?? 'Manual payment status update'
-                    );
-                }
-            }
-
-            if (in_array($request->status, ['failed', 'refund'])) {
-                if ($order && in_array($order->status, [
-                    Order::STATUS_PENDING,
-                    Order::STATUS_PERLU_DIPROSES,
-                    Order::STATUS_PROCESSING,
-                    Order::STATUS_SHIPPING,
-                ])) {
-                    $reason = $request->notes ?? "Pesanan dibatalkan karena pembayaran {$request->status}.";
-                    $order->update([
-                        'status'         => Order::STATUS_CANCELLED,
-                        'payment_status' => $request->status,
-                        'cancel_reason'  => $reason,
-                    ]);
-
-                    $order->load('orderItems.product');
-                    if ($order->is_stock_deducted) {
-                        $this->orderService->restoreOrderStock($order, $request->status);
-                    }
-
-                    TrackingHistory::create([
-                        'order_id'       => $order->id,
-                        'admin_id'       => auth()->id(),
-                        'status'         => Order::STATUS_CANCELLED,
-                        'notes'          => $reason,
-                        'refund_method'  => 'manual',
-                        'refund_reason'  => $request->notes,
-                        'payment_method' => $transaction->payment_method,
-                    ]);
-
-                    AuditService::logOrderRefund(
-                        auth()->id(),
-                        $order->id,
-                        'manual_refund',
-                        $request->notes ?? 'Manual refund trigger'
-                    );
-                }
-            }
-
-            $statusMsg = \App\Services\StatusService::getTransactionLabel($request->status);
-
-            if ($order) {
-                $admins = \App\Models\User::where('role', 'admin')->get();
-                \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\GeneralOrderNotification([
-                    'order_id' => $order->id,
-                    'title'    => 'Pembayaran ' . $statusMsg . ': ' . $order->midtrans_order_id,
-                    'message'  => "Status pembayaran untuk pesanan {$order->midtrans_order_id} telah diubah menjadi {$statusMsg}.",
-                    'type'     => in_array($request->status, ['failed', 'refund']) ? 'cancel' : 'payment',
-                ]));
-
-                if ($order->customer) {
-                    $order->customer->notify(new \App\Notifications\GeneralOrderNotification([
-                        'order_id' => $order->id,
-                        'title'    => 'Status Pembayaran: ' . $statusMsg,
-                        'message'  => "Status pembayaran untuk pesanan Anda ({$order->midtrans_order_id}) telah diperbarui menjadi {$statusMsg}.",
-                        'type'     => in_array($request->status, ['failed', 'refund']) ? 'cancel' : 'payment',
-                    ]));
-                }
-            }
-
-            return back()->with('success', "Data pembayaran berhasil diproses. Status transaksi {$transaction->transaction_id} telah diubah menjadi '{$statusMsg}'.");
-        });
-
-        return $result;
-    }
 }

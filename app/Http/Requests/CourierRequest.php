@@ -34,6 +34,28 @@ class CourierRequest extends FormRequest
                 'max:50',
                 $courierId ? 'unique:couriers,code,' . $courierId : 'unique:couriers,code'
             ],
+            'description' => [
+                'nullable',
+                'string'
+            ],
+            'contact_person' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+            'phone_number' => [
+                'required',
+                'string',
+                'regex:/^([0-9\s\-\+\(\)]*)$/',
+                'min:10',
+                'max:20'
+            ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                $courierId ? 'unique:couriers,email,' . $courierId : 'unique:couriers,email'
+            ],
         ];
 
         if ($this->isMethod('POST')) {
@@ -62,6 +84,24 @@ class CourierRequest extends FormRequest
             'code.string' => 'Kode kurir harus berupa teks biasa.',
             'code.max' => 'Kode kurir terlalu panjang. Maksimal adalah 50 karakter.',
             'code.unique' => 'Kode kurir sudah terdaftar di sistem. Silakan masukkan kode unik lain.',
+
+            // Kontak
+            'contact_person.required' => 'Nama kontak wajib diisi.',
+            'contact_person.string' => 'Nama kontak harus berupa teks.',
+            'contact_person.max' => 'Nama kontak maksimal 255 karakter.',
+
+            // Nomor Telepon
+            'phone_number.required' => 'Nomor telepon wajib diisi.',
+            'phone_number.string' => 'Nomor telepon harus berupa teks.',
+            'phone_number.regex' => 'Format nomor telepon tidak valid.',
+            'phone_number.min' => 'Nomor telepon minimal 10 digit.',
+            'phone_number.max' => 'Nomor telepon maksimal 20 digit.',
+
+            // Email
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.max' => 'Email maksimal 255 karakter.',
+            'email.unique' => 'Email sudah digunakan oleh kurir lain.',
 
             // Status Aktif (is_active)
             'is_active.accepted' => 'Status aktif kurir wajib diaktifkan saat penambahan baru.',

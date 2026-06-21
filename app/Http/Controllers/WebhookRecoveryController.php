@@ -148,7 +148,7 @@ class WebhookRecoveryController extends Controller
             } else {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Gagal membuat ulang token pembayaran, silakan periksa data alamat pelanggan',
+                    'message' => 'Gagal membuat ulang token pembayaran, silakan periksa data alamat customer',
                 ], 400);
             }
         } catch (\Exception $e) {

@@ -428,6 +428,9 @@
                                     </option>
                                 @endforeach
                             </select>
+                            @error('store_id')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         {{-- Nama Kategori --}}
@@ -436,6 +439,9 @@
                             <input type="text" id="name" name="name"
                                 class="field-input {{ $errors->has('name') ? 'is-invalid' : '' }}"
                                 placeholder="Contoh: Elektronik, Pakaian, Makanan..." value="{{ old('name') }}" required>
+                            @error('name')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         {{-- Deskripsi --}}
@@ -444,6 +450,9 @@
                             <textarea id="description" name="description"
                                 class="field-input field-textarea {{ $errors->has('description') ? 'is-invalid' : '' }}"
                                 placeholder="Jelaskan jenis produk yang masuk dalam kategori ini...">{{ old('description') }}</textarea>
+                            @error('description')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -471,6 +480,9 @@
                             </label>
                             <div class="toggle-label" id="categoryActiveLabel">{{ old('is_active', '1') == '1' ? 'Kategori Aktif' : 'Kategori Nonaktif' }}</div>
                         </div>
+                        @error('is_active')
+                            <div class="field-error">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 

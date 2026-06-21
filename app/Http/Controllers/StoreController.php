@@ -117,8 +117,24 @@ class StoreController extends Controller
                     'list' => $messages
                 ]);
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Terjadi kendala saat menyimpan data toko baru.');
+            return back()->withInput()->with('error', [
+                'title' => 'Gagal Menyimpan Toko',
+                'list' => [
+                    'Gagal menyimpan data toko baru.',
+                    'Pastikan koneksi stabil atau hubungi administrator jika masalah berlanjut.'
+                ]
+            ]);
         }
+    }
+
+    /**
+     * Display the specified store.
+     */
+    public function show(Store $store): View
+    {
+        $store->loadCount(['products', 'productCategories', 'orders']);
+        $store->load(['province', 'city']);
+        return view('stores.show', compact('store'));
     }
 
     /**
@@ -127,7 +143,8 @@ class StoreController extends Controller
     public function edit(Store $store): View
     {
         $provinces = \App\Models\Province::orderBy('name')->get();
-        return view('stores.edit', compact('store', 'provinces'));
+        $cities = \App\Models\City::where('province_id', $store->province_id)->orderBy('name')->get();
+        return view('stores.edit', compact('store', 'provinces', 'cities'));
     }
 
     /**
@@ -142,8 +159,7 @@ class StoreController extends Controller
             $nameChanged   = $store->name !== $data['name'];
             $statusChanged = (bool) $store->is_active !== (bool) $data['is_active'];
             $logoChanged   = $request->hasFile('logo');
-            $addressChanged = $store->address !== $data['address'];
-            $locationChanged = $store->city_id != $data['city_id'] || $store->province_id != $data['province_id'];
+            $locationChanged = $store->province_id != $data['province_id'] || $store->city_id != $data['city_id'] || $store->address !== $data['address'];
             $phoneChanged = $store->phone !== $data['phone'];
             $hoursChanged = $store->operational_hours !== $data['operational_hours'];
             $descChanged = $store->description !== $data['description'];
@@ -168,13 +184,12 @@ class StoreController extends Controller
                 $messages[] = "Nama toko berhasil diubah menjadi <strong>{$data['name']}</strong>.";
             }
 
-            if ($addressChanged) {
-                $messages[] = "Detail alamat jalan telah diperbarui.";
-            }
+
 
             if ($locationChanged) {
                 $store->load(['city', 'province']);
                 $messages[] = "Lokasi operasional toko telah dipindahkan ke <strong>{$store->city->name}, {$store->province->name}</strong>.";
+                $messages[] = "Ongkos kirim (Reguler & Cargo) untuk pesanan baru akan dihitung otomatis dari lokasi baru ini.";
             }
 
             if ($phoneChanged) {
@@ -198,9 +213,9 @@ class StoreController extends Controller
                 $messages[] = "Status operasional toko berhasil diubah menjadi <strong>{$statusLabel}</strong>.";
                 
                 if (!$data['is_active']) {
-                    $messages[] = "Semua kategori dan produk di toko ini akan tidak tersedia bagi pelanggan.";
+                    $messages[] = "Semua kategori dan produk di toko ini akan tidak tersedia bagi customer.";
                 } else {
-                    $messages[] = "Semua kategori dan produk aktif di toko ini kembali tersedia bagi pelanggan.";
+                    $messages[] = "Semua kategori dan produk aktif di toko ini kembali tersedia bagi customer.";
                 }
             }
 
@@ -208,7 +223,12 @@ class StoreController extends Controller
             if (empty($messages)) {
                 return redirect()
                     ->route('stores.index')
-                    ->with('info', 'Data toko sudah sesuai. Tidak ada perubahan yang dilakukan.');
+                    ->with('info', [
+                        'title' => 'Data Sudah Sesuai',
+                        'list' => [
+                            'Data toko sudah sesuai. Tidak ada perubahan yang dilakukan.'
+                        ]
+                    ]);
             }
 
             return redirect()
@@ -218,33 +238,22 @@ class StoreController extends Controller
                     'list' => $messages
                 ]);
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Terjadi kendala saat menyimpan perubahan data toko.');
+            return back()->withInput()->with('error', [
+                'title' => 'Gagal Menyimpan Perubahan',
+                'list' => [
+                    'Gagal menyimpan perubahan data toko.',
+                    'Muat ulang halaman dan coba kembali, atau hubungi administrator jika masalah berlanjut.'
+                ]
+            ]);
         }
     }
 
     /**
      * Remove the specified store from storage.
      */
-    public function destroy(Store $store): RedirectResponse
+    public function destroy(\App\Http\Requests\StoreDeleteRequest $request, Store $store): RedirectResponse
     {
         $name = $store->name;
-
-        // Cek keterhubungan data sebelum hapus (Proteksi Data)
-        $categoryCount = $store->productCategories()->count();
-        if ($categoryCount > 0) {
-            return back()->with('error', "Toko {$name} masih memiliki {$categoryCount} kategori produk. Hapus kategori tersebut terlebih dahulu.");
-        }
-
-        $productCount = $store->products()->withTrashed()->count();
-
-        if ($productCount > 0) {
-            return back()->with('error', "Toko {$name} masih memiliki {$productCount} produk. Kosongkan atau pindahkan produk terlebih dahulu.");
-        }
-
-        $orderCount = $store->orders()->count();
-        if ($orderCount > 0) {
-            return back()->with('error', "Toko {$name} tidak dapat dihapus karena memiliki {$orderCount} riwayat pesanan.");
-        }
 
         if ($store->logo && Storage::disk('public')->exists($store->logo)) {
             Storage::disk('public')->delete($store->logo);
@@ -255,9 +264,20 @@ class StoreController extends Controller
 
             return redirect()
                 ->route('stores.index')
-                ->with('success', "Toko {$name} telah dihapus secara permanen dari sistem.");
+                ->with('success', [
+                    'title' => 'Toko Dihapus',
+                    'list' => [
+                        "Toko <strong>{$name}</strong> beserta seluruh profilnya telah dihapus secara permanen dari sistem."
+                    ]
+                ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Sistem gagal menghapus toko karena ada kendala pada database.');
+            return back()->with('error', [
+                'title' => 'Toko Gagal Dihapus',
+                'list' => [
+                    'Gagal menghapus toko karena data sedang digunakan oleh sistem lain.',
+                    'Muat ulang halaman dan coba kembali.'
+                ]
+            ]);
         }
     }
 
@@ -269,8 +289,44 @@ class StoreController extends Controller
         if ($store->logo && Storage::disk('public')->exists($store->logo)) {
             Storage::disk('public')->delete($store->logo);
             $store->update(['logo' => null]);
-            return back()->with('success', 'Logo toko berhasil dihapus.');
+            return back()->with('success', [
+                'title' => 'Logo Toko Dihapus',
+                'list' => [
+                    'File logo lama berhasil dihapus dari penyimpanan.'
+                ]
+            ]);
         }
-        return back()->with('error', 'Logo tidak ditemukan atau sudah dihapus.');
+        return back()->with('error', [
+            'title' => 'Logo Gagal Dihapus',
+            'list' => [
+                'Logo tidak ditemukan atau sistem telah menghapusnya sebelumnya.'
+            ]
+        ]);
+    }
+
+    /**
+     * Update the store's active status.
+     */
+    public function updateStatus(\App\Http\Requests\StoreStatusRequest $request, Store $store): RedirectResponse
+    {
+        try {
+            $store->update(['is_active' => $request->is_active]);
+
+            $message = $request->is_active ? 'Toko berhasil diaktifkan.' : 'Toko berhasil dinonaktifkan.';
+
+            return back()->with('success', [
+                'title' => 'Status Berhasil Diubah',
+                'list' => [
+                    $message
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('error', [
+                'title' => 'Gagal mengubah status toko',
+                'list' => [
+                    'Terjadi kesalahan saat memperbarui status toko.'
+                ]
+            ]);
+        }
     }
 }

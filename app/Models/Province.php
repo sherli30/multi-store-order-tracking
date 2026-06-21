@@ -9,7 +9,11 @@ class Province extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['id', 'name'];
+    protected $fillable = ['id', 'name', 'code', 'is_active'];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
     public function cities()
     {

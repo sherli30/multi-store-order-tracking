@@ -34,10 +34,10 @@ class StoreRequest extends FormRequest
             'description'       => ['required', 'string'],
             'phone'             => ['required', 'numeric', 'digits_between:10,15'],
             'operational_hours' => ['required', 'string', 'max:255'],
+            'logo'              => [$logoRequired ? 'required' : 'nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+            'address'           => ['required', 'string'],
             'province_id'       => ['required', 'exists:provinces,id'],
             'city_id'           => ['required', 'exists:cities,id'],
-            'address'           => ['required', 'string'],
-            'logo'              => [$logoRequired ? 'required' : 'nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ];
 
         if ($isCreate) {
@@ -59,10 +59,10 @@ class StoreRequest extends FormRequest
             'name.string' => 'Nama toko harus berupa karakter teks yang valid.',
             'name.max' => 'Nama toko tidak boleh lebih dari 255 karakter.',
             
-            'logo.required' => 'Logo toko wajib diunggah untuk kelengkapan identitas visual profil.',
-            'logo.image' => 'File logo harus berupa gambar (JPEG, PNG, JPG, atau WEBP).',
-            'logo.mimes' => 'Format file logo yang didukung hanya: jpeg, png, jpg, webp.',
-            'logo.max' => 'Ukuran file logo tidak boleh lebih dari 2MB agar loading halaman tetap cepat.',
+            'logo.required' => 'File logo wajib dipilih.',
+            'logo.image' => 'Format file harus JPG, JPEG, PNG atau WEBP.',
+            'logo.mimes' => 'Format file harus JPG, JPEG, PNG atau WEBP.',
+            'logo.max' => 'Ukuran file maksimal 2 MB.',
             
             'address.required' => 'Alamat lengkap toko wajib diisi untuk keperluan pengiriman.',
             'address.string' => 'Alamat lengkap harus berupa teks.',
@@ -77,7 +77,7 @@ class StoreRequest extends FormRequest
             'phone.numeric' => 'Nomor telepon harus berupa angka (0-9).',
             'phone.digits_between' => 'Nomor telepon harus berjumlah antara 10 sampai 15 digit.',
             
-            'operational_hours.required' => 'Jam operasional toko wajib diisi sebagai informasi bagi pelanggan.',
+            'operational_hours.required' => 'Jam operasional toko wajib diisi sebagai informasi bagi customer.',
             'operational_hours.string' => 'Jam operasional harus berupa teks.',
             'operational_hours.max' => 'Jam operasional tidak boleh lebih dari 255 karakter.',
             

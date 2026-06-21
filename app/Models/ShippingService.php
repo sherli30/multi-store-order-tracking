@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class ShippingService extends Model
 {
-    protected $fillable = ['courier_id', 'service_name', 'min_weight', 'description', 'is_active'];
+    protected $fillable = ['courier_id', 'service_name', 'service_code', 'min_weight', 'description', 'estimated_delivery', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'min_weight' => 'decimal:2',
     ];
 
     public function courier()

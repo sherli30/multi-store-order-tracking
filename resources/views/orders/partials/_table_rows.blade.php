@@ -29,7 +29,7 @@
         </div>
     </td>
 
-    {{-- Pelanggan --}}
+    {{-- Customer --}}
     <td>
         <div class="product-name">{{ $order->customer_name }}</div>
         <div class="product-slug" style="font-family: inherit;">{{ $order->customer_phone }}</div>
@@ -64,10 +64,10 @@
     <td>
         <div class="actions-cell" style="justify-content: flex-end; gap: 8px;">
             {{-- 1. Tombol Aksi Cepat (Langsung Modal) --}}
-            @if($order->status === \App\Models\Order::STATUS_PENDING)
-                <button type="button" class="btn-action-primary amber"
-                        onclick="openConfirmModal('{{ $order->id }}', '{{ $order->order_number }}', 'perlu_diproses', 'Konfirmasi Pembayaran', 'Apakah Anda yakin pembayaran untuk pesanan ini sudah valid?')">
-                    Verifikasi
+            @if($order->status === 'menunggu_konfirmasi_admin')
+                <button type="button" class="btn-action-primary green"
+                        onclick="openConfirmModal('{{ $order->id }}', '{{ $order->order_number }}', 'perlu_diproses', 'Konfirmasi Pesanan', 'Terima pesanan dan teruskan ke toko untuk diproses?')">
+                    Konfirmasi
                 </button>
             @elseif($order->status === \App\Models\Order::STATUS_PERLU_DIPROSES)
                 <button type="button" class="btn-action-primary blue"
@@ -81,8 +81,13 @@
                 </button>
             @elseif($order->status === \App\Models\Order::STATUS_SHIPPING)
                 <button type="button" class="btn-action-primary green"
-                        onclick="openConfirmModal('{{ $order->id }}', '{{ $order->order_number }}', 'completed', 'Selesaikan Pesanan', 'Pastikan barang sudah sampai ke tangan pelanggan?')">
+                        onclick="openConfirmModal('{{ $order->id }}', '{{ $order->order_number }}', 'completed', 'Selesaikan Pesanan', 'Pastikan barang sudah sampai ke tangan customer?')">
                     Selesai
+                </button>
+            @elseif($order->status === \App\Models\Order::STATUS_COMPLETED && $order->return_status === 'requested')
+                <button type="button" class="btn-action-primary amber"
+                        onclick="openReturnModal('{{ $order->id }}', '{{ $order->order_number }}', '{{ addslashes($order->return_reason) }}')">
+                    Tinjau Retur
                 </button>
             @endif
 

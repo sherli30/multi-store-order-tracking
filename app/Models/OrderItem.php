@@ -15,7 +15,6 @@ class OrderItem extends Model
         'product_id',
         'quantity',
         'price',
-        'packing',
     ];
 
     /**
@@ -27,7 +26,6 @@ class OrderItem extends Model
     {
         return [
             'price' => 'decimal:2',
-            'packing_cost' => 'decimal:2',
         ];
     }
 

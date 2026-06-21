@@ -44,7 +44,7 @@ class LoginRequest extends FormRequest
     {
         return [
             // Email
-            'email.required' => 'Email tidak boleh kosong. Silakan ketik alamat email Admin Anda.',
+            'email.required' => 'Email tidak boleh kosong. Silakan ketik alamat email Administrator Anda.',
             'email.email'    => 'Format email salah. Pastikan menggunakan tanda "@" (contoh: admin@gmail.com).',
 
             // Password
@@ -73,7 +73,7 @@ class LoginRequest extends FormRequest
 
             if (!$userExists) {
                 throw ValidationException::withMessages([
-                    'email' => 'Email tidak terdaftar. Periksa kembali ejaan email atau gunakan akun Admin yang benar.',
+                    'email' => 'Email tidak terdaftar. Periksa kembali ejaan email atau gunakan akun Administrator yang benar.',
                 ]);
             }
 
@@ -95,12 +95,14 @@ class LoginRequest extends FormRequest
             ]);
         }
         
-        if ($user->role !== 'admin') {
+        $userRole = trim(strtolower($user->role ?? ''));
+
+        if (!in_array($userRole, ['administrator', 'logistics'])) {
             Auth::logout();
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => 'Akses Ditolak! Portal ini khusus untuk Admin. Akun Anda (' . ($user->role ?? 'User') . ') tidak memiliki izin masuk.',
+                'email' => 'Akses Ditolak! Portal ini khusus untuk Administrator & Tim Logistik. Akun Anda (' . ($user->role ?? 'User') . ') tidak memiliki izin masuk.',
             ]);
         }
 
@@ -145,10 +147,10 @@ class LoginRequest extends FormRequest
             });
 
             if (!preg_match('/[0-9]/', $raw)) {
-                $filteredErrors[] = 'Password harus mengandung minimal 1 angka (contoh: Admin123).';
+                $filteredErrors[] = 'Password harus mengandung minimal 1 angka (contoh: Toko1234).';
             }
             if (!preg_match('/[A-Za-z]/', $raw)) {
-                $filteredErrors[] = 'Password harus mengandung minimal 1 huruf (contoh: Admin123).';
+                $filteredErrors[] = 'Password harus mengandung minimal 1 huruf (contoh: Toko1234).';
             }
 
             $errors->forget('password');

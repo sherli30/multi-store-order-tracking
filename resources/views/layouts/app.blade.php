@@ -429,7 +429,8 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            padding: 5px 10px 5px 5px;
+            padding: 6px 12px 6px 6px;
+            min-height: 52px;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 10px;
@@ -443,18 +444,48 @@
             box-shadow: var(--shadow-sm);
         }
 
-        .profile-avatar {
-            width: 28px;
-            height: 28px;
-            background: linear-gradient(135deg, var(--accent), var(--blue));
-            border-radius: 7px;
+        /*
+         * Avatar Header — disamakan dengan avatar Edit Profil
+         * (.profile-avatar-wrap + .profile-avatar-img di profile/index.blade.php):
+         * - Bentuk bundar penuh (border-radius: 50%), bukan rounded-square.
+         * - Ukuran diperbesar dari 40px → 40px tetap pas di tinggi topbar (52px),
+         *   tapi shape bundar membuat foto wajah tidak lagi terlihat gepeng.
+         * - object-fit: cover + object-position: center memastikan foto selalu
+         *   terpotong proporsional dari tengah, tidak ter-stretch.
+         * - overflow: hidden pada wrapper memastikan tepi gambar terpotong rapi
+         *   mengikuti lingkaran, sama seperti di Edit Profil.
+         */
+        .profile-avatar-wrap-sm {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+        }
+
+        .profile-avatar-img-sm {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+        }
+
+        .profile-avatar-placeholder-sm {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
             font-weight: 700;
             color: #fff;
-            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--accent), var(--blue));
         }
 
         .profile-name {
@@ -1386,7 +1417,7 @@
                 transform: translateX(0);
                 width: 248px !important;
             }
-            
+
             .main-wrap {
                 margin-left: 0 !important;
                 width: 100% !important;
@@ -1579,7 +1610,7 @@
         });
 
         // ── Toast Notification (Versi Lengkap & Anti [object Object]) ──────────
-        function showToast(message, type = 'success') {
+        function showToast(message, type = 'success', url = null) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
 
@@ -1601,12 +1632,23 @@
                 }
 
                 if (message.type) type = message.type;
+                if (message.url) url = message.url;
             } else {
                 finalMessage = `<div style="color: var(--text-2); font-size: 13.5px;">${message}</div>`;
             }
 
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
+            if (url) {
+                toast.style.cursor = 'pointer';
+                toast.onclick = function(e) {
+                    if (!e.target.closest('.toast-close')) {
+                        window.location.href = url;
+                    }
+                };
+                toast.onmouseover = function() { this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)'; };
+                toast.onmouseout = function() { this.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'; };
+            }
 
             const icons = {
                 success: '<svg width="22" height="22" fill="#22c55e" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>',
@@ -1618,7 +1660,7 @@
             const icon = icons[type] || icons.info;
 
             toast.innerHTML = `
-        <div class="toast-content" style="align-items: flex-start; gap: 12px;">
+        <div class="toast-content" style="align-items: flex-start; gap: 12px; flex: 1;">
             <div style="margin-top: 2px;">${icon}</div>
             <div style="flex: 1;">
                 ${titleHtml}
@@ -1711,7 +1753,7 @@
                 const modal = document.getElementById(modalId);
                 if (modal) {
                     modal.classList.add('open');
-                    
+
                     // Khusus untuk modal stok yang memiliki action dinamis (add/deduct)
                     if (modalId === 'stockModal' && typeof window.openStockModal === 'function') {
                         const action = '{{ old("stock_action", "add") }}';
@@ -1726,12 +1768,62 @@
     <script>
         document.querySelectorAll('form').forEach(form => {
             form.addEventListener('submit', function() {
+                // Jangan disable button di filter GET request
+                if(this.method && this.method.toUpperCase() === 'GET') return;
+
                 const btn = this.querySelector('button[type="submit"]');
                 if (btn) {
-                    btn.innerHTML = 'Menyimpan...';
-                    btn.disabled = true;
+                    btn.innerHTML = 'Memproses...';
+                    btn.style.pointerEvents = 'none';
+                    btn.style.opacity = '0.7';
                 }
             });
+        });
+    </script>
+
+    <!-- 🔔 REALTIME NOTIFICATIONS (SSE) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof EventSource !== "undefined") {
+                const source = new EventSource("{{ route('notifications.stream') }}");
+
+                source.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+
+                    if(data.notifications && data.notifications.length > 0) {
+                        const notifBadge = document.querySelector('.notif-dot');
+                        if(!notifBadge) {
+                            const btn = document.querySelector('.topbar-btn[title="Notifikasi"]');
+                            if(btn) {
+                                btn.innerHTML += '<span class="notif-dot"></span>';
+                            }
+                        }
+
+                        data.notifications.forEach(notif => {
+                            // Tampilkan Toast Realtime
+                            showToast({
+                                title: notif.data.title || 'Notifikasi Baru',
+                                list: [notif.data.message || 'Ada pembaruan sistem.'],
+                                url: '/notifications/' + notif.id + '/redirect'
+                            }, 'info');
+
+                            // Jika berada di dashboard, update counter
+                            const ordersVal = document.getElementById('dash-orders-val');
+                            if(ordersVal && (notif.data.type === 'new_order' || notif.data.type === 'payment')) {
+                                let val = parseInt(ordersVal.innerText) || 0;
+                                ordersVal.innerText = val + 1;
+                            }
+
+                            // Trigger event global untuk halaman yang sedang aktif agar bisa reload (Orders/Tracking/Dashboard dll)
+                            document.dispatchEvent(new CustomEvent('realtime-notification', { detail: notif }));
+                        });
+                    }
+                };
+
+                source.onerror = function(error) {
+                    console.log("SSE Connection closed or error, will automatically retry.");
+                };
+            }
         });
     </script>
 </body>

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Courier;
 use App\Models\ShippingService;
 use App\Http\Requests\ShippingServiceRequest;
+use App\Http\Requests\ShippingServiceDeleteRequest;
+use App\Http\Requests\ShippingServiceStatusRequest;
 use Illuminate\Http\Request;
 
 class ShippingServiceController extends Controller
@@ -16,8 +18,8 @@ class ShippingServiceController extends Controller
         $query->when($request->filled('courier_id'), fn($q) => $q->where('courier_id', $request->courier_id));
         $query->when($request->filled('status'), fn($q) => $q->where('is_active', $request->status === 'active'));
         $query->when($request->filled('type'), function($q) use ($request) {
-            if ($request->type === 'cargo') $q->where('min_weight', '>=', 10000);
-            elseif ($request->type === 'reguler') $q->where('min_weight', '<', 10000);
+            if ($request->type === 'cargo') $q->where('min_weight', '>=', 10);
+            elseif ($request->type === 'reguler') $q->where('min_weight', '<', 10);
         });
 
         $services = $query->orderBy('courier_id')->get();
@@ -37,7 +39,20 @@ class ShippingServiceController extends Controller
         $service = ShippingService::create($request->validated());
         $service->load('courier');
 
-        return redirect()->route('shipping-services.index')->with('success', 'Layanan "' . $service->service_name . '" untuk kurir "' . $service->courier->name . '" berhasil ditambahkan.');
+        return redirect()->route('shipping-services.index')->with('success', [
+            'title' => 'Layanan Berhasil Ditambahkan',
+            'list' => [
+                'Layanan "<strong>' . $service->service_name . '</strong>" untuk kurir "<strong>' . $service->courier->name . '</strong>" berhasil ditambahkan.'
+            ]
+        ]);
+    }
+
+    public function show(ShippingService $shippingService)
+    {
+        $shippingService->load('courier');
+        $shippingService->loadCount('rates');
+        
+        return view('shipping-services.show', compact('shippingService'));
     }
 
     public function update(ShippingServiceRequest $request, ShippingService $shippingService)
@@ -76,26 +91,64 @@ class ShippingServiceController extends Controller
             $msg = 'Informasi layanan "' . $shippingService->service_name . '" untuk kurir "' . $shippingService->courier->name . '" berhasil diperbarui tanpa perubahan.';
         }
 
-        return redirect()->route('shipping-services.index')->with('success', $msg);
+        return redirect()->route('shipping-services.index')->with('success', [
+            'title' => 'Layanan Berhasil Diperbarui',
+            'list' => [
+                $msg
+            ]
+        ]);
     }
 
-    public function destroy(ShippingService $shippingService)
+    public function updateStatus(ShippingServiceStatusRequest $request, ShippingService $shippingService)
+    {
+        $statusLabel = $request->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        try {
+            $shippingService->update([
+                'is_active' => $request->is_active
+            ]);
+
+            return redirect()->back()->with('success', [
+                'title' => 'Status Diperbarui',
+                'list' => [
+                    "Layanan pengiriman \"<strong>{$shippingService->service_name}</strong>\" berhasil {$statusLabel}."
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', [
+                'title' => 'Gagal Memperbarui Status',
+                'list' => [
+                    "Gagal mengubah status layanan pengiriman \"<strong>{$shippingService->service_name}</strong>\".",
+                    "Terjadi kesalahan saat memperbarui status layanan."
+                ]
+            ]);
+        }
+    }
+
+    public function destroy(ShippingServiceDeleteRequest $request, ShippingService $shippingService)
     {
         $serviceName = $shippingService->service_name;
         $courierName = $shippingService->courier ? $shippingService->courier->name : 'N/A';
 
         try {
-            if ($shippingService->rates()->count() > 0) {
-                return back()->with('error', 'Gagal menghapus! Layanan "' . $serviceName . '" untuk kurir "' . $courierName . '" masih memiliki data tarif ongkir terkait di sistem.');
-            }
-
             $shippingService->delete();
 
             return redirect()
                 ->route('shipping-services.index')
-                ->with('success', 'Layanan "' . $serviceName . '" untuk kurir "' . $courierName . '" telah berhasil dihapus secara permanen dari database sistem.');
+                ->with('success', [
+                    'title' => 'Layanan Dihapus',
+                    'list' => [
+                        'Layanan pengiriman "<strong>' . $serviceName . '</strong>" untuk kurir "<strong>' . $courierName . '</strong>" telah berhasil dihapus secara permanen.'
+                    ]
+                ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus layanan "' . $serviceName . '" untuk kurir "' . $courierName . '". Terjadi kesalahan pada sistem, silakan coba lagi.');
+            return back()->with('error', [
+                'title' => 'Gagal Menghapus Layanan',
+                'list' => [
+                    "Gagal menghapus layanan pengiriman <strong>{$serviceName}</strong> untuk kurir <strong>{$courierName}</strong>.",
+                    'Data sedang digunakan oleh transaksi atau pengiriman aktif.'
+                ]
+            ]);
         }
     }
 }

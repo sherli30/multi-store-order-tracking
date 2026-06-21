@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\City;
+use App\Models\Province;
 use App\Models\ShippingRate;
 use App\Models\ShippingService;
 use App\Http\Requests\ShippingRateRequest;
+use App\Http\Requests\ShippingRateStatusRequest;
+use App\Http\Requests\ShippingRateDeleteRequest;
 use Illuminate\Http\Request;
 
 class ShippingRateController extends Controller
@@ -32,8 +35,15 @@ class ShippingRateController extends Controller
             ->get();
 
         $cities = City::orderBy('name')->get();
+        $provinces = Province::orderBy('name')->get();
 
-        return view('shipping-rates.index', compact('rates', 'services', 'cities'));
+        return view('shipping-rates.index', compact('rates', 'services', 'cities', 'provinces'));
+    }
+
+    public function show(ShippingRate $shippingRate)
+    {
+        $shippingRate->load(['service.courier', 'originProvince', 'originCity', 'destinationProvince', 'destinationCity']);
+        return view('shipping-rates.show', compact('shippingRate'));
     }
 
     public function store(ShippingRateRequest $request)
@@ -48,11 +58,22 @@ class ShippingRateController extends Controller
         try {
             ShippingRate::create($request->all());
 
-            return redirect()
-                ->route('shipping-rates.index')
-                ->with('success', 'Tarif ongkos kirim baru untuk layanan "' . $serviceName . '" rute "' . $routeName . '" sebesar Rp ' . number_format($request->cost_per_kg, 0, ',', '.') . '/kg berhasil ditambahkan ke database.');
+            return redirect()->route('shipping-rates.index')
+                ->with('success', [
+                    'title' => 'Tarif Berhasil Ditambahkan',
+                    'list' => [
+                        'Tarif ongkos kirim baru untuk layanan "<strong>' . $serviceName . '</strong>" rute "<strong>' . $routeName . '</strong>" sebesar Rp ' . number_format($request->cost_per_kg, 0, ',', '.') . '/kg berhasil ditambahkan.'
+                    ]
+                ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menambahkan tarif ongkir rute "' . $routeName . '". Terjadi kesalahan sistem: ' . $e->getMessage());
+            \Log::error('Gagal menambahkan tarif ongkir: ' . $e->getMessage());
+            return back()->with('error', [
+                'title' => 'Kesalahan Sistem',
+                'list' => [
+                    "Gagal menambahkan tarif ongkir rute <strong>{$routeName}</strong>.",
+                    'Silakan coba lagi atau hubungi administrator jika masalah berlanjut.'
+                ]
+            ]);
         }
     }
 
@@ -73,9 +94,7 @@ class ShippingRateController extends Controller
             if (isset($dirty['shipping_service_id'])) {
                 $changes[] = 'layanan kurir';
             }
-            if (isset($dirty['origin_city_id'])) {
-                $changes[] = 'kota asal pengiriman';
-            }
+
             if (isset($dirty['destination_city_id'])) {
                 $changes[] = 'kota tujuan pengiriman';
             }
@@ -102,13 +121,51 @@ class ShippingRateController extends Controller
                 $msg = 'Data tarif rute "' . $routeName . '" (' . $serviceName . ') diperbarui tanpa ada perubahan data.';
             }
 
-            return redirect()->route('shipping-rates.index')->with('success', $msg);
+            return redirect()->route('shipping-rates.index')->with('success', [
+                'title' => 'Tarif Berhasil Diperbarui',
+                'list' => [
+                    $msg
+                ]
+            ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal memperbarui data tarif rute "' . $routeName . '". Terjadi kesalahan sistem: ' . $e->getMessage());
+            \Log::error('Gagal memperbarui tarif ongkir: ' . $e->getMessage());
+            return back()->with('error', [
+                'title' => 'Kesalahan Sistem',
+                'list' => [
+                    "Gagal memperbarui data tarif rute <strong>{$routeName}</strong>.",
+                    'Silakan coba lagi atau hubungi administrator jika masalah berlanjut.'
+                ]
+            ]);
         }
     }
 
-    public function destroy(ShippingRate $shippingRate)
+    public function updateStatus(ShippingRateStatusRequest $request, ShippingRate $shippingRate)
+    {
+        try {
+            $shippingRate->update([
+                'is_active' => $request->is_active
+            ]);
+
+            $statusText = $request->is_active ? 'diaktifkan' : 'dinonaktifkan';
+            
+            return redirect()->route('shipping-rates.index')->with('success', [
+                'title' => 'Status Diperbarui',
+                'list' => [
+                    "Status tarif pengiriman berhasil {$statusText}."
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Gagal memperbarui status tarif ongkir: ' . $e->getMessage());
+            return back()->with('error', [
+                'title' => 'Gagal Memperbarui Status',
+                'list' => [
+                    'Terjadi kesalahan saat memperbarui status tarif pengiriman.'
+                ]
+            ]);
+        }
+    }
+
+    public function destroy(ShippingRateDeleteRequest $request, ShippingRate $shippingRate)
     {
         $serviceName = $shippingRate->service ? ($shippingRate->service->courier->name . ' (' . $shippingRate->service->service_name . ')') : 'N/A';
         $routeName = ($shippingRate->originCity && $shippingRate->destinationCity) ? ($shippingRate->originCity->name . ' → ' . $shippingRate->destinationCity->name) : 'N/A';
@@ -116,11 +173,20 @@ class ShippingRateController extends Controller
         try {
             $shippingRate->delete();
 
-            return redirect()
-                ->route('shipping-rates.index')
-                ->with('success', 'Tarif pengiriman untuk layanan "' . $serviceName . '" rute "' . $routeName . '" telah berhasil dihapus secara permanen dari sistem.');
+            return redirect()->route('shipping-rates.index')
+                ->with('success', [
+                    'title' => 'Tarif Dihapus',
+                    'list' => [
+                        'Tarif pengiriman berhasil dihapus.'
+                    ]
+                ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus data tarif layanan "' . $serviceName . '" rute "' . $routeName . '". Terjadi kesalahan pada database, silakan coba lagi.');
+            return back()->with('error', [
+                'title' => 'Gagal Menghapus Tarif',
+                'list' => [
+                    "Tarif pengiriman tidak dapat dihapus karena masih digunakan."
+                ]
+            ]);
         }
     }
 }

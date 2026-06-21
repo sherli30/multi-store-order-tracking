@@ -14,8 +14,12 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Product::with(['store', 'category', 'images', 'descriptions', 'specifications'])
-                ->withSum('orderItems', 'quantity')
+            $query = Product::with(['store.city', 'store.province', 'category', 'images', 'descriptions', 'specifications'])
+                ->withSum(['orderItems' => function ($q) {
+                    $q->whereHas('order', function ($oq) {
+                        $oq->whereIn('payment_status', ['settlement', 'capture', 'paid']);
+                    });
+                }], 'quantity')
                 ->available();
 
             // Filter by store
@@ -34,6 +38,9 @@ class ProductController extends Controller
             }
 
             $products = $query->get()->map(function ($product) {
+                // Map the dynamically calculated sum to sold_count property
+                $product->sold_count = (int) ($product->order_items_sum_quantity ?? 0);
+
                 // Append full image URL so Flutter can load it easily
                 $product->images->transform(function ($image) {
                     $image->image_url = url('storage/' . $image->image_path);

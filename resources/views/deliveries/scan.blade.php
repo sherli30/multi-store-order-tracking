@@ -238,27 +238,7 @@ white-space: nowrap;
         <p>Arahkan scanner barcode atau ketik nomor resi / nomor pesanan untuk melihat status pengiriman.</p>
     </div>
 
-    {{-- Flash Alerts --}}
-    @if(session('success'))
-    <div class="scan-alert success" role="alert">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-        </svg>
-        {{ session('success') }}
-    </div>
-    @endif
 
-    @if(session('error'))
-    <div class="scan-alert error" role="alert">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="15" y1="9" x2="9" y2="15" />
-            <line x1="9" y1="9" x2="15" y2="15" />
-        </svg>
-        {{ session('error') }}
-    </div>
-    @endif
 
     {{-- Scanner Card --}}
     <div class="scanner-card">
@@ -271,27 +251,33 @@ white-space: nowrap;
 
         {{-- Input + submit --}}
         <form action="{{ route('deliveries.scan') }}" method="GET" id="scanForm" novalidate>
-            <div class="scanner-input-row">
-                <input
-                    type="text"
-                    name="identifier"
-                    id="barcodeInput"
-                    class="scanner-input"
-                    placeholder="Tembak barcode atau ketik resi / nomor pesanan..."
-                    value="{{ request('identifier') }}"
-                    autocomplete="off"
-                    autocorrect="off"
-                    autocapitalize="off"
-                    spellcheck="false"
-                    autofocus
-                    required>
-                <button type="submit" class="btn-scan-submit">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                    <span>Cari</span>
-                </button>
+            <div class="scanner-input-row" style="flex-direction: column; gap: 8px;">
+                <label style="font-size: 13px; font-weight: 700; color: var(--text-2); text-align: left;">Nomor Resi <span>*</span></label>
+                <div style="display: flex; gap: 10px; align-items: stretch;">
+                    <input
+                        type="text"
+                        name="identifier"
+                        id="barcodeInput"
+                        class="scanner-input @error('identifier') is-invalid @enderror"
+                        placeholder="Tembak barcode atau ketik resi / nomor pesanan..."
+                        value="{{ old('identifier', request('identifier')) }}"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        autofocus
+                        required>
+                    <button type="submit" class="btn-scan-submit">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                        </svg>
+                        <span>Cari</span>
+                    </button>
+                </div>
+                @error('identifier')
+                <div style="color:var(--red); font-size:11.5px; font-weight:600; text-align: left;">{{ $message }}</div>
+                @enderror
             </div>
         </form>
 
@@ -347,8 +333,16 @@ white-space: nowrap;
                         Detail Pesanan
                     </div>
                     <div class="scan-info-item">
-                        <span class="scan-info-label">Status</span>
+                        <span class="scan-info-label">Status Pesanan</span>
                         <span class="scan-info-value" style="color:var(--accent);text-transform:uppercase;">{{ \App\Services\StatusService::getOrderLabel($order->status ?? '') }}</span>
+                    </div>
+                    <div class="scan-info-item">
+                        <span class="scan-info-label">Nomor Pesanan</span>
+                        <span class="scan-info-value" style="font-family:var(--mono); font-size:12px;">{{ $order->order_number ?? 'Informasi tidak tersedia.' }}</span>
+                    </div>
+                    <div class="scan-info-item">
+                        <span class="scan-info-label">Nomor Invoice</span>
+                        <span class="scan-info-value" style="font-family:var(--mono); font-size:12px;">{{ $order->invoice_id ?? 'Belum diterbitkan' }}</span>
                     </div>
                     <div class="scan-info-item">
                         <span class="scan-info-label">Tanggal Pemesanan</span>
@@ -356,7 +350,11 @@ white-space: nowrap;
                     </div>
                     <div class="scan-info-item">
                         <span class="scan-info-label">Toko</span>
-                        <span class="scan-info-value">{{ $order->store->name ?? '—' }}</span>
+                        <span class="scan-info-value">{{ $order->store->name ?? 'Informasi toko belum tersedia.' }}</span>
+                    </div>
+                    <div class="scan-info-item">
+                        <span class="scan-info-label">Alamat Toko</span>
+                        <span class="scan-info-value">{{ $order->store->address ?? 'Informasi toko belum tersedia.' }}</span>
                     </div>
                 </div>
 
@@ -366,15 +364,15 @@ white-space: nowrap;
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
                         </svg>
-                        Informasi Pelanggan
+                        Informasi Customer
                     </div>
                     <div class="scan-info-item">
                         <span class="scan-info-label">Nama Lengkap</span>
-                        <span class="scan-info-value">{{ $order->customer_name }}</span>
+                        <span class="scan-info-value">{{ $order->customer_name ?? 'Informasi pelanggan belum tersedia.' }}</span>
                     </div>
                     <div class="scan-info-item">
                         <span class="scan-info-label">Kontak</span>
-                        <span class="scan-info-value">{{ $order->customer_phone ?? '—' }}<br><span style="font-size:12px;color:var(--text-3);font-weight:500;">{{ $order->customer_email }}</span></span>
+                        <span class="scan-info-value">{{ $order->customer_phone ?? 'Informasi pelanggan belum tersedia.' }}<br><span style="font-size:12px;color:var(--text-3);font-weight:500;">{{ $order->customer_email }}</span></span>
                     </div>
                 </div>
             </div>
@@ -392,15 +390,31 @@ white-space: nowrap;
                     </div>
                     <div class="scan-info-item">
                         <span class="scan-info-label">Kurir & Layanan</span>
-                        <span class="scan-info-value">{{ strtoupper($order->shipping_courier ?? '—') }} ({{ ucfirst($order->shipping_type) }})</span>
+                        <span class="scan-info-value">{{ $order->shipping_courier ? strtoupper($order->shipping_courier) . ' (' . ucfirst($order->shipping_type) . ')' : 'Informasi pengiriman belum lengkap.' }}</span>
                     </div>
                     <div class="scan-info-item">
                         <span class="scan-info-label">Nomor Resi</span>
                         <span class="scan-info-value" style="font-family:var(--mono);color:var(--accent);">{{ $order->tracking_number ?? 'Belum ada resi' }}</span>
                     </div>
                     <div class="scan-info-item">
-                        <span class="scan-info-label">Alamat Tujuan</span>
-                        <span class="scan-info-value">{{ $order->shipping_address }}<br>{{ $order->city }}, {{ $order->province }} {{ $order->postal_code }}</span>
+                        <span class="scan-info-label">Tanggal Pengiriman</span>
+                        <span class="scan-info-value">{{ $order->shipment_created_at ? \Carbon\Carbon::parse($order->shipment_created_at)->translatedFormat('d M Y, H:i') : 'Informasi pengiriman belum lengkap.' }}</span>
+                    </div>
+                    <div class="scan-info-item">
+                        <span class="scan-info-label">Estimasi Pengiriman</span>
+                        <span class="scan-info-value">{{ $order->shipping_cost ? 'Tersedia dalam rincian layanan' : 'Informasi pengiriman belum lengkap.' }}</span>
+                    </div>
+                    <div class="scan-info-item">
+                        <span class="scan-info-label">Provinsi Tujuan</span>
+                        <span class="scan-info-value">{{ $order->province ?? 'Informasi pelanggan belum tersedia.' }}</span>
+                    </div>
+                    <div class="scan-info-item">
+                        <span class="scan-info-label">Kota Tujuan</span>
+                        <span class="scan-info-value">{{ $order->city ?? 'Informasi pelanggan belum tersedia.' }}</span>
+                    </div>
+                    <div class="scan-info-item">
+                        <span class="scan-info-label">Alamat Lengkap</span>
+                        <span class="scan-info-value">{{ $order->shipping_address ?? 'Informasi pelanggan belum tersedia.' }}<br>{{ $order->postal_code }}</span>
                     </div>
                 </div>
 
@@ -413,7 +427,11 @@ white-space: nowrap;
                         Pembayaran
                     </div>
                     <div class="scan-info-item">
-                        <span class="scan-info-label">Metode</span>
+                        <span class="scan-info-label">Status Pembayaran</span>
+                        <span class="scan-info-value" style="text-transform:uppercase;">{{ \App\Services\StatusService::getTransactionLabel($order->transaction->status ?? '') }}</span>
+                    </div>
+                    <div class="scan-info-item">
+                        <span class="scan-info-label">Metode Pembayaran</span>
                         <span class="scan-info-value" style="text-transform:uppercase;">{{ $order->transaction->payment_method ?? '—' }}</span>
                     </div>
                     <div class="scan-info-item">
@@ -444,7 +462,15 @@ white-space: nowrap;
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        $totalWeight = 0;
+                        $totalQty = 0;
+                    @endphp
                     @foreach($order->orderItems as $item)
+                    @php
+                        $totalQty += $item->quantity;
+                        $totalWeight += ($item->product->weight ?? 0) * $item->quantity;
+                    @endphp
                     <tr>
                         <td>
                             <div style="display:flex;align-items:center;gap:10px;">
@@ -453,7 +479,7 @@ white-space: nowrap;
                                 @else
                                 <div style="width:32px;height:32px;border-radius:6px;background:var(--surface-2);"></div>
                                 @endif
-                                <span>{{ $item->product->name ?? 'Produk Dihapus' }}</span>
+                                <span>{{ $item->product->name ?? 'Informasi produk belum tersedia.' }}</span>
                             </div>
                         </td>
                         <td style="text-align:right;">{{ $item->quantity }}x</td>
@@ -461,6 +487,12 @@ white-space: nowrap;
                         <td style="text-align:right;">Rp {{ number_format($item->price * $item->quantity, 0, ',', '.') }}</td>
                     </tr>
                     @endforeach
+                    <tr>
+                        <td colspan="4" style="text-align:right; font-size:12px; color:var(--text-3); padding-top:10px;">
+                            Total Berat: <strong>{{ number_format($totalWeight, 2, ',', '.') }} kg</strong> |
+                            Jumlah Produk: <strong>{{ $totalQty }} item</strong>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -475,7 +507,7 @@ white-space: nowrap;
             </div>
 
             <div class="shopee-timeline">
-                @forelse($order->trackingHistories()->whereIn('status', ['processing', 'shipping', 'completed', 'cancelled'])->latest()->get() as $index => $h)
+                @forelse($order->trackingHistories()->whereIn('status', ['pending', 'perlu_diproses', 'processing', 'shipping', 'completed', 'cancelled', 'refunded'])->latest()->get() as $index => $h)
                 @php $isLatest = $index === 0; @endphp
                 <div class="timeline-item {{ $isLatest ? 'latest' : '' }}" style="animation-delay: {{ $index * 0.1 }}s;">
                     <div class="timeline-dot">
@@ -495,13 +527,14 @@ white-space: nowrap;
                             {{ $h->notes }}
                             @else
                             {{ match($h->status) {
-                                            'pending' => 'Pesanan telah berhasil dibuat oleh pelanggan.',
-                                            'perlu_diproses' => 'Pesanan sedang menunggu untuk diproses oleh admin.',
+                                            'pending' => 'Pesanan telah berhasil dibuat oleh customer.',
+                                            'perlu_diproses' => 'Pesanan sedang menunggu untuk diproses oleh administrator.',
                                             'processing' => 'Barang sedang dipersiapkan dan dikemas untuk pengiriman.',
                                             'shipping' => 'Pesanan telah diserahkan ke kurir untuk dikirim ke alamat tujuan.',
                                             'completed' => 'Pesanan telah sampai di tujuan dan diterima dengan baik.',
                                             'cancelled' => 'Pesanan dibatalkan dengan alasan tertentu.',
-                                            'refund' => 'Pesanan dibatalkan dan dana dikembalikan (refund).',
+                                            'refund' => 'Pesanan dibatalkan dan dana dikembalikan.',
+                                            'refunded' => 'Pesanan dikembalikan dan dana direfund.',
                                             default => 'Status diperbarui oleh sistem.'
                                         } }}
                             @endif
@@ -521,7 +554,7 @@ white-space: nowrap;
                         <line x1="12" y1="8" x2="12" y2="12" />
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
-                    <p style="color: var(--text-4); font-size: 13px; font-weight: 600;">Belum ada riwayat aktivitas tracking tercatat.</p>
+                    <p style="color: var(--text-4); font-size: 13px; font-weight: 600;">Riwayat pengiriman belum tersedia.</p>
                 </div>
                 @endforelse
             </div>

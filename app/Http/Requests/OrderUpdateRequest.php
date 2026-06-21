@@ -23,7 +23,9 @@ class OrderUpdateRequest extends FormRequest
                 Order::STATUS_PERLU_DIPROSES,
                 Order::STATUS_PROCESSING,
                 Order::STATUS_SHIPPING,
-                Order::STATUS_COMPLETED
+                Order::STATUS_COMPLETED,
+                Order::STATUS_CANCELLED,
+                Order::STATUS_REFUNDED,
             ]);
             $rules['status'] = "required|string|in:{$allowed}";
         }

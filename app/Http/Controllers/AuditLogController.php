@@ -47,7 +47,7 @@ class AuditLogController extends Controller
         // Get unique entity types and action types for filters
         $entityTypes = AdminAction::distinct()->pluck('entity_type')->sort();
         $actionTypes = AdminAction::distinct()->pluck('action_type')->sort();
-        $admins = \App\Models\User::where('role', 'admin')->orderBy('name')->get(['id', 'name']);
+        $admins = \App\Models\User::where('role', 'administrator')->orderBy('name')->get(['id', 'name']);
 
         return view('audit.admin_actions', compact('actions', 'entityTypes', 'actionTypes', 'admins'));
     }

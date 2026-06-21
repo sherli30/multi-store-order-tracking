@@ -1,9 +1,10 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen Pesanan')
+@section('title', 'Kelola Pesanan')
 
 @section('styles')
 /* ── Page Header ─────────────────────────────── */
+.main-wrap, .page { min-width: 0; } /* Fix flex blowout horizontal scroll */
 .page-header {
 display: flex; align-items: flex-start; justify-content: space-between;
 margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
@@ -23,7 +24,7 @@ border-radius: 10px; display: flex; align-items: center; justify-content: center
 /* ── Stats Bar ───────────────────────────────── */
 .stats-bar {
 display: grid;
-grid-template-columns: repeat(3, 1fr);
+grid-template-columns: repeat(4, 1fr);
 gap: 14px;
 margin-bottom: 24px;
 }
@@ -40,6 +41,9 @@ justify-content: center; flex-shrink: 0; }
 .stat-icon.green { background: var(--green-dim); color: var(--green); }
 .stat-icon.purple { background: rgba(139,92,246,0.1); color: #8b5cf6; }
 .stat-icon.amber { background: var(--amber-dim); color: var(--amber); }
+.stat-icon.red { background: var(--red-dim); color: var(--red); }
+.stat-icon.indigo { background: var(--accent-dim); color: var(--accent); }
+.stat-icon.rose { background: #ffe4e6; color: #e11d48; }
 .stat-value { font-size: 20px; font-weight: 800; color: var(--text-1); letter-spacing: -0.03em; }
 .stat-label { font-size: 11.5px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
 @media (max-width: 1024px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
@@ -50,12 +54,13 @@ justify-content: center; flex-shrink: 0; }
 display: flex; gap: 4px; background: var(--surface); padding: 4px;
 border-radius: 12px; margin-bottom: 20px; overflow-x: auto;
 scrollbar-width: none; border: 1px solid var(--border);
+max-width: 100%;
 }
 .tabs-wrap::-webkit-scrollbar { display: none; }
 .tab-btn {
 padding: 8px 16px; font-size: 13px; font-weight: 700; color: var(--text-3);
 border-radius: 9px; cursor: pointer; transition: all 0.2s; text-decoration: none;
-white-space: nowrap; display: inline-flex; align-items: center; gap: 8px;
+white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;
 }
 .tab-btn:hover { color: var(--text-1); background: rgba(0,0,0,0.03); }
 .tab-btn.active { background: var(--panel); color: var(--accent); box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
@@ -222,6 +227,8 @@ font-weight: 600; white-space: nowrap; }
 
 .badge-pending { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
 .badge-pending::before { background: var(--amber); }
+.badge-menunggu_konfirmasi_admin { background: rgba(100,116,139,0.08); color: #475569; border: 1px solid rgba(100,116,139,0.2); }
+.badge-menunggu_konfirmasi_admin::before { background: #475569; }
 .badge-perlu_diproses { background: rgba(59,130,246,0.08); color: #3b82f6; border: 1px solid rgba(59,130,246,0.2); }
 .badge-perlu_diproses::before { background: #3b82f6; }
 .badge-processing { background: rgba(139,92,246,0.08); color: #8b5cf6; border: 1px solid rgba(139,92,246,0.2); }
@@ -232,6 +239,12 @@ font-weight: 600; white-space: nowrap; }
 .badge-completed::before { background: var(--green); }
 .badge-cancelled { background: var(--red-dim); color: var(--red); border: 1px solid rgba(220,38,38,0.2); }
 .badge-cancelled::before { background: var(--red); }
+.badge-refunded { background: #ffe4e6; color: #e11d48; border: 1px solid rgba(225,29,72,0.2); }
+.badge-refunded::before { background: #e11d48; }
+.badge-ready_to_ship { background: rgba(14,165,233,0.08); color: #0ea5e9; border: 1px solid rgba(14,165,233,0.2); }
+.badge-ready_to_ship::before { background: #0ea5e9; }
+.badge-delivered { background: rgba(34,197,94,0.08); color: #16a34a; border: 1px solid rgba(34,197,94,0.2); }
+.badge-delivered::before { background: #16a34a; }
 
 .actions-cell { display: flex; gap: 6px; justify-content: center; align-items: center; }
 
@@ -281,6 +294,9 @@ center; justify-content: center; margin-bottom: 16px; }
 .modal-icon svg { width: 24px; height: 24px; }
 .modal-icon.red { background: var(--red-dim); color: var(--red); }
 .modal-icon.blue { background: rgba(59,130,246,0.1); color: #3b82f6; }
+.modal-icon.green { background: rgba(22,163,74,0.1); color: var(--green); }
+.modal-icon.amber { background: var(--amber-dim); color: var(--amber); }
+.modal-icon.purple { background: rgba(139,92,246,0.1); color: #8b5cf6; }
 
 .modal-title { font-size: 16px; font-weight: 800; color: var(--text-1); margin-bottom: 6px; }
 .modal-desc { font-size: 13px; color: var(--text-2); margin-bottom: 22px; line-height: 1.6; }
@@ -340,7 +356,7 @@ border-color: var(--border) !important; cursor: default !important;
                     <path d="M8 16h.01" />
                 </svg>
             </span>
-            Manajemen Pesanan
+            Kelola Pesanan
         </h1>
         <p>Monitor dan kelola seluruh transaksi pesanan dari semua toko Anda.</p>
     </div>
@@ -405,8 +421,47 @@ border-color: var(--border) !important; cursor: default !important;
             </svg>
         </div>
         <div>
-            <div class="stat-value">{{ number_format($tabCounts['completed']) }}</div>
+            <div class="stat-value">{{ number_format($tabCounts['completed'] ?? 0) }}</div>
             <div class="stat-label">Selesai</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon indigo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="1" y="3" width="15" height="13"/>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                <circle cx="5.5" cy="18.5" r="2.5"/>
+                <circle cx="18.5" cy="18.5" r="2.5"/>
+            </svg>
+        </div>
+        <div>
+            <div class="stat-value">{{ number_format($tabCounts['shipping'] ?? 0) }}</div>
+            <div class="stat-label">Dikirim</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon red">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+        </div>
+        <div>
+            <div class="stat-value">{{ number_format($tabCounts['cancelled'] ?? 0) }}</div>
+            <div class="stat-label">Dibatalkan</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon rose">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 14 4 9 9 4"/>
+                <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+            </svg>
+        </div>
+        <div>
+            <div class="stat-value">{{ number_format($tabCounts['refunded'] ?? 0) }}</div>
+            <div class="stat-label">Pengembalian</div>
         </div>
     </div>
 </div>
@@ -418,6 +473,9 @@ border-color: var(--border) !important; cursor: default !important;
     </a>
     <a href="{{ request()->fullUrlWithQuery(['tab' => 'pending']) }}" class="tab-btn {{ $tab === 'pending' ? 'active' : '' }}">
         Belum Bayar <span class="tab-count">{{ $tabCounts['pending'] ?? 0 }}</span>
+    </a>
+    <a href="{{ request()->fullUrlWithQuery(['tab' => 'menunggu_konfirmasi_admin']) }}" class="tab-btn {{ $tab === 'menunggu_konfirmasi_admin' ? 'active' : '' }}">
+        Menunggu Konfirmasi <span class="tab-count">{{ $tabCounts['menunggu_konfirmasi_admin'] ?? 0 }}</span>
     </a>
     <a href="{{ request()->fullUrlWithQuery(['tab' => 'perlu_diproses']) }}" class="tab-btn {{ $tab === 'perlu_diproses' ? 'active' : '' }}">
         Perlu Diproses <span class="tab-count">{{ $tabCounts['perlu_diproses'] ?? 0 }}</span>
@@ -434,6 +492,9 @@ border-color: var(--border) !important; cursor: default !important;
     <a href="{{ request()->fullUrlWithQuery(['tab' => 'cancelled']) }}" class="tab-btn {{ $tab === 'cancelled' ? 'active' : '' }}">
         Dibatalkan <span class="tab-count">{{ $tabCounts['cancelled'] ?? 0 }}</span>
     </a>
+    <a href="{{ request()->fullUrlWithQuery(['tab' => 'refunded']) }}" class="tab-btn {{ $tab === 'refunded' ? 'active' : '' }}">
+        Pengembalian <span class="tab-count">{{ $tabCounts['refunded'] ?? 0 }}</span>
+    </a>
 </div>
 
 {{-- Filter Card --}}
@@ -448,7 +509,7 @@ border-color: var(--border) !important; cursor: default !important;
     <form id="filter-form">
         <input type="hidden" name="tab" value="{{ $tab }}">
 
-        <div class="filter-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="filter-grid">
             {{-- Toko --}}
             <div class="form-group">
                 <label class="form-label">Toko</label>
@@ -507,7 +568,7 @@ border-color: var(--border) !important; cursor: default !important;
                 <tr>
                     <th class="center" style="width:50px;">No</th>
                     <th>Nomor Pesanan</th>
-                    <th>Pelanggan</th>
+                    <th>Customer</th>
                     <th>Toko</th>
                     <th>Tanggal Pesanan</th>
                     <th>Total Bayar</th>
@@ -599,10 +660,10 @@ border-color: var(--border) !important; cursor: default !important;
             <div class="form-group">
                 <label class="form-label">Pilih Status Baru</label>
                 <select name="status" id="newStatus" class="form-input">
-                    <option value="perlu_diproses">Perlu Diproses</option>
                     <option value="processing">Dikemas</option>
                     <option value="shipping">Dikirim</option>
                     <option value="completed">Selesai</option>
+                    <option value="refunded" id="optionRefunded">Pengembalian Dana (Manual Refund)</option>
                 </select>
             </div>
 
@@ -614,33 +675,35 @@ border-color: var(--border) !important; cursor: default !important;
     </div>
 </div>
 
-{{-- Cancel Order Modal --}}
-<div id="cancelModal" class="modal-overlay">
+@include('orders.partials._cancel_modal')
+
+{{-- Return Request Modal --}}
+<div id="returnModal" class="modal-overlay">
     <div class="modal-box">
-        <div class="modal-icon red">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
+        <div class="modal-icon amber" style="background: var(--amber-dim); color: var(--amber);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12" />
             </svg>
         </div>
-        <h3 class="modal-title">Batalkan Pesanan</h3>
-        <p class="modal-desc">Apakah Anda yakin ingin membatalkan pesanan <strong id="cancelOrderNumber">#ORD-XXXX</strong>? Tindakan ini akan mengembalikan stok produk.</p>
+        <h3 class="modal-title">Tinjau Pengajuan Pengembalian</h3>
+        <p class="modal-desc">Pelanggan mengajukan pengembalian untuk pesanan <strong id="returnOrderNumber">#ORD-XXXX</strong>.</p>
 
-        <form id="cancelForm" method="POST" action="" novalidate>
+        <div style="margin-bottom: 15px; padding: 12px; background: var(--surface); border-radius: 8px; border: 1px dashed var(--border);">
+            <strong style="display:block; font-size: 11px; color: var(--text-3); margin-bottom: 4px; text-transform: uppercase;">Alasan Pelanggan:</strong>
+            <span id="returnReasonDisplay" style="font-size: 13px; color: var(--text-1); font-weight: 500;"></span>
+        </div>
+
+        <form id="returnForm" method="POST" action="">
             @csrf
             @method('PATCH')
-            <div class="form-group">
-                <label class="form-label">Alasan Pembatalan</label>
-                <textarea name="cancel_reason" class="form-input" rows="3" placeholder="Masukkan alasan pembatalan...">{{ old('cancel_reason') }}</textarea>
-                @error('cancel_reason')
-                <div class="field-error" style="color: var(--danger); font-size: 13px; margin-top: 5px;">{{ $message }}</div>
-                @enderror
-            </div>
+            <input type="hidden" name="return_status" id="returnStatusField">
+            
 
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeModals()">Kembali</button>
-                <button type="submit" class="btn-danger">Ya, Batalkan Pesanan</button>
+
+            <div class="modal-actions" style="margin-top: 20px;">
+                <button type="button" class="btn-cancel" onclick="closeModals()">Batal</button>
+                <button type="button" class="btn-primary" style="background: var(--red); box-shadow: 0 4px 10px rgba(220,38,38,0.2);" onclick="submitReturn('rejected')">Tolak</button>
+                <button type="button" class="btn-primary" style="background: var(--green); box-shadow: 0 4px 10px rgba(22,163,74,0.2);" onclick="submitReturn('approved')">Setujui</button>
             </div>
         </form>
     </div>
@@ -657,10 +720,17 @@ border-color: var(--border) !important; cursor: default !important;
     // ── Global Modal Handlers ──
     const baseUrl = "{{ url('/') }}";
 
-    function openStatusModal(id, number, currentStatus) {
+    function openStatusModal(id, number, currentStatus, isManual = false) {
         $('#statusOrderNumber').text('#' + number);
         $('#newStatus').val(currentStatus);
         $('#statusForm').attr('action', `${baseUrl}/orders/${id}/status`);
+        
+        if (isManual) {
+            $('#optionRefunded').show();
+        } else {
+            $('#optionRefunded').hide();
+        }
+
         $('#statusModal').addClass('open');
     }
 
@@ -678,8 +748,9 @@ border-color: var(--border) !important; cursor: default !important;
         btn.css('background', '');
 
         if (status === 'perlu_diproses') {
-            icon.addClass('amber');
-            btn.css('background', 'var(--amber)');
+            icon.addClass('green');
+            btn.css('background', 'var(--green)');
+            btn.css('box-shadow', '0 4px 10px rgba(22,163,74,0.25)');
         } else if (status === 'processing') {
             icon.addClass('blue');
             btn.css('background', '#3b82f6');
@@ -702,6 +773,58 @@ border-color: var(--border) !important; cursor: default !important;
         $('#cancelOrderNumber').text('#' + number);
         $('#cancelForm').attr('action', `${baseUrl}/orders/${id}/cancel`);
         $('#cancelModal').addClass('open');
+    }
+
+    function openReturnModal(id, number, reason) {
+        $('#returnOrderNumber').text('#' + number);
+        $('#returnReasonDisplay').text(reason);
+        $('#returnForm').attr('action', `${baseUrl}/orders/${id}/handle-return`);
+        $('#returnModal').addClass('open');
+    }
+
+    async function submitReturn(status) {
+        const form = document.getElementById('returnForm');
+        const formData = new FormData(form);
+        formData.set('return_status', status);
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.status === 422) {
+                if (typeof showToast === 'function') {
+                    showToast({ title: 'Validasi Gagal', list: Object.values(data.errors).flat() }, 'error');
+                }
+                return;
+            }
+
+            if (!response.ok) {
+                if (typeof showToast === 'function') {
+                    showToast({ title: 'Error', list: [data.message || 'Terjadi kesalahan.'] }, 'error');
+                }
+                return;
+            }
+
+            // Success
+            if (typeof showToast === 'function') {
+                showToast({ title: 'Pengajuan Diproses', list: [data.message || 'Berhasil disimpan.'] }, 'success');
+            }
+            setTimeout(() => location.reload(), 1500);
+
+        } catch (e) {
+            console.error(e);
+            if (typeof showToast === 'function') {
+                showToast({ title: 'Koneksi Gagal', list: ['Gagal menghubungi server.'] }, 'error');
+            }
+        }
     }
 
     function closeModals() {
@@ -798,14 +921,39 @@ border-color: var(--border) !important; cursor: default !important;
                 url: "{{ route('orders.index') }}",
                 type: 'GET',
                 data: params,
-                success: function(html) {
+                success: function(res) {
                     if ($.fn.DataTable.isDataTable('#orderTable')) {
                         table.destroy();
                     }
-                    $('#orderTable tbody').html(html);
+                    // Handle JSON response
+                    $('#orderTable tbody').html(res.html || res);
                     $('#orderTable tbody tr').addClass('fade-in-animated');
                     table = initDataTable();
                     $('#orderTable tbody').css('opacity', '1');
+
+                    // Update Tab Counts
+                    if(res.counts) {
+                        $('.tab-btn').each(function() {
+                            const href = $(this).attr('href');
+                            const match = href.match(/tab=([^&]+)/);
+                            const tabName = match ? match[1] : 'all';
+                            const countVal = res.counts[tabName] !== undefined ? res.counts[tabName] : 0;
+                            $(this).find('.tab-count').text(countVal.toLocaleString('id-ID'));
+                        });
+                        
+                        // Update Stat Bar Counts
+                        const statVals = $('.stat-value');
+                        if(statVals.length >= 8) {
+                            $(statVals[0]).text((res.counts['all'] || 0).toLocaleString('id-ID'));
+                            $(statVals[1]).text((res.counts['pending'] || 0).toLocaleString('id-ID'));
+                            $(statVals[2]).text((res.counts['perlu_diproses'] || 0).toLocaleString('id-ID'));
+                            $(statVals[3]).text((res.counts['processing'] || 0).toLocaleString('id-ID'));
+                            $(statVals[4]).text((res.counts['completed'] || 0).toLocaleString('id-ID'));
+                            $(statVals[5]).text((res.counts['shipping'] || 0).toLocaleString('id-ID'));
+                            $(statVals[6]).text((res.counts['cancelled'] || 0).toLocaleString('id-ID'));
+                            $(statVals[7]).text((res.counts['refunded'] || 0).toLocaleString('id-ID'));
+                        }
+                    }
 
                     checkResetVisibility();
 
@@ -816,6 +964,12 @@ border-color: var(--border) !important; cursor: default !important;
                     $('#orderTable tbody').css('opacity', '1');
                 }
             });
+        });
+
+        // ── Realtime Notification Listener ──
+        document.addEventListener('realtime-notification', function(e) {
+            // Trigger refresh automatically when SSE event is received
+            $('#btnApplyFilter').trigger('click');
         });
 
         // ── Handler Reset Filter ──

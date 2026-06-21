@@ -17,6 +17,7 @@ class Transaction extends Model
     const STATUS_REFUND = StatusService::TRANSACTION_REFUND;    // 'refund'
 
     protected $fillable = [
+        'invoice_id',
         'order_id',
         'transaction_id',
         'payment_method',
@@ -34,6 +35,11 @@ class Transaction extends Model
         'refunded_at'     => 'datetime',
         'payment_details' => 'array',
     ];
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
+    }
 
     public function order()
     {

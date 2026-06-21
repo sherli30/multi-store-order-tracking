@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Pelanggan — ' . $customer->name)
+@section('title', 'Detail Customer — ' . $customer->name)
 
 @section('styles')
     /* =============================================
@@ -421,17 +421,11 @@
 @section('content')
 
     {{-- Breadcrumb --}}
-    <div class="breadcrumb">
+    <div class="breadcrumb" style="margin-bottom: 24px;">
         <a href="{{ route('dashboard') }}">Dashboard</a>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-        </svg>
-        <a href="{{ route('customers.index') }}">Manajemen Pelanggan</a>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-        </svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><polyline points="9 18 15 12 9 6"/></svg>
+        <a href="{{ route('customers.index') }}">Kelola Customer</a>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><polyline points="9 18 15 12 9 6"/></svg>
         <span class="current">{{ $customer->name }}</span>
     </div>
 
@@ -446,7 +440,7 @@
                 </svg>
             </div>
             <div class="cust-page-header-text">
-                <h1>Profil Pelanggan</h1>
+                <h1>Profil Customer</h1>
                 <p>Terdaftar {{ $customer->created_at->diffForHumans() }} · {{ $customer->created_at->format('d M Y') }}</p>
             </div>
         </div>
@@ -489,7 +483,7 @@
                     <div class="profile-name">{{ $customer->name }}</div>
                     <div class="profile-email">{{ $customer->email }}</div>
                     <span class="profile-badge {{ $customer->is_active ? 'active' : 'blocked' }}">
-                        {{ $customer->is_active ? 'Akun Aktif' : 'Akun Diblokir' }}
+                        {{ $customer->is_active ? 'Akun Aktif' : 'Akun Dinonaktifkan' }}
                     </span>
                 </div>
 
@@ -517,7 +511,7 @@
                                 <line x1="8" y1="9" x2="16" y2="9" />
                                 <line x1="8" y1="13" x2="14" y2="13" />
                             </svg>
-                            ID Pelanggan
+                            ID Customer
                         </div>
                         <div class="info-value mono">#{{ $customer->id }}</div>
                     </div>
@@ -618,11 +612,11 @@
                             stroke-linejoin="round">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                         </svg>
-                        Kontrol Admin
+                        Kontrol Administrator
                     </div>
 
                     @if($customer->is_active)
-                        {{-- Tombol Blokir / Nonaktifkan --}}
+                        {{-- Tombol Nonaktifkan --}}
                         <button type="button" class="action-btn toggle-active"
                             onclick="openConfirmModal('block', '{{ $customer->id }}', '{{ addslashes($customer->name) }}')">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -630,7 +624,7 @@
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
                             </svg>
-                            Blokir / Nonaktifkan Akun
+                            Nonaktifkan Akun
                         </button>
                     @else
                         {{-- Tombol Aktifkan Kembali --}}
@@ -646,7 +640,7 @@
                     @endif
 
                     <p class="control-note">
-                        {{ $customer->is_active ? 'Pelanggan yang diblokir tidak dapat login ke aplikasi.' : 'Mengaktifkan kembali akses pelanggan ke aplikasi.' }}
+                        {{ $customer->is_active ? 'Customer yang dinonaktifkan tidak dapat login ke aplikasi.' : 'Mengaktifkan kembali akses customer ke aplikasi.' }}
                     </p>
 
                     <div class="control-divider"></div>
@@ -695,7 +689,7 @@
                         </div>
                         <div>
                             <div class="card-title">Riwayat Pesanan</div>
-                            <div class="card-subtitle">Semua transaksi yang pernah dilakukan pelanggan ini</div>
+                            <div class="card-subtitle">Semua transaksi yang pernah dilakukan customer ini</div>
                         </div>
                     </div>
                     <span class="card-badge">{{ $totalOrders }} Pesanan</span>
@@ -713,7 +707,7 @@
                             </svg>
                         </div>
                         <div class="empty-orders-title">Belum Ada Riwayat Pesanan</div>
-                        <div class="empty-orders-desc">Pelanggan ini belum pernah melakukan transaksi.</div>
+                        <div class="empty-orders-desc">Customer ini belum pernah melakukan transaksi.</div>
                     </div>
                 @else
                     <div style="overflow-x: auto;">
@@ -784,7 +778,7 @@
                         </div>
                         <div>
                             <div class="card-title">Ringkasan Belanja</div>
-                            <div class="card-subtitle">Statistik transaksi keseluruhan pelanggan</div>
+                            <div class="card-subtitle">Statistik transaksi keseluruhan customer</div>
                         </div>
                     </div>
                 </div>
@@ -903,7 +897,7 @@
             const statusInput = document.getElementById('statusInput');
             const methodField = document.getElementById('methodField');
 
-            // 1. RESET DEFAULT ke mode Merah (Blokir/Hapus)
+            // 1. RESET DEFAULT ke mode Merah (Nonaktifkan/Hapus)
             btnSubmit.innerText = "Ya, Lanjutkan";
             btnSubmit.style.backgroundColor = "#ef4444";
             btnSubmit.style.color = "#ffffff";
@@ -912,8 +906,8 @@
             methodField.value = "PATCH";
 
             if (type === 'block') {
-                title.innerText = "Blokir Akun";
-                desc.innerHTML = `Apakah Anda yakin ingin memblokir <strong>${name}</strong>?`;
+                title.innerText = "Nonaktifkan Akun";
+                desc.innerHTML = `Apakah Anda yakin ingin menonaktifkan akun <strong>${name}</strong>?`;
                 iconContent.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>';
 
                 form.action = "{{ url('customers') }}/" + id + "/status";

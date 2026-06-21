@@ -32,7 +32,7 @@
         </td>
         <td>
             @if(!$category->store->is_active)
-                <span class="badge badge-inactive" style="background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15);" title="Toko ini sedang dinonaktifkan di Manajemen Toko">Non-aktif (Toko Non-aktif)</span>
+                <span class="badge badge-inactive" style="background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15);" title="Toko ini sedang dinonaktifkan di Kelola Toko">Non-aktif (Toko Non-aktif)</span>
             @elseif($category->is_active)
                 <span class="badge badge-active">Aktif</span>
             @else
@@ -41,6 +41,12 @@
         </td>
         <td>
             <div class="actions-cell">
+                <a href="{{ route('product-categories.show', $category->id) }}" class="btn-sm" title="Lihat Kategori">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </a>
                 <a href="{{ route('product-categories.edit', $category->id) }}" class="btn-sm" title="Edit Kategori">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

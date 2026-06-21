@@ -457,6 +457,9 @@
                                     @endif
                                 @endforeach
                             </select>
+                            @error('store_id')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         {{-- Nama Kategori --}}
@@ -465,6 +468,9 @@
                             <input type="text" id="name" name="name"
                                 class="field-input {{ $errors->has('name') ? 'is-invalid' : '' }}"
                                 value="{{ old('name', $productCategory->name) }}" required>
+                            @error('name')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         {{-- Deskripsi --}}
@@ -472,6 +478,9 @@
                             <label class="field-label" for="description">Deskripsi <span>*</span></label>
                             <textarea id="description" name="description"
                                 class="field-input field-textarea {{ $errors->has('description') ? 'is-invalid' : '' }}">{{ old('description', $productCategory->description) }}</textarea>
+                            @error('description')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -523,11 +532,14 @@
                             </label>
                             <div class="toggle-label" id="categoryActiveLabel">{{ old('is_active', $productCategory->is_active) ? 'Kategori Aktif' : 'Kategori Nonaktif' }}</div>
                         </div>
+                        @error('is_active')
+                            <div class="field-error">{{ $message }}</div>
+                        @enderror
                         <div id="storeInactiveWarning" style="display: none; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--red); background: color-mix(in srgb, var(--red) 8%, var(--panel)); border: 1.5px solid color-mix(in srgb, var(--red) 20%, transparent); border-radius: 10px; padding: 12px 14px; text-align: left;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; color: var(--red);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                             <div>
                                 <span style="font-weight: 800; display: block; margin-bottom: 3px; font-size: 12.5px;">Toko Induk Non-Aktif</span>
-                                Status kategori ini dikunci karena toko utamanya sedang dinonaktifkan di Manajemen Toko. Silakan aktifkan toko terlebih dahulu jika ingin mengaktifkan kategori ini.
+                                Status kategori ini dikunci karena toko utamanya sedang dinonaktifkan di Kelola Toko. Silakan aktifkan toko terlebih dahulu jika ingin mengaktifkan kategori ini.
                             </div>
                         </div>
                     </div>

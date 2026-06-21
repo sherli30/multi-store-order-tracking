@@ -73,10 +73,10 @@ class NewPasswordController extends Controller
 
                 // Tambahkan pesan spesifik hanya jika karakter tersebut memang kurang
                 if (!preg_match('/[0-9]/', $raw)) {
-                    $otherPasswordErrors[] = 'Kata sandi harus mengandung minimal 1 angka (contoh: Admin123).';
+                    $otherPasswordErrors[] = 'Kata sandi harus mengandung minimal 1 angka (contoh: Toko1234).';
                 }
                 if (!preg_match('/[A-Za-z]/', $raw)) {
-                    $otherPasswordErrors[] = 'Kata sandi harus mengandung minimal 1 huruf (contoh: Admin123).';
+                    $otherPasswordErrors[] = 'Kata sandi harus mengandung minimal 1 huruf (contoh: Toko1234).';
                 }
 
                 $errors->forget('password');

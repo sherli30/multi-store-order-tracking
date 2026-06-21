@@ -60,10 +60,10 @@
             <span>/ Detail Pesanan</span>
         @elseif(request()->routeIs('orders.*'))
             Penjualan
-            <span>/ Daftar Pesanan</span>
+            <span>/ Kelola Pesanan</span>
         @elseif(request()->routeIs('transactions.*'))
             Penjualan
-            <span>/ Daftar Transaksi</span>
+            <span>/ Riwayat Transaksi</span>
 
             {{-- LOGISTIK --}}
         @elseif(request()->routeIs('deliveries.scan'))
@@ -77,24 +77,24 @@
             <span>/ Cetak Label</span>
         @elseif(request()->routeIs('deliveries.*'))
             Logistik
-            <span>/ Riwayat Status</span>
+            <span>/ Monitoring Pengiriman</span>
 
-            {{-- MASTER LOGISTIK --}}
+            {{-- DATA LOGISTIK --}}
         @elseif(request()->routeIs('couriers.*'))
-            Master Logistik
-            <span>/ Master Kurir</span>
+            Data Logistik
+            <span>/ Kelola Kurir</span>
         @elseif(request()->routeIs('shipping-services.*'))
-            Master Logistik
-            <span>/ Master Layanan</span>
+            Data Logistik
+            <span>/ Kelola Layanan</span>
         @elseif(request()->routeIs('provinces.*'))
-            Master Logistik
-            <span>/ Master Provinsi</span>
+            Data Logistik
+            <span>/ Kelola Provinsi</span>
         @elseif(request()->routeIs('cities.*'))
-            Master Logistik
-            <span>/ Master Kota & Kabupaten</span>
+            Data Logistik
+            <span>/ Kelola Kota & Kabupaten</span>
         @elseif(request()->routeIs('shipping-rates.*'))
-            Master Logistik
-            <span>/ Master Ongkir</span>
+            Data Logistik
+            <span>/ Kelola Ongkir</span>
 
             {{-- KATALOG --}}
         @elseif(request()->routeIs('products.create'))
@@ -105,7 +105,7 @@
             <span>/ Edit Produk</span>
         @elseif(request()->routeIs('products.*'))
             Katalog
-            <span>/ Daftar Produk</span>
+            <span>/ Kelola Produk</span>
 
         @elseif(request()->routeIs('product-categories.create'))
             Katalog
@@ -125,7 +125,7 @@
             <span>/ Edit Toko</span>
         @elseif(request()->routeIs('stores.*'))
             Katalog
-            <span>/ Daftar Toko</span>
+            <span>/ Kelola Toko</span>
 
             {{-- ANALISIS --}}
         @elseif(request()->routeIs('reports.*'))
@@ -135,13 +135,13 @@
             {{-- LAINNYA --}}
         @elseif(request()->routeIs('customers.show'))
             Lainnya
-            <span>/ Detail Pelanggan</span>
+            <span>/ Detail Customer</span>
         @elseif(request()->routeIs('customers.*'))
             Lainnya
-            <span>/ Pelanggan</span>
+            <span>/ Kelola Customer</span>
         @elseif(request()->routeIs('profile.*'))
             Lainnya
-            <span>/ Profil Admin</span>
+            <span>/ Profil Administrator</span>
 
         @else
             Sistem
@@ -180,29 +180,29 @@
                 </div>
                 <div class="profile-menu-body" style="max-height: 300px; overflow-y: auto; padding: 0;">
                     @forelse(auth()->user()->unreadNotifications->take(5) as $notif)
-                        <div style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px;">
+                        <a href="{{ route('notifications.redirect', $notif->id) }}" style="padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; text-decoration: none; color: inherit; transition: background 0.15s;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background='transparent'">
                             <div style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; background: var(--accent-dim); color: var(--accent); display: flex; align-items: center; justify-content: center;">
-                                @if($notif->data['type'] == 'new_order')
+                                @if(isset($notif->data['type']) && $notif->data['type'] == 'new_order')
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                                @elseif($notif->data['type'] == 'payment')
+                                @elseif(isset($notif->data['type']) && $notif->data['type'] == 'payment')
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                                @elseif(isset($notif->data['type']) && in_array($notif->data['type'], ['cancel', 'return_requested', 'return_approved', 'return_rejected']))
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                @elseif(isset($notif->data['type']) && in_array($notif->data['type'], ['shipping', 'delivered']))
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                 @else
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                 @endif
                             </div>
                             <div style="flex: 1; min-width: 0;">
-                                <div style="font-size: 12.5px; font-weight: 700; color: var(--text-1);">{{ $notif->data['title'] }}</div>
-                                <div style="font-size: 11.5px; color: var(--text-2); margin-top: 2px;">{{ $notif->data['message'] }}</div>
+                                <div style="font-size: 12.5px; font-weight: 700; color: var(--text-1);">{{ $notif->data['title'] ?? 'Notifikasi Sistem' }}</div>
+                                <div style="font-size: 11.5px; color: var(--text-2); margin-top: 2px;">{{ $notif->data['message'] ?? '' }}</div>
                                 <div style="font-size: 10px; color: var(--text-4); margin-top: 4px;">{{ $notif->created_at->diffForHumans() }}</div>
                             </div>
-                            <form method="POST" action="{{ route('notifications.markAsRead', $notif->id) }}">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" title="Tandai dibaca" style="background:none; border:none; cursor:pointer; color:var(--text-3); padding:4px;">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                </button>
-                            </form>
-                        </div>
+                            <div style="display: flex; align-items: center; justify-content: center; padding-left: 8px;">
+                                <span style="display: block; width: 8px; height: 8px; background: var(--accent); border-radius: 50%;" title="Baru"></span>
+                            </div>
+                        </a>
                     @empty
                         <div style="padding: 30px 20px; text-align: center; color: var(--text-3); font-size: 12.5px;">
                             Tidak ada notifikasi baru.
@@ -225,12 +225,21 @@
 
         <div class="profile-dropdown-wrap" id="profileDropdown">
             <div class="profile-btn" onclick="toggleProfileDropdown()">
-                @if(Auth::user()->avatar)
-                    <img src="{{ Storage::url(Auth::user()->avatar) }}" alt="Avatar" class="profile-avatar object-cover"
-                        style="background:none;">
-                @else
-                    <div class="profile-avatar">{{ substr(Auth::user()->name, 0, 1) }}</div>
-                @endif
+                {{--
+                    Avatar Header — disamakan dengan avatar Edit Profil:
+                    wrapper bundar (.profile-avatar-wrap-sm) + <img> object-fit:cover
+                    (.profile-avatar-img-sm), atau placeholder inisial bergradasi
+                    (.profile-avatar-placeholder-sm) bila user belum punya foto.
+                    Tidak ada lagi class ganda "object-cover" yang tidak terdefinisi.
+                --}}
+                <div class="profile-avatar-wrap-sm">
+                    @if(Auth::user()->avatar)
+                        <img src="{{ Storage::url(Auth::user()->avatar) }}" alt="Avatar"
+                            class="profile-avatar-img-sm">
+                    @else
+                        <div class="profile-avatar-placeholder-sm">{{ substr(Auth::user()->name, 0, 1) }}</div>
+                    @endif
+                </div>
                 <span class="profile-name">{{ Auth::user()->name }}</span>
                 <svg class="profile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <polyline points="6 9 12 15 18 9" />
@@ -241,7 +250,7 @@
                 <div class="profile-menu-header">
                     <div class="profile-menu-name">{{ Auth::user()->name }}</div>
                     <div class="profile-menu-email">{{ Auth::user()->email }}</div>
-                    <span class="profile-menu-role">{{ str_replace('_', ' ', Auth::user()->role) }}</span>
+                    <span class="profile-menu-role">{{ Auth::user()->role === 'administrator' ? 'Administrator' : (Auth::user()->role === 'logistics' ? 'Tim Logistik' : ucfirst(str_replace('_', ' ', Auth::user()->role))) }}</span>
                 </div>
                 <div class="profile-menu-body">
                     <a href="{{ route('profile.edit') }}" class="profile-menu-item">
@@ -250,7 +259,7 @@
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
                         </svg>
-                        Profil Admin
+                        Profil Administrator
                     </a>
                     <div class="profile-menu-divider"></div>
                     <form method="POST" action="{{ route('logout') }}">
@@ -305,7 +314,7 @@
     window.addEventListener('click', function (e) {
         const profileDropdown = document.getElementById('profileDropdown');
         const notifDropdown = document.getElementById('notifDropdown');
-        
+
         if (profileDropdown && !profileDropdown.contains(e.target)) {
             profileDropdown.classList.remove('active');
         }

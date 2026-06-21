@@ -615,6 +615,9 @@
                             <input type="text" id="name" name="name"
                                 class="field-input {{ $errors->has('name') ? 'is-invalid' : '' }}"
                                 placeholder="Contoh: Toko Sayuran Sejahtera" value="{{ old('name') }}" required autofocus>
+                            @error('name')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="field-group">
@@ -622,6 +625,9 @@
                             <input type="text" id="phone" name="phone"
                                 class="field-input {{ $errors->has('phone') ? 'is-invalid' : '' }}"
                                 placeholder="Contoh: 08123456789" value="{{ old('phone') }}" required>
+                            @error('phone')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="field-group">
@@ -667,6 +673,9 @@
                                     </div>
                                 </div>
                             </div>
+                            @error('operational_hours')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
                         <div class="field-group">
                             <label class="field-label" for="province_id">Provinsi <span>*</span></label>
@@ -676,20 +685,27 @@
                                     <option value="{{ $province->id }}" {{ old('province_id') == $province->id ? 'selected' : '' }}>{{ $province->name }}</option>
                                 @endforeach
                             </select>
+                            @error('province_id')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="field-group">
                             <label class="field-label" for="city_id">Kota / Kabupaten <span>*</span></label>
                             <select id="city_id" name="city_id" class="field-input {{ $errors->has('city_id') ? 'is-invalid' : '' }}" required disabled>
-                                <option value="">-- Pilih Kota --</option>
+                                <option value="">-- Pilih Kota / Kabupaten --</option>
                             </select>
+                            @error('city_id')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="field-group">
                             <label class="field-label" for="address">Alamat Lengkap <span>*</span></label>
-                            <textarea id="address" name="address"
-                                class="field-input field-textarea {{ $errors->has('address') ? 'is-invalid' : '' }}"
-                                placeholder="Contoh: Jl. Merdeka No. 123, RT 01/RW 02, Kelurahan Maju..." required>{{ old('address') }}</textarea>
+                            <textarea id="address" name="address" class="field-input field-textarea {{ $errors->has('address') ? 'is-invalid' : '' }}" placeholder="Masukkan alamat lengkap toko..." required>{{ old('address') }}</textarea>
+                            @error('address')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="field-group">
@@ -697,6 +713,9 @@
                             <textarea id="description" name="description"
                                 class="field-input field-textarea {{ $errors->has('description') ? 'is-invalid' : '' }}"
                                 placeholder="Tuliskan deskripsi singkat mengenai toko ini..." required>{{ old('description') }}</textarea>
+                            @error('description')
+                                <div class="field-error">{{ $message }}</div>
+                            @enderror
                         </div>
                     </div>
                 </div>
@@ -734,6 +753,9 @@
                         </div>
 
                         <input type="file" id="logo" name="logo" style="display:none;" accept="image/*" onchange="previewLogo(this)">
+                        @error('logo')
+                            <div class="field-error">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 
@@ -757,6 +779,9 @@
                             </label>
                             <div class="toggle-label" id="storeActiveLabel">{{ old('is_active', '1') == '1' ? 'Toko Aktif' : 'Toko Nonaktif' }}</div>
                         </div>
+                        @error('is_active')
+                            <div class="field-error">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
                 <button type="submit" class="btn-primary">
@@ -923,10 +948,8 @@
             }
 
             try {
-                const response = await fetch(`/stores/0/categories?province_id=${provinceId}`); // Using an existing endpoint or creating a new one
-                // Wait, let's use a better approach. I should check if there's a generic city API.
-                // Actually, I'll use the one from ShippingController if it exists.
                 const res = await fetch(`/api/shipping/cities/${provinceId}`);
+                if (!res.ok) throw new Error('Network response was not ok');
                 const result = await res.json();
 
                 if (result.status === 'success') {
@@ -941,10 +964,15 @@
                         citySelect.appendChild(option);
                     });
                     citySelect.disabled = false;
+                } else {
+                    throw new Error(result.message || 'Gagal memuat data kota');
                 }
             } catch (error) {
                 console.error('Error loading cities:', error);
                 citySelect.innerHTML = '<option value="">-- Gagal memuat data --</option>';
+                if (typeof showToast === 'function') {
+                    showToast('Gagal memuat data kota. Periksa koneksi jaringan Anda.', 'error');
+                }
             }
         }
 

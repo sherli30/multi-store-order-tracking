@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Master Data Kurir')
+@section('title', 'Data Kurir')
 
 @section('styles')
     /* ── Page Header ─────────────────────────────── */
@@ -334,9 +334,9 @@
                         <circle cx="18.5" cy="18.5" r="2.5"></circle>
                     </svg>
                 </span>
-                Master Kurir
+                Data Kurir
             </h1>
-            <p>Kelola daftar penyedia layanan pengiriman (Kurir Umum).</p>
+            <p>Kelola semua partner logistik untuk pengiriman pesanan.</p>
         </div>
         <button type="button" class="btn-primary" onclick="openCourierModal()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
@@ -514,6 +514,7 @@
                     <input type="text" id="courierNameInput" name="name"
                         class="form-modal-input @error('name') is-invalid @enderror"
                         placeholder="Contoh: J&T Express, JNE, SiCepat" value="{{ old('name') }}" required>
+                    @error('name') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="form-modal-field">
@@ -521,6 +522,39 @@
                     <input type="text" id="courierCodeInput" name="code"
                         class="form-modal-input @error('code') is-invalid @enderror"
                         placeholder="Contoh: jnt, jne, sicepat" value="{{ old('code') }}" required>
+                    @error('code') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-modal-field">
+                    <label class="form-modal-label" for="courierContactInput">Contact Person <span>*</span></label>
+                    <input type="text" id="courierContactInput" name="contact_person"
+                        class="form-modal-input @error('contact_person') is-invalid @enderror"
+                        placeholder="Nama Kontak" value="{{ old('contact_person') }}" required>
+                    @error('contact_person') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-modal-field">
+                    <label class="form-modal-label" for="courierPhoneInput">Nomor Telepon <span>*</span></label>
+                    <input type="text" id="courierPhoneInput" name="phone_number"
+                        class="form-modal-input @error('phone_number') is-invalid @enderror"
+                        placeholder="081234567890" value="{{ old('phone_number') }}" required>
+                    @error('phone_number') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-modal-field">
+                    <label class="form-modal-label" for="courierEmailInput">Email <span>*</span></label>
+                    <input type="email" id="courierEmailInput" name="email"
+                        class="form-modal-input @error('email') is-invalid @enderror"
+                        placeholder="email@kurir.com" value="{{ old('email') }}" required>
+                    @error('email') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-modal-field">
+                    <label class="form-modal-label" for="courierDescInput">Deskripsi</label>
+                    <textarea id="courierDescInput" name="description"
+                        class="form-modal-input @error('description') is-invalid @enderror"
+                        placeholder="Deskripsi operasional kurir">{{ old('description') }}</textarea>
+                    @error('description') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="toggle-card">
@@ -692,7 +726,7 @@
             checkResetVisibility();
         });
 
-        function openCourierModal(id = null, name = '', code = '', isActive = '1', isValidationError = false) {
+        function openCourierModal(id = null, name = '', code = '', contact_person = '', phone_number = '', email = '', description = '', isActive = '1', isValidationError = false) {
             const modal = document.getElementById('courierModal');
             const form = document.getElementById('courierForm');
             const title = document.getElementById('courierModalTitle');
@@ -724,6 +758,10 @@
                 document.getElementById('courierIdInput').value = id;
                 document.getElementById('courierNameInput').value = name;
                 document.getElementById('courierCodeInput').value = code;
+                document.getElementById('courierContactInput').value = contact_person;
+                document.getElementById('courierPhoneInput').value = phone_number;
+                document.getElementById('courierEmailInput').value = email;
+                document.getElementById('courierDescInput').value = description;
                 document.getElementById('courierActiveInput').checked = (isActive == '1' || isActive === 'true');
             } else {
                 title.textContent = 'Tambah Kurir Baru';
@@ -740,6 +778,10 @@
                 document.getElementById('courierIdInput').value = '';
                 document.getElementById('courierNameInput').value = '';
                 document.getElementById('courierCodeInput').value = '';
+                document.getElementById('courierContactInput').value = '';
+                document.getElementById('courierPhoneInput').value = '';
+                document.getElementById('courierEmailInput').value = '';
+                document.getElementById('courierDescInput').value = '';
                 document.getElementById('courierActiveInput').checked = (isActive == '1' || isActive === 'true' || isActive === true);
             }
 
@@ -759,10 +801,10 @@
             $(document).ready(function() {
                 const oldId = '{{ old('id') }}';
                 if (oldId) {
-                    openCourierModal(oldId, `{!! addslashes(old('name')) !!}`, '{{ old('code') }}',
+                    openCourierModal(oldId, `{!! addslashes(old('name')) !!}`, '{{ old('code') }}', '{{ old('contact_person') }}', '{{ old('phone_number') }}', '{{ old('email') }}', `{!! addslashes(old('description')) !!}`,
                         '{{ old('is_active') }}', true);
                 } else {
-                    openCourierModal(null, `{!! addslashes(old('name')) !!}`, '{{ old('code') }}',
+                    openCourierModal(null, `{!! addslashes(old('name')) !!}`, '{{ old('code') }}', '{{ old('contact_person') }}', '{{ old('phone_number') }}', '{{ old('email') }}', `{!! addslashes(old('description')) !!}`,
                         '{{ old('is_active') }}', true);
                 }
             });

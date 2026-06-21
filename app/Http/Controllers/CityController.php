@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\CityRequest;
+use App\Http\Requests\CityDeleteRequest;
+use App\Http\Requests\CityStatusRequest;
 use App\Models\City;
 use App\Models\Province;
 use Illuminate\Http\Request;
@@ -31,7 +33,19 @@ class CityController extends Controller
     {
         City::create($request->validated());
 
-        return redirect()->route('cities.index')->with('success', 'Kota "' . $request->name . '" berhasil ditambahkan.');
+        return redirect()->route('cities.index')->with('success', [
+            'title' => 'Kota Ditambahkan',
+            'list' => [
+                'Kota "<strong>' . $request->name . '</strong>" berhasil ditambahkan.'
+            ]
+        ]);
+    }
+
+    public function show(City $city)
+    {
+        $city->load('province');
+        $city->loadCount('stores');
+        return view('regions.cities.show', compact('city'));
     }
 
     public function update(CityRequest $request, City $city)
@@ -69,10 +83,40 @@ class CityController extends Controller
             $msg = 'Informasi kota "' . $city->name . '" berhasil diperbarui tanpa perubahan.';
         }
 
-        return redirect()->route('cities.index')->with('success', $msg);
+        return redirect()->route('cities.index')->with('success', [
+            'title' => 'Kota Diperbarui',
+            'list' => [
+                $msg
+            ]
+        ]);
     }
 
-    public function destroy(City $city)
+    public function updateStatus(CityStatusRequest $request, City $city)
+    {
+        $statusLabel = $request->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        try {
+            $city->update([
+                'is_active' => $request->is_active
+            ]);
+
+            return redirect()->back()->with('success', [
+                'title' => 'Status Diperbarui',
+                'list' => [
+                    "Kota \"<strong>{$city->name}</strong>\" berhasil {$statusLabel}."
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', [
+                'title' => 'Gagal Memperbarui Status',
+                'list' => [
+                    "Gagal mengubah status kota \"<strong>{$city->name}</strong>\"."
+                ]
+            ]);
+        }
+    }
+
+    public function destroy(CityDeleteRequest $request, City $city)
     {
         $cityName = $city->name;
 
@@ -81,9 +125,20 @@ class CityController extends Controller
 
             return redirect()
                 ->route('cities.index')
-                ->with('success', 'Kota "' . $cityName . '" telah berhasil dihapus secara permanen dari sistem.');
+                ->with('success', [
+                    'title' => 'Kota Dihapus',
+                    'list' => [
+                        'Kota "<strong>' . $cityName . '</strong>" telah berhasil dihapus secara permanen dari sistem.'
+                    ]
+                ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus kota "' . $cityName . '". Terjadi kesalahan pada sistem, silakan coba lagi.');
+            return back()->with('error', [
+                'title' => 'Gagal Menghapus Kota',
+                'list' => [
+                    "Gagal menghapus kota <strong>{$cityName}</strong>.",
+                    'Data sedang digunakan oleh toko atau riwayat pesanan aktif.'
+                ]
+            ]);
         }
     }
 }

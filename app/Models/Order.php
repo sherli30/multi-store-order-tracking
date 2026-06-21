@@ -14,15 +14,27 @@ class Order extends Model
 
     // ─── Order Status Constants (All Indonesian labels) ──────────────────
     const STATUS_PENDING = StatusService::ORDER_PENDING;
+    const STATUS_WAITING_CONFIRMATION = StatusService::ORDER_WAITING_CONFIRMATION;
     const STATUS_PERLU_DIPROSES = StatusService::ORDER_PROCESSING_NEEDED;
     const STATUS_PROCESSING = StatusService::ORDER_PROCESSING;
+    const STATUS_READY_TO_SHIP = StatusService::ORDER_READY_TO_SHIP;
     const STATUS_SHIPPING = StatusService::ORDER_SHIPPING;
+    const STATUS_DELIVERED = StatusService::ORDER_DELIVERED;
     const STATUS_COMPLETED = StatusService::ORDER_COMPLETED;
     const STATUS_CANCELLED = StatusService::ORDER_CANCELLED;
+    const STATUS_REFUNDED = StatusService::ORDER_REFUNDED;
+
+    /**
+     * The accessors to append to the model's array/JSON form.
+     */
+    protected $appends = [
+        'order_number',
+    ];
 
     protected $fillable = [
         'store_id',
         'user_id',
+        'invoice_id',
         'customer_name',
         'customer_email',
         'customer_phone',
@@ -34,9 +46,13 @@ class Order extends Model
         'postal_code',
         'shipping_type',
         'shipping_cost',
-        'packing_cost',
         'shipping_courier',
         'tracking_number',
+        'shipment_id',
+        'shipment_status',
+        'courier_name',
+        'courier_service',
+        'shipment_created_at',
         'status',
         'notes',
         'is_stock_deducted',
@@ -47,6 +63,9 @@ class Order extends Model
         'idempotency_key',
         'webhook_attempts',
         'last_webhook_attempt',
+        'return_status',
+        'return_reason',
+        'admin_return_notes',
     ];
 
     /**
@@ -59,9 +78,9 @@ class Order extends Model
         return [
             'total_amount' => 'decimal:2',
             'shipping_cost' => 'decimal:2',
-            'packing_cost' => 'decimal:2',
             'is_stock_deducted' => 'boolean',
             'last_webhook_attempt' => 'datetime',
+            'shipment_created_at' => 'datetime',
         ];
     }
 
@@ -91,13 +110,13 @@ class Order extends Model
     }
 
     /**
-     * Get the total weight of the order in grams.
+     * Get the total weight of the order in KG.
      */
-    public function getTotalWeightAttribute(): int
+    public function getTotalWeightAttribute(): float
     {
-        return (int) $this->orderItems->sum(function ($item) {
+        return (float) $this->orderItems->sum(function ($item) {
             // Mengalikan jumlah beli dengan berat masing-masing produk
-            return $item->quantity * ($item->product->weight ?? 0);
+            return $item->quantity * ($item->product->weight ?? 1.0);
         });
     }
 
@@ -107,6 +126,14 @@ class Order extends Model
     public function store()
     {
         return $this->belongsTo(Store::class);
+    }
+
+    /**
+     * Get the invoice (payment group) that owns the order.
+     */
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
     }
 
     /**
@@ -131,6 +158,11 @@ class Order extends Model
     public function trackingHistories()
     {
         return $this->hasMany(TrackingHistory::class);
+    }
+
+    public function shipmentTrackingHistories()
+    {
+        return $this->hasMany(ShipmentTrackingHistory::class);
     }
 
     /**

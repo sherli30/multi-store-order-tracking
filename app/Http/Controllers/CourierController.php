@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Courier;
 use Illuminate\Http\Request;
 use App\Http\Requests\CourierRequest;
+use App\Http\Requests\CourierDeleteRequest;
+use App\Http\Requests\CourierStatusRequest;
 
 class CourierController extends Controller
 {
@@ -42,7 +44,18 @@ class CourierController extends Controller
     {
         Courier::create($request->all());
 
-        return redirect()->route('couriers.index')->with('success', 'Kurir "' . $request->name . '" berhasil ditambahkan.');
+        return redirect()->route('couriers.index')->with('success', [
+            'title' => 'Kurir Ditambahkan',
+            'list' => [
+                'Kurir "<strong>' . $request->name . '</strong>" berhasil ditambahkan.'
+            ]
+        ]);
+    }
+
+    public function show(Courier $courier)
+    {
+        $courier->loadCount('services');
+        return view('couriers.show', compact('courier'));
     }
 
     public function edit(Courier $courier)
@@ -82,25 +95,63 @@ class CourierController extends Controller
             $msg = 'Informasi kurir "' . $courier->name . '" berhasil diperbarui tanpa perubahan.';
         }
 
-        return redirect()->route('couriers.index')->with('success', $msg);
+        return redirect()->route('couriers.index')->with('success', [
+            'title' => 'Kurir Diperbarui',
+            'list' => [
+                $msg
+            ]
+        ]);
     }
 
-    public function destroy(Courier $courier)
+    public function updateStatus(CourierStatusRequest $request, Courier $courier)
+    {
+        $statusLabel = $request->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        try {
+            $courier->update([
+                'is_active' => $request->is_active
+            ]);
+
+            return redirect()->back()->with('success', [
+                'title' => 'Status Diperbarui',
+                'list' => [
+                    "Kurir \"<strong>{$courier->name}</strong>\" berhasil {$statusLabel}."
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', [
+                'title' => 'Gagal Memperbarui Status',
+                'list' => [
+                    "Gagal mengubah status kurir \"<strong>{$courier->name}</strong>\".",
+                    "Terjadi kesalahan saat memperbarui status kurir."
+                ]
+            ]);
+        }
+    }
+
+    public function destroy(CourierDeleteRequest $request, Courier $courier)
     {
         $courierName = $courier->name;
 
         try {
-            if ($courier->services()->count() > 0) {
-                return back()->with('error', 'Gagal menghapus! Kurir "' . $courierName . '" masih memiliki data layanan kurir terkait di sistem.');
-            }
-
             $courier->delete();
 
             return redirect()
                 ->route('couriers.index')
-                ->with('success', 'Kurir "' . $courierName . '" telah berhasil dihapus secara permanen dari sistem.');
+                ->with('success', [
+                    'title' => 'Kurir Dihapus',
+                    'list' => [
+                        'Kurir "<strong>' . $courierName . '</strong>" telah berhasil dihapus secara permanen dari sistem.'
+                    ]
+                ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus kurir "' . $courierName . '". Terjadi kesalahan pada sistem, silakan coba lagi.');
+            return back()->with('error', [
+                'title' => 'Gagal Menghapus Kurir',
+                'list' => [
+                    "Gagal menghapus kurir <strong>{$courierName}</strong>.",
+                    'Data kurir sedang terkait dengan transaksi atau layanan pengiriman aktif.'
+                ]
+            ]);
         }
     }
 }

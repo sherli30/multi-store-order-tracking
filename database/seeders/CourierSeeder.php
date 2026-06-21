@@ -19,7 +19,7 @@ class CourierSeeder extends Seeder
                 'code' => 'jnt',
                 'services' => [
                     ['service_name' => 'Reguler', 'min_weight' => 0],
-                    ['service_name' => 'Cargo (J&T Cargo)', 'min_weight' => 10000],
+                    ['service_name' => 'Cargo (J&T Cargo)', 'min_weight' => 10],
                 ]
             ],
             [
@@ -27,7 +27,7 @@ class CourierSeeder extends Seeder
                 'code' => 'jne',
                 'services' => [
                     ['service_name' => 'REG (Reguler)', 'min_weight' => 0],
-                    ['service_name' => 'JTR (JNE Trucking/Cargo)', 'min_weight' => 10000],
+                    ['service_name' => 'JTR (JNE Trucking/Cargo)', 'min_weight' => 10],
                 ]
             ],
         ];

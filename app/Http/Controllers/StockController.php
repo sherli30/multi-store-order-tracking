@@ -78,7 +78,13 @@ class StockController extends Controller
                 'Manual stock addition: ' . $note
             );
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menambahkan stok: ' . $e->getMessage())->withInput();
+            return back()->with('error', [
+                'title' => 'Gagal Menambahkan Stok',
+                'list' => [
+                    'Gagal menambahkan stok.',
+                    'Pastikan data tidak diubah oleh administrator lain di waktu yang sama, lalu coba kembali.'
+                ]
+            ])->withInput();
         }
 
         return back()->with('success', [
@@ -121,7 +127,13 @@ class StockController extends Controller
         } catch (InsufficientStockException $e) {
             return back()->withErrors(['qty' => $e->getMessage()])->withInput();
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengurangi stok: ' . $e->getMessage())->withInput();
+            return back()->with('error', [
+                'title' => 'Gagal Mengurangi Stok',
+                'list' => [
+                    'Gagal mengurangi stok.',
+                    'Pastikan stok cukup dan tidak sedang terkunci oleh transaksi lain.'
+                ]
+            ])->withInput();
         }
 
         return back()->with('success', [

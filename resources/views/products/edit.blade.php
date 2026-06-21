@@ -614,41 +614,7 @@
     .audit-label { font-size: 12px; color: var(--text-3); font-weight: 600; }
     .audit-value { font-size: 12px; color: var(--text-1); font-weight: 700; }
 
-    /* ── WEIGHT UNIT BADGES ─── */
-    .weight-badge {
-        padding: 5px 12px;
-        background: var(--panel);
-        border: 1.5px solid var(--border);
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 700;
-        color: var(--text-2);
-        cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        user-select: none;
-        margin-top: 4px;
-    }
-    .weight-badge:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-        transform: translateY(-1px);
-    }
-    .weight-badge.active {
-        background: var(--accent);
-        border-color: var(--accent);
-        color: #fff;
-        box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 25%, transparent);
-    }
-    .weight-badge.active svg { color: #fff; }
-    .weight-badge svg {
-        width: 12px;
-        height: 12px;
-        color: inherit;
-        transition: color 0.2s;
-    }
+
 @endsection
 
 @section('content')
@@ -699,6 +665,13 @@
                             <label class="field-label" for="name">Nama Produk <span>*</span></label>
                             <input type="text" id="name" name="name" class="field-input {{ $errors->has('name') ? 'is-invalid' : '' }}"
                                 placeholder="Contoh: Kopi Bubuk Arabika" value="{{ old('name', $product->name) }}" required>
+                            @error('name') <span class="field-hint" style="color:var(--red);">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label" for="sku">SKU <span>*</span></label>
+                            <input type="text" id="sku" name="sku" class="field-input {{ $errors->has('sku') ? 'is-invalid' : '' }}" placeholder="Contoh: KBA-250" value="{{ old('sku', $product->sku) }}" required>
+                            @error('sku') <span class="field-hint" style="color:var(--red);">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="field-group">
@@ -713,6 +686,7 @@
                                     @endif
                                 @endforeach
                             </select>
+                            @error('store_id') <span class="field-hint" style="color:var(--red);">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="field-group">
@@ -727,6 +701,7 @@
                                     @endif
                                 @endforeach
                             </select>
+                            @error('category_id') <span class="field-hint" style="color:var(--red);">{{ $message }}</span> @enderror
                         </div>
                     </div>
                 </div>
@@ -752,21 +727,12 @@
                                         style="padding-left:42px;" placeholder="0" required
                                         value="{{ old('price', (int) ($product->price ?? 0)) }}">
                                 </div>
+                                @error('price') <span class="field-hint" style="color:var(--red);">{{ $message }}</span> @enderror
                             </div>
                             <div class="field-group">
-                                <label class="field-label">Berat <span>*</span></label>
-                                <input type="number" step="any" id="weight_display" class="field-input {{ $errors->has('weight') ? 'is-invalid' : '' }}" placeholder="Contoh: 500" min="0" required>
-                                <div class="badge-row" style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:2px;">
-                                    <div class="weight-badge" id="badge_g" onclick="selectWeightUnit('g')">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path><line x1="16" y1="8" x2="2" y2="22"></line><line x1="17.5" y1="15" x2="9" y2="15"></line></svg>
-                                        gram (g)
-                                    </div>
-                                    <div class="weight-badge" id="badge_kg" onclick="selectWeightUnit('kg')">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10" width="14" height="11" rx="2"></rect><path d="M12 2v8M8 2h8"></path></svg>
-                                        kilogram (kg)
-                                    </div>
-                                </div>
-                                <input type="hidden" name="weight" id="single_weight" value="{{ old('weight', round($product->weight ?? 0)) }}">
+                                <label class="field-label">Berat (kg) <span>*</span></label>
+                                <input type="number" step="0.01" name="weight" id="single_weight" class="field-input {{ $errors->has('weight') ? 'is-invalid' : '' }}" placeholder="Contoh: 0.5 kg" min="0" required value="{{ old('weight', (float)($product->weight ?? 0)) }}">
+                                @error('weight') <span class="field-hint" style="color:var(--red);">{{ $message }}</span> @enderror
                             </div>
                         </div>
                         <div class="field-hint" style="display:flex; align-items:center; gap:8px;">
@@ -775,7 +741,7 @@
                                 <line x1="12" y1="8" x2="12" y2="12" />
                                 <line x1="12" y1="16" x2="12.01" y2="16" />
                             </svg>
-                            Update stok dilakukan melalui menu <strong>Manajemen Stok</strong>.
+                            Update stok dilakukan melalui menu <strong>Kelola Stok</strong>.
                         </div>
                     </div>
                 </div>
@@ -900,7 +866,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width: 16px; height: 16px; margin-top: 2px; flex-shrink: 0; color: var(--red);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                             <div>
                                 <span style="font-weight: 800; display: block; margin-bottom: 3px; font-size: 12.5px;">Toko Induk Non-Aktif</span>
-                                Status produk ini dikunci karena toko utamanya sedang dinonaktifkan di Manajemen Toko. Silakan aktifkan toko terlebih dahulu jika ingin mengaktifkan produk ini.
+                                Status produk ini dikunci karena toko utamanya sedang dinonaktifkan di Kelola Toko. Silakan aktifkan toko terlebih dahulu jika ingin mengaktifkan produk ini.
                             </div>
                         </div>
                         <div id="categoryInactiveWarning" style="display: none; align-items: flex-start; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--red); background: color-mix(in srgb, var(--red) 8%, var(--panel)); border: 1.5px solid color-mix(in srgb, var(--red) 20%, transparent); border-radius: 10px; padding: 12px 14px; text-align: left;">
@@ -1174,6 +1140,9 @@
                 })
                 .catch(err => {
                     categorySelect.innerHTML = '<option value="" disabled selected>Gagal memuat kategori</option>';
+                    if (typeof showToast === 'function') {
+                        showToast('Gagal memuat kategori. Periksa koneksi jaringan Anda.', 'error');
+                    }
                 });
             }
 
@@ -1193,48 +1162,7 @@
             });
         });
 
-        // ── DYNAMIC WEIGHT UNIT AUTO-CONVERSION ──
-        (function() {
-            const hiddenWeight = document.getElementById('single_weight');
-            const displayWeight = document.getElementById('weight_display');
-            let currentUnit = null;
 
-            window.selectWeightUnit = function(unit) {
-                currentUnit = unit;
-                document.getElementById('badge_g').classList.toggle('active', unit === 'g');
-                document.getElementById('badge_kg').classList.toggle('active', unit === 'kg');
-                updateHiddenWeight();
-            }
-
-            function updateHiddenWeight() {
-                const val = parseFloat(displayWeight.value);
-                if (isNaN(val) || val <= 0 || !currentUnit) {
-                    hiddenWeight.value = '';
-                    return;
-                }
-                hiddenWeight.value = currentUnit === 'kg' ? Math.round(val * 1000) : Math.round(val);
-            }
-
-            function initDisplayWeight() {
-                const rawVal = parseFloat(hiddenWeight.value);
-                if (!isNaN(rawVal) && rawVal > 0) {
-                    if (rawVal >= 1000) {
-                        displayWeight.value = parseFloat((rawVal / 1000).toFixed(3));
-                        selectWeightUnit('kg');
-                    } else {
-                        displayWeight.value = rawVal;
-                        selectWeightUnit('g');
-                    }
-                } else {
-                    currentUnit = null;
-                    document.getElementById('badge_g').classList.remove('active');
-                    document.getElementById('badge_kg').classList.remove('active');
-                }
-            }
-
-            displayWeight.addEventListener('input', updateHiddenWeight);
-            initDisplayWeight();
-        })();
 
         let descIndex = {{ (is_array(old('descriptions')) ? max(array_keys(old('descriptions'))) : $product->descriptions->count()) + 10 }};
 

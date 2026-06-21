@@ -32,6 +32,7 @@ class CategoryRequest extends FormRequest
             'name' => [
                 'required',
                 'string',
+                'min:3',
                 'max:100',
                 Rule::unique('product_categories', 'name')
                     ->where('store_id', $this->store_id)
@@ -61,24 +62,25 @@ class CategoryRequest extends FormRequest
     {
         return [
             // Store ID
-            'store_id.required' => 'Toko wajib dipilih terlebih dahulu.',
-            'store_id.exists'   => 'Toko yang dipilih tidak terdaftar di sistem kami.',
+            'store_id.required' => 'Toko wajib dipilih.',
+            'store_id.exists'   => 'Toko tidak ditemukan.',
 
             // Name
-            'name.required'     => 'Nama kategori tidak boleh kosong.',
+            'name.required'     => 'Nama kategori wajib diisi.',
             'name.string'       => 'Nama kategori harus berupa teks.',
-            'name.max'          => 'Nama kategori terlalu panjang, maksimal 100 karakter.',
-            'name.unique'       => 'Kategori dengan nama ini sudah ada di toko tersebut. Silakan gunakan nama lain.',
+            'name.min'          => 'Nama kategori minimal 3 karakter.',
+            'name.max'          => 'Nama kategori maksimal 100 karakter.',
+            'name.unique'       => 'Nama kategori sudah digunakan.',
 
             // Description
-            'description.required' => 'Deskripsi kategori tidak boleh kosong.',
+            'description.required' => 'Deskripsi wajib diisi.',
             'description.string' => 'Deskripsi harus berupa teks.',
-            'description.max'    => 'Deskripsi terlalu panjang, maksimal 500 karakter.',
+            'description.max'    => 'Deskripsi maksimal 500 karakter.',
 
             // Is Active
-            'is_active.accepted' => 'Status aktif kategori wajib diaktifkan saat pendaftaran baru.',
-            'is_active.required' => 'Status aktif kategori wajib diisi.',
-            'is_active.boolean'  => 'Status aktif harus berupa pilihan benar atau salah.',
+            'is_active.accepted' => 'Status wajib dipilih.',
+            'is_active.required' => 'Status wajib dipilih.',
+            'is_active.boolean'  => 'Status kategori tidak valid.',
         ];
     }
 

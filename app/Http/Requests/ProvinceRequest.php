@@ -29,7 +29,22 @@ class ProvinceRequest extends FormRequest
                 'max:255',
                 $provinceId ? 'unique:provinces,name,' . $provinceId : 'unique:provinces,name'
             ],
+            'code' => [
+                'required',
+                'string',
+                'regex:/^[A-Z0-9\-]+$/',
+                'max:50',
+                $provinceId ? 'unique:provinces,code,' . $provinceId : 'unique:provinces,code'
+            ],
         ];
+
+        if ($this->isMethod('POST')) {
+            $rules['is_active'] = ['accepted'];
+        } else {
+            $rules['is_active'] = ['required', 'boolean'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -42,7 +57,24 @@ class ProvinceRequest extends FormRequest
             'name.string' => 'Nama provinsi harus berupa teks biasa.',
             'name.max' => 'Nama provinsi terlalu panjang. Maksimal adalah 255 karakter.',
             'name.unique' => 'Nama provinsi sudah terdaftar di sistem. Silakan masukkan nama provinsi lain.',
+
+            'code.required' => 'Kode provinsi wajib diisi.',
+            'code.string' => 'Format kode provinsi tidak valid.',
+            'code.regex' => 'Format kode provinsi tidak valid. Hanya gunakan huruf kapital, angka, dan strip (contoh: JBR, JTG).',
+            'code.max' => 'Kode provinsi maksimal 50 karakter.',
+            'code.unique' => 'Kode provinsi sudah digunakan. Silakan gunakan kode lain yang unik.',
+
+            'is_active.accepted' => 'Status provinsi wajib diaktifkan saat penambahan baru.',
+            'is_active.required' => 'Status provinsi wajib dipilih. Silakan tentukan apakah provinsi ini aktif atau tidak.',
+            'is_active.boolean' => 'Status provinsi tidak valid. Harap pilih aktif atau nonaktif.',
         ];
+    }
+
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'is_active' => $this->boolean('is_active'),
+        ]);
     }
 
     protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)

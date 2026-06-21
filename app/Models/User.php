@@ -62,6 +62,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the FCM tokens for the user.
+     */
+    public function fcmTokens()
+    {
+        return $this->hasMany(FcmToken::class);
+    }
+
+    /**
      * Otomatis hapus file avatar saat user dihapus secara permanen.
      */
     protected static function booted()
@@ -71,5 +79,13 @@ class User extends Authenticatable
                 \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
             }
         });
+    }
+
+    /**
+     * Override the default password reset notification to use our custom Mail template.
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        \Illuminate\Support\Facades\Mail::to($this->email)->send(new \App\Mail\ResetPasswordMail($token, $this));
     }
 }

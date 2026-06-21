@@ -20,7 +20,7 @@ class DummyOrderSeeder extends Seeder
     public function run(): void
     {
         $store = Store::first();
-        $admin = User::first();
+        $admin = User::where('role', 'administrator')->first();
         $product1 = Product::first();
         $product2 = Product::skip(1)->first() ?? $product1;
 
@@ -193,7 +193,7 @@ class DummyOrderSeeder extends Seeder
             'order_id' => $order3->id,
             'admin_id' => null,
             'status' => 'pending',
-            'notes' => 'Menunggu pembayaran dari pelanggan',
+            'notes' => 'Menunggu pembayaran dari customer',
             'created_at' => now()->subHours(5),
         ]);
     }

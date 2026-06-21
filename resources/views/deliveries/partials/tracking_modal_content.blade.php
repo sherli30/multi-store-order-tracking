@@ -49,7 +49,7 @@
             <div style="position: absolute; left: 20px; top: 10px; bottom: 10px; width: 2px; background: var(--border); z-index: 1;"></div>
 
             @php
-                $timelineStatuses = ['perlu_diproses', 'processing', 'shipping', 'completed', 'cancelled', 'refund', 'pending'];
+                $timelineStatuses = ['perlu_diproses', 'processing', 'shipping', 'completed', 'cancelled', 'refunded', 'pending'];
                 $histories = $order->trackingHistories()
                     ->whereIn('status', $timelineStatuses)
                     ->latest()
@@ -85,13 +85,13 @@
                                 {{ $h->notes }}
                             @else
                                 {{ match($h->status) {
-                                    'pending'        => 'Pesanan berhasil dibuat oleh pelanggan.',
-                                    'perlu_diproses' => 'Pesanan menunggu untuk diproses oleh admin.',
+                                    'pending'        => 'Pesanan berhasil dibuat oleh customer.',
+                                    'perlu_diproses' => 'Pesanan menunggu untuk diproses oleh administrator.',
                                     'processing'     => 'Barang sedang dipersiapkan dan dikemas untuk pengiriman.',
                                     'shipping'       => 'Pesanan telah diserahkan ke kurir untuk dikirim ke alamat tujuan.',
-                                    'completed'      => 'Pesanan telah sampai dan diterima oleh pelanggan.',
+                                    'completed'      => 'Pesanan telah sampai dan diterima oleh customer.',
                                     'cancelled'      => 'Pesanan dibatalkan.',
-                                    'refund'         => 'Pesanan dibatalkan dan dana dikembalikan (refund).',
+                                    'refunded'       => 'Pesanan dikembalikan dan dana direfund.',
                                     default          => 'Status diperbarui oleh sistem.'
                                 } }}
                             @endif

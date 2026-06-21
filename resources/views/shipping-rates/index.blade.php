@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Master Tarif Ongkos Kirim')
+@section('title', 'Kelola Tarif Ongkos Kirim')
 
 @section('styles')
     /* ── Page Header ─────────────────────────────── */
@@ -51,7 +51,7 @@
     .filter-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
     .filter-card-title { font-size: 13px; font-weight: 700; color: var(--text-1); }
 
-    .filter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; align-items: flex-end; }
+    .filter-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; align-items: flex-end; }
     @media (max-width: 1024px) { .filter-grid { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 560px)  { .filter-grid { grid-template-columns: 1fr; } }
 
@@ -236,6 +236,29 @@
     }
     .btn-cancel:hover { border-color: var(--border-2); color: var(--text-1); }
 
+    .toggle-card {
+        background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+        padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 24px; transition: all 0.2s; cursor: pointer; user-select: none;
+    }
+    .toggle-card.active { border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: color-mix(in srgb, var(--accent) 3%, var(--surface)); }
+    .toggle-info { display: flex; flex-direction: column; gap: 4px; }
+    .toggle-title { font-size: 13px; font-weight: 700; color: var(--text-1); }
+    .toggle-desc { font-size: 11.5px; color: var(--text-3); font-weight: 500; }
+    .custom-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .custom-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute; cursor: pointer; inset: 0; background-color: var(--border-2);
+        transition: .3s; border-radius: 24px;
+    }
+    .slider:before {
+        position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+        background-color: white; transition: .3s; border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .custom-switch input:checked + .slider { background-color: var(--accent); }
+    .custom-switch input:checked + .slider:before { transform: translateX(20px); }
+
     /* ── Delete Modal ────────────────────────────── */
     .modal-box-delete { width: 380px !important; padding: 28px !important; text-align: left !important; }
     .modal-box-delete .modal-title { font-size: 16px !important; margin-bottom: 6px !important; }
@@ -276,9 +299,9 @@
                     <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
             </span>
-            Master Ongkir
+            Kelola Ongkir
         </h1>
-        <p>Kelola biaya pengiriman per kg antar kota untuk setiap layanan.</p>
+        <p>Atur biaya pengiriman berdasarkan rute dan layanan logistik.</p>
     </div>
     <button class="btn-primary" onclick="openModal()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -313,7 +336,7 @@
         </div>
         <div>
             <div class="stat-value">Rp {{ number_format($rates->avg('cost_per_kg') ?? 0, 0, ',', '.') }}</div>
-            <div class="stat-label">Rata-rata Biaya / KG</div>
+            <div class="stat-label">Rata-rata Biaya / kg</div>
         </div>
     </div>
     <div class="stat-card">
@@ -350,15 +373,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="form-group">
-            <label class="form-label" for="dtFilterOrigin">Kota Asal</label>
-            <select id="dtFilterOrigin" class="form-input">
-                <option value="">Semua Kota Asal</option>
-                @foreach ($cities as $city)
-                    <option value="{{ $city->id }}">{{ $city->name }}</option>
-                @endforeach
-            </select>
-        </div>
+
         <div class="form-group">
             <label class="form-label" for="dtFilterDestination">Kota Tujuan</label>
             <select id="dtFilterDestination" class="form-input">
@@ -395,7 +410,7 @@
                     <th class="center" style="width:50px;">No</th>
                     <th>Layanan</th>
                     <th>Rute (Asal → Tujuan)</th>
-                    <th>Biaya / KG</th>
+                    <th>Biaya / kg</th>
                     <th>Estimasi (ETD)</th>
                     <th class="center" style="width:150px;">Aksi</th>
                 </tr>
@@ -446,44 +461,101 @@
                         Data tarif ongkir ini tetap dapat diperbarui, tetapi tidak akan aktif secara operasional di sistem karena jenis layanan atau ekspedisi kurir induk sedang dinonaktifkan.
                     </div>
                 </div>
+                @error('shipping_service_id') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
             </div>
 
+            <div style="font-size:12px; font-weight:800; color:var(--text-1); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">Lokasi Asal</div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+                <div class="form-modal-field" style="margin-bottom:0;">
+                    <label class="form-modal-label">Provinsi Asal <span>*</span></label>
+                    <select name="origin_province_id" id="originProvinceId" class="form-modal-input @error('origin_province_id') is-invalid @enderror" required>
+                        <option value="">-- Pilih Provinsi --</option>
+                        @foreach($provinces as $province)
+                            <option value="{{ $province->id }}">{{ $province->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('origin_province_id') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
+                </div>
                 <div class="form-modal-field" style="margin-bottom:0;">
                     <label class="form-modal-label">Kota Asal (Origin) <span>*</span></label>
                     <select name="origin_city_id" id="originId" class="form-modal-input @error('origin_city_id') is-invalid @enderror" required>
                         <option value="">-- Pilih Kota --</option>
                         @foreach($cities as $city)
-                            <option value="{{ $city->id }}">{{ $city->full_name }}</option>
+                            <option value="{{ $city->id }}" data-province="{{ $city->province_id }}">{{ $city->full_name }}</option>
                         @endforeach
                     </select>
+                    @error('origin_city_id') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
+                </div>
+            </div>
+
+            <div style="font-size:12px; font-weight:800; color:var(--text-1); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">Lokasi Tujuan</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
+                <div class="form-modal-field" style="margin-bottom:0;">
+                    <label class="form-modal-label">Provinsi Tujuan <span>*</span></label>
+                    <select name="destination_province_id" id="destProvinceId" class="form-modal-input @error('destination_province_id') is-invalid @enderror" required>
+                        <option value="">-- Pilih Provinsi --</option>
+                        @foreach($provinces as $province)
+                            <option value="{{ $province->id }}">{{ $province->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('destination_province_id') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-modal-field" style="margin-bottom:0;">
                     <label class="form-modal-label">Kota Tujuan (Dest) <span>*</span></label>
                     <select name="destination_city_id" id="destId" class="form-modal-input @error('destination_city_id') is-invalid @enderror" required>
                         <option value="">-- Pilih Kota --</option>
                         @foreach($cities as $city)
-                            <option value="{{ $city->id }}">{{ $city->full_name }}</option>
+                            <option value="{{ $city->id }}" data-province="{{ $city->province_id }}">{{ $city->full_name }}</option>
                         @endforeach
                     </select>
+                    @error('destination_city_id') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
+                </div>
+            </div>
+
+            <div style="font-size:12px; font-weight:800; color:var(--text-1); margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border);">Tarif & Parameter</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div class="form-modal-field" style="margin-bottom:0;">
+                    <label class="form-modal-label">Berat Minimum (kg) <span>*</span></label>
+                    <input type="number" step="0.01" name="min_weight" id="minWeight" class="form-modal-input @error('min_weight') is-invalid @enderror" required placeholder="Contoh: 1.00" value="{{ old('min_weight', '1.00') }}">
+                    @error('min_weight') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
+                </div>
+                <div class="form-modal-field" style="margin-bottom:0;">
+                    <label class="form-modal-label">Berat Maksimum (kg)</label>
+                    <input type="number" step="0.01" name="max_weight" id="maxWeight" class="form-modal-input @error('max_weight') is-invalid @enderror" placeholder="Boleh dikosongkan" value="{{ old('max_weight') }}">
+                    @error('max_weight') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
                 </div>
             </div>
 
             <div class="form-modal-field">
-                <label class="form-modal-label">Biaya per KG (Rp) <span>*</span></label>
+                <label class="form-modal-label">Biaya per kg (Rp) <span>*</span></label>
                 <input type="text" name="cost_per_kg" id="costKg" class="form-modal-input @error('cost_per_kg') is-invalid @enderror" required placeholder="Contoh: 12.000" value="{{ old('cost_per_kg') }}">
+                @error('cost_per_kg') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
                 <div class="form-modal-field" style="margin-bottom:0;">
                     <label class="form-modal-label">Estimasi Min (Hari) <span>*</span></label>
                     <input type="number" name="etd_min" id="etdMin" class="form-modal-input @error('etd_min') is-invalid @enderror" required placeholder="0" value="{{ old('etd_min') }}">
+                    @error('etd_min') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
                 </div>
                 <div class="form-modal-field" style="margin-bottom:0;">
                     <label class="form-modal-label">Estimasi Max (Hari) <span>*</span></label>
                     <input type="number" name="etd_max" id="etdMax" class="form-modal-input @error('etd_max') is-invalid @enderror" required placeholder="0" value="{{ old('etd_max') }}">
+                    @error('etd_max') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:6px;">{{ $message }}</div> @enderror
                 </div>
             </div>
+
+            <div class="toggle-card" id="activeToggleCard" onclick="document.getElementById('isActive').click()">
+                <div class="toggle-info">
+                    <div class="toggle-title">Status Aktif</div>
+                    <div class="toggle-desc" id="activeToggleDesc">Tarif pengiriman ini dapat digunakan oleh pesanan.</div>
+                </div>
+                <label class="custom-switch" onclick="event.stopPropagation()">
+                    <input type="checkbox" name="is_active" id="isActive" value="1" {{ old('is_active', '1') == '1' ? 'checked' : '' }}>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            @error('is_active') <div style="color:var(--red); font-size:11.5px; font-weight:600; margin-top:-14px; margin-bottom:20px;">{{ $message }}</div> @enderror
 
             <div style="display:flex; gap:10px; justify-content:flex-end;">
                 <button type="button" class="btn-cancel" onclick="closeModal()">Batal</button>
@@ -596,7 +668,7 @@
         }
 
         function checkResetVisibility() {
-            const hasFilter = $('#dtFilterService').val() || $('#dtFilterOrigin').val() || $('#dtFilterDestination').val();
+            const hasFilter = $('#dtFilterService').val() || $('#dtFilterDestination').val();
             if (hasFilter) {
                 $('#btnResetFilter').fadeIn(200).css('display', 'inline-flex');
             } else {
@@ -613,7 +685,6 @@
             $('#btnApplyFilter').on('click', function() {
                 const params = {
                     service_id:          $('#dtFilterService').val(),
-                    origin_city_id:      $('#dtFilterOrigin').val(),
                     destination_city_id: $('#dtFilterDestination').val(),
                 };
 
@@ -644,7 +715,6 @@
 
             $('#btnResetFilter').on('click', function() {
                 $('#dtFilterService').val('');
-                $('#dtFilterOrigin').val('');
                 $('#dtFilterDestination').val('');
                 $('#btnApplyFilter').trigger('click');
             });
@@ -685,7 +755,42 @@
             }
         }
 
-        function openModal(id = null, serviceId = '', originId = '', destId = '', cost = '', etdMin = '', etdMax = '', isValidationError = false) {
+        document.getElementById('isActive').addEventListener('change', function() {
+            const card = document.getElementById('activeToggleCard');
+            const desc = document.getElementById('activeToggleDesc');
+            if(this.checked) {
+                card.classList.add('active');
+                desc.textContent = 'Tarif pengiriman ini dapat digunakan oleh pesanan.';
+            } else {
+                card.classList.remove('active');
+                desc.textContent = 'Nonaktif (disembunyikan dari pilihan checkout pengguna).';
+            }
+        });
+
+        function filterCitiesByProvince(provinceSelectId, citySelectId, selectedCityId = null) {
+            const provinceId = document.getElementById(provinceSelectId).value;
+            const citySelect = document.getElementById(citySelectId);
+            const options = citySelect.querySelectorAll('option:not([value=""])');
+
+            options.forEach(opt => {
+                if (!provinceId || opt.getAttribute('data-province') === provinceId) {
+                    opt.style.display = 'block';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+
+            if (selectedCityId) {
+                citySelect.value = selectedCityId;
+            } else {
+                citySelect.value = '';
+            }
+        }
+
+        document.getElementById('originProvinceId').addEventListener('change', function() { filterCitiesByProvince('originProvinceId', 'originId'); });
+        document.getElementById('destProvinceId').addEventListener('change', function() { filterCitiesByProvince('destProvinceId', 'destId'); });
+
+        function openModal(id = null, serviceId = '', originProvId = '', originId = '', destProvId = '', destId = '', minWeight = '1.00', maxWeight = '', cost = '', etdMin = '', etdMax = '', isActive = 1, isValidationError = false) {
             const modal       = document.getElementById('rateModal');
             const form        = document.getElementById('rateForm');
             const title       = document.getElementById('modalTitle');
@@ -717,13 +822,21 @@
             });
 
             document.getElementById('serviceId').value = serviceId;
-            document.getElementById('originId').value  = originId;
-            document.getElementById('destId').value    = destId;
+            document.getElementById('originProvinceId').value = originProvId;
+            document.getElementById('destProvinceId').value = destProvId;
+            
+            filterCitiesByProvince('originProvinceId', 'originId', originId);
+            filterCitiesByProvince('destProvinceId', 'destId', destId);
+            
+            document.getElementById('minWeight').value = minWeight;
+            document.getElementById('maxWeight').value = maxWeight;
             document.getElementById('costKg').value    = cost ? formatNumber(cost) : '';
             document.getElementById('etdMin').value    = etdMin;
             document.getElementById('etdMax').value    = etdMax;
+            document.getElementById('isActive').checked = (isActive == '1' || isActive === 'true' || isActive === true);
 
             checkServiceStatus();
+            document.getElementById('isActive').dispatchEvent(new Event('change'));
 
             if (id) {
                 title.innerText    = 'Edit Ongkir';
@@ -756,9 +869,9 @@
             $(document).ready(function() {
                 const oldId = '{{ old('id') }}';
                 if (oldId) {
-                    openModal(oldId, '{{ old('shipping_service_id') }}', '{{ old('origin_city_id') }}', '{{ old('destination_city_id') }}', '{{ old('cost_per_kg') }}', '{{ old('etd_min') }}', '{{ old('etd_max') }}', true);
+                    openModal(oldId, '{{ old('shipping_service_id') }}', '{{ old('origin_province_id') }}', '{{ old('origin_city_id') }}', '{{ old('destination_province_id') }}', '{{ old('destination_city_id') }}', '{{ old('min_weight') }}', '{{ old('max_weight') }}', '{{ old('cost_per_kg') }}', '{{ old('etd_min') }}', '{{ old('etd_max') }}', '{{ old('is_active') }}', true);
                 } else {
-                    openModal(null, '{{ old('shipping_service_id') }}', '{{ old('origin_city_id') }}', '{{ old('destination_city_id') }}', '{{ old('cost_per_kg') }}', '{{ old('etd_min') }}', '{{ old('etd_max') }}', true);
+                    openModal(null, '{{ old('shipping_service_id') }}', '{{ old('origin_province_id') }}', '{{ old('origin_city_id') }}', '{{ old('destination_province_id') }}', '{{ old('destination_city_id') }}', '{{ old('min_weight') }}', '{{ old('max_weight') }}', '{{ old('cost_per_kg') }}', '{{ old('etd_min') }}', '{{ old('etd_max') }}', '{{ old('is_active') }}', true);
                 }
             });
         @endif

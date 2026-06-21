@@ -11,11 +11,15 @@ class StatusService
 {
     // ─── Order Status Constants ─────────────────────────────────────────
     const ORDER_PENDING = 'pending';
+    const ORDER_WAITING_CONFIRMATION = 'menunggu_konfirmasi_admin';
     const ORDER_PROCESSING_NEEDED = 'perlu_diproses';
     const ORDER_PROCESSING = 'processing';
+    const ORDER_READY_TO_SHIP = 'ready_to_ship';
     const ORDER_SHIPPING = 'shipping';
+    const ORDER_DELIVERED = 'delivered';
     const ORDER_COMPLETED = 'completed';
     const ORDER_CANCELLED = 'cancelled';
+    const ORDER_REFUNDED = 'refunded';
 
     // ─── Transaction Status Constants ───────────────────────────────────
     const TRANSACTION_PENDING = 'pending';
@@ -26,11 +30,15 @@ class StatusService
     // ─── Order Status Labels (All Indonesian) ──────────────────────────
     const ORDER_LABELS = [
         self::ORDER_PENDING => 'Belum Bayar',
+        self::ORDER_WAITING_CONFIRMATION => 'Menunggu Konfirmasi',
         self::ORDER_PROCESSING_NEEDED => 'Perlu Diproses',
         self::ORDER_PROCESSING => 'Dikemas',
+        self::ORDER_READY_TO_SHIP => 'Siap Dikirim',
         self::ORDER_SHIPPING => 'Dikirim',
+        self::ORDER_DELIVERED => 'Pesanan Tiba',
         self::ORDER_COMPLETED => 'Selesai',
         self::ORDER_CANCELLED => 'Dibatalkan',
+        self::ORDER_REFUNDED => 'Pengembalian',
     ];
 
     // ─── Transaction Status Labels (All Indonesian) ─────────────────────
@@ -38,7 +46,7 @@ class StatusService
         self::TRANSACTION_PENDING => 'Menunggu',
         self::TRANSACTION_PAID => 'Lunas',
         self::TRANSACTION_FAILED => 'Gagal',
-        self::TRANSACTION_REFUND => 'Dikembalikan',
+        self::TRANSACTION_REFUND => 'Dana Dikembalikan',
     ];
 
     // ─── Midtrans Status to Transaction Status Mapping ──────────────────
@@ -56,11 +64,15 @@ class StatusService
     // ─── Badge CSS Classes (for styling) ────────────────────────────────
     const ORDER_BADGE_CLASSES = [
         self::ORDER_PENDING => 'badge-pending',
+        self::ORDER_WAITING_CONFIRMATION => 'badge-info',
         self::ORDER_PROCESSING_NEEDED => 'badge-perlu_diproses',
         self::ORDER_PROCESSING => 'badge-processing',
+        self::ORDER_READY_TO_SHIP => 'badge-primary',
         self::ORDER_SHIPPING => 'badge-shipping',
+        self::ORDER_DELIVERED => 'badge-info',
         self::ORDER_COMPLETED => 'badge-completed',
         self::ORDER_CANCELLED => 'badge-cancelled',
+        self::ORDER_REFUNDED => 'badge-refunded',
     ];
 
     const TRANSACTION_BADGE_CLASSES = [
@@ -117,11 +129,15 @@ class StatusService
     {
         return [
             self::ORDER_PENDING,
+            self::ORDER_WAITING_CONFIRMATION,
             self::ORDER_PROCESSING_NEEDED,
             self::ORDER_PROCESSING,
+            self::ORDER_READY_TO_SHIP,
             self::ORDER_SHIPPING,
+            self::ORDER_DELIVERED,
             self::ORDER_COMPLETED,
             self::ORDER_CANCELLED,
+            self::ORDER_REFUNDED,
         ];
     }
 

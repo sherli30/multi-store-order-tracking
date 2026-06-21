@@ -39,7 +39,13 @@ class ConfirmablePasswordController extends Controller
 
             return redirect()->intended(RouteServiceProvider::HOME);
         } catch (\Exception $e) {
-            return back()->with('error', 'Terjadi kesalahan saat memverifikasi sesi. Silakan coba lagi.');
+            return back()->with('error', [
+                'title' => 'Kesalahan Sistem',
+                'list' => [
+                    'Terjadi kesalahan saat memverifikasi sesi.',
+                    'Silakan coba lagi.'
+                ]
+            ]);
         }
     }
 }

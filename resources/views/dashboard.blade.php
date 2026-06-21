@@ -391,7 +391,7 @@
         <div class="db-sc db-sc--blue">
             <div class="db-sc-top">
                 <div class="db-sc-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
                 </div>
                 <div class="db-sc-chip">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -432,7 +432,7 @@
             </div>
             <div>
                 <div class="db-sc-val">{{ number_format($totalCustomers, 0, ',', '.') }}</div>
-                <div class="db-sc-label">Total Pelanggan</div>
+                <div class="db-sc-label">Total Customer</div>
             </div>
         </div>
 
@@ -512,7 +512,7 @@
                     <thead>
                         <tr>
                             <th>Nomor Pesanan</th>
-                            <th>Pelanggan</th>
+                            <th>Customer</th>
                             <th>Tanggal</th>
                             <th>Total</th>
                             <th>Status</th>
@@ -552,6 +552,7 @@
                                         'badge-shipping' => 'db-b-processing',
                                         'badge-completed' => 'db-b-success',
                                         'badge-cancelled' => 'db-b-failed',
+                                        'badge-refunded'  => 'db-b-failed',
                                     ];
                                     $statusClass = $bgMap[\App\Services\StatusService::getOrderBadgeClass($order->status ?? '')] ?? 'db-b-processing';
                                 @endphp
@@ -611,6 +612,16 @@
                             <div class="db-tli-desc">Dibatalkan atau gagal</div>
                         </div>
                         <div class="db-tli-num">{{ $transactionSummaries['failed'] ?? 0 }}</div>
+                    </div>
+                    <div class="db-tli">
+                        <div class="db-tli-icon" style="background:rgba(225,29,72,.11);color:#e11d48;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M3.51 15A9 9 0 0 0 18.36 18.36L23 14"/></svg>
+                        </div>
+                        <div class="db-tli-info">
+                            <div class="db-tli-title">Dana Dikembalikan</div>
+                            <div class="db-tli-desc">Transaksi di-refund</div>
+                        </div>
+                        <div class="db-tli-num">{{ $transactionSummaries['refund'] ?? 0 }}</div>
                     </div>
                 </div>
 
@@ -748,7 +759,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
                     </div>
                     <div class="db-qn-body">
-                        <div class="db-qn-title">Manajemen Pesanan</div>
+                        <div class="db-qn-title">Kelola Pesanan</div>
                         <div class="db-qn-sub">Penjualan</div>
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -784,14 +795,14 @@
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
                 </a>
-                {{-- Master Logistik --}}
+                {{-- Data Logistik --}}
                 <a href="{{ route('couriers.index') }}" class="db-qn" style="--_qc:#f59e0b">
                     <div class="db-qn-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                     </div>
                     <div class="db-qn-body">
-                        <div class="db-qn-title">Master Kurir</div>
-                        <div class="db-qn-sub">Master Logistik</div>
+                        <div class="db-qn-title">Kelola Kurir</div>
+                        <div class="db-qn-sub">Data Logistik</div>
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
                 </a>
@@ -800,8 +811,8 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 3 6.92 12 12 21 6.92 12 2"/><polygon points="12 22.08 12 12 3 6.92 3 17.08 12 22.08"/><polygon points="12 22.08 12 12 21 6.92 21 17.08 12 22.08"/></svg>
                     </div>
                     <div class="db-qn-body">
-                        <div class="db-qn-title">Master Layanan</div>
-                        <div class="db-qn-sub">Master Logistik</div>
+                        <div class="db-qn-title">Kelola Layanan</div>
+                        <div class="db-qn-sub">Data Logistik</div>
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
                 </a>
@@ -810,7 +821,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </div>
                     <div class="db-qn-body">
-                        <div class="db-qn-title">Master Wilayah</div>
+                        <div class="db-qn-title">Kelola Wilayah</div>
                         <div class="db-qn-sub">Provinsi & Kota</div>
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -820,8 +831,8 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                     </div>
                     <div class="db-qn-body">
-                        <div class="db-qn-title">Master Ongkir</div>
-                        <div class="db-qn-sub">Master Logistik</div>
+                        <div class="db-qn-title">Kelola Ongkir</div>
+                        <div class="db-qn-sub">Data Logistik</div>
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
                 </a>
@@ -831,7 +842,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
                     </div>
                     <div class="db-qn-body">
-                        <div class="db-qn-title">Manajemen Produk</div>
+                        <div class="db-qn-title">Kelola Produk</div>
                         <div class="db-qn-sub">Katalog</div>
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -851,7 +862,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     </div>
                     <div class="db-qn-body">
-                        <div class="db-qn-title">Manajemen Toko</div>
+                        <div class="db-qn-title">Kelola Toko</div>
                         <div class="db-qn-sub">Katalog</div>
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -872,7 +883,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
                     <div class="db-qn-body">
-                        <div class="db-qn-title">Pelanggan</div>
+                        <div class="db-qn-title">Kelola Customer</div>
                         <div class="db-qn-sub">Lainnya</div>
                     </div>
                     <div class="db-qn-arr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -881,7 +892,7 @@
         </div>
     </div>
 
-    {{-- ═══ MONITORING PENGIRIMAN + MASTER DATA ═══ --}}
+    {{-- ═══ MONITORING PENGIRIMAN + DATA LOGISTIK ═══ --}}
     <div class="db-row">
         {{-- Monitoring Pengiriman --}}
         <div class="db-card">
@@ -935,14 +946,14 @@
             </div>
         </div>
 
-        {{-- Master Data Ringkasan --}}
+        {{-- Ringkasan Data --}}
         <div class="db-card">
             <div class="db-ch">
                 <div class="db-ct">
                     <div class="db-ct-i">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                     </div>
-                    Ringkasan Master Data
+                    Ringkasan Data
                 </div>
             </div>
             <div class="db-cb">
@@ -1038,13 +1049,18 @@
                     <div class="db-rs-val">{{ number_format($reportSnapshot['cancelled'] ?? 0) }}</div>
                 </div>
                 <div class="db-rs">
+                    <div class="db-rs-dot" style="background:#b91c1c;"></div>
+                    <div class="db-rs-lbl">Pengembalian</div>
+                    <div class="db-rs-val">{{ number_format($reportSnapshot['refunded'] ?? 0) }}</div>
+                </div>
+                <div class="db-rs">
                     <div class="db-rs-dot" style="background:#6366f1;"></div>
                     <div class="db-rs-lbl">Pendapatan Bulan Ini</div>
                     <div class="db-rs-val" style="color:var(--accent,#6366f1);">Rp {{ number_format($reportSnapshot['revenue'] ?? 0, 0, ',', '.') }}</div>
                 </div>
                 <div class="db-rs">
                     <div class="db-rs-dot" style="background:#3b82f6;"></div>
-                    <div class="db-rs-lbl">Total Pelanggan</div>
+                    <div class="db-rs-lbl">Total Customer</div>
                     <div class="db-rs-val">{{ number_format($totalCustomers, 0, ',', '.') }}</div>
                 </div>
                 <div class="db-rs">
@@ -1151,6 +1167,7 @@ document.addEventListener('DOMContentLoaded', function () {
         shipping:       { color: '#8b5cf6' },
         completed:      { color: '#10b981' },
         cancelled:      { color: '#ef4444' },
+        refunded:       { color: '#b91c1c' },
     };
 
     let labels = [], values = [], colors = [];
@@ -1197,6 +1214,52 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         }
+    });
+
+    /* ── REALTIME DASHBOARD SYNC ── */
+    document.addEventListener('realtime-notification', function(e) {
+        fetch(window.location.href)
+            .then(res => res.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Update Top Stats
+                const stats = document.querySelector('.db-stats');
+                const newStats = doc.querySelector('.db-stats');
+                if(stats && newStats) stats.innerHTML = newStats.innerHTML;
+                
+                // Update Tables (Recent Orders & Top Products)
+                const tws = document.querySelectorAll('.db-tw');
+                const newTws = doc.querySelectorAll('.db-tw');
+                tws.forEach((tw, i) => { if(newTws[i]) tw.innerHTML = newTws[i].innerHTML; });
+
+                // Update Transaction Summaries
+                const tl = document.querySelector('.db-tl');
+                const newTl = doc.querySelector('.db-tl');
+                if(tl && newTl) tl.innerHTML = newTl.innerHTML;
+
+                // Update Recent Activities
+                const al = document.querySelector('.db-al');
+                const newAl = doc.querySelector('.db-al');
+                if(al && newAl) al.innerHTML = newAl.innerHTML;
+
+                // Update Master Data Grid
+                const mgrid = document.querySelector('.db-mgrid');
+                const newMgrid = doc.querySelector('.db-mgrid');
+                if(mgrid && newMgrid) mgrid.innerHTML = newMgrid.innerHTML;
+
+                // Update Report Snapshot
+                const rsnap = document.querySelector('.db-rsnap');
+                const newRsnap = doc.querySelector('.db-rsnap');
+                if(rsnap && newRsnap) rsnap.innerHTML = newRsnap.innerHTML;
+
+                // Update Delivery Section
+                const drow = document.querySelector('.db-drow');
+                const newDrow = doc.querySelector('.db-drow');
+                if(drow && newDrow) drow.innerHTML = newDrow.innerHTML;
+            })
+            .catch(err => console.error('Dashboard sync error:', err));
     });
 });
 </script>

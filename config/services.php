@@ -21,6 +21,12 @@ return [
         'scheme' => 'https',
     ],
 
+    'biteship' => [
+        'api_key' => env('BITESHIP_API_KEY'),
+        'base_url' => env('BITESHIP_BASE_URL', 'https://api.biteship.com/v1'),
+        'webhook_secret' => env('BITESHIP_WEBHOOK_SECRET'),
+    ],
+
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
     ],

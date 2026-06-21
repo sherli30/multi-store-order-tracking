@@ -424,7 +424,9 @@
             <p>
                 Dibuat {{ $transaction->created_at->diffForHumans() }}
                 &bull; {{ $transaction->created_at->format('d M Y, H:i') }} WIB
-                @if($transaction->order)
+                @if($transaction->invoice)
+                    &bull; Multi-Toko ({{ $transaction->invoice->orders->count() }} Pesanan)
+                @elseif($transaction->order)
                     &bull; {{ $transaction->order->store->name ?? 'Toko Pusat' }}
                 @endif
             </p>
@@ -443,18 +445,6 @@
         </a>
     </div>
 </div>
-
-{{-- ─────────────────────────────────────────────
-     Flash Banner
-────────────────────────────────────────────── --}}
-@if(session('success'))
-    <div class="alert-banner alert-success" id="flash-success">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-        {{ session('success') }}
-    </div>
-@endif
 
 {{-- ─────────────────────────────────────────────
      Meta Strip
@@ -480,7 +470,12 @@
         <span class="meta-chip-label">Total Transaksi</span>
         <span class="meta-chip-value" style="color: var(--accent);">Rp {{ number_format($transaction->amount, 0, ',', '.') }}</span>
     </div>
-    @if($transaction->order)
+    @if($transaction->invoice)
+    <div class="meta-chip">
+        <span class="meta-chip-label">Pesanan Terkait</span>
+        <span class="meta-chip-value" style="font-family: 'Courier New', monospace; font-size: 12px;">{{ $transaction->invoice->invoice_number ?? $transaction->invoice->midtrans_order_id }}</span>
+    </div>
+    @elseif($transaction->order)
     <div class="meta-chip">
         <span class="meta-chip-label">Pesanan Terkait</span>
         <span class="meta-chip-value" style="font-family: 'Courier New', monospace; font-size: 12px;">#{{ $transaction->order->order_number }}</span>
@@ -553,7 +548,57 @@
         </div>
 
         {{-- ── Card: Pesanan Terkait ── --}}
-        @if($transaction->order)
+        @if($transaction->invoice)
+        <div class="detail-card">
+            <div class="card-header">
+                <span class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                    </svg>
+                    Pesanan Terkait (Invoice)
+                </span>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <div style="padding: 20px 22px;">
+                    <div class="payment-grid">
+                        <div class="payment-cell">
+                            <div class="payment-cell-label">Nomor Invoice</div>
+                            <div class="payment-cell-value mono">{{ $transaction->invoice->invoice_number ?? $transaction->invoice->midtrans_order_id }}</div>
+                        </div>
+                        <div class="payment-cell">
+                            <div class="payment-cell-label">Nama Customer</div>
+                            <div class="payment-cell-value">{{ $transaction->invoice->user?->name ?? '—' }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <table class="log-table" style="min-width:100%;">
+                    <thead>
+                        <tr>
+                            <th>Nomor Pesanan</th>
+                            <th>Toko</th>
+                            <th>Status</th>
+                            <th>Total Tagihan</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($transaction->invoice->orders as $invOrder)
+                        <tr>
+                            <td class="mono">#{{ $invOrder->order_number }}</td>
+                            <td>{{ $invOrder->store->name ?? 'Toko Pusat' }}</td>
+                            <td>{{ ucfirst($invOrder->status) }}</td>
+                            <td class="accent">Rp {{ number_format($invOrder->total_amount, 0, ',', '.') }}</td>
+                            <td>
+                                <a href="{{ route('orders.show', $invOrder) }}" class="btn-sm" style="padding:4px 8px;">Detail</a>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @elseif($transaction->order)
         <div class="detail-card">
             <div class="card-header">
                 <span class="card-title">
@@ -580,7 +625,7 @@
                         <div class="payment-cell-value">{{ ucfirst($transaction->order->status ?? '—') }}</div>
                     </div>
                     <div class="payment-cell">
-                        <div class="payment-cell-label">Nama Pelanggan</div>
+                        <div class="payment-cell-label">Nama Customer</div>
                         <div class="payment-cell-value">{{ $transaction->order->customer_name ?? '—' }}</div>
                     </div>
                     <div class="payment-cell">
@@ -649,7 +694,7 @@
                         <div class="timeline-content">
                             <div class="timeline-title">Transaksi Dibuat</div>
                             <div class="timeline-date">{{ $transaction->created_at->format('d M Y, H:i') }} WIB</div>
-                            <div class="timeline-note">Pelanggan mengajukan pembayaran via {{ $transaction->payment_method ?? 'N/A' }}.</div>
+                            <div class="timeline-note">Customer mengajukan pembayaran via {{ $transaction->payment_method ?? 'N/A' }}.</div>
                         </div>
                     </div>
 
@@ -669,8 +714,8 @@
                         </div>
                         <div class="timeline-content">
                             <div class="timeline-title">
-                                @if($transaction->status === 'pending') Menunggu Konfirmasi Admin
-                                @else Dikonfirmasi Admin
+                                @if($transaction->status === 'pending') Menunggu Konfirmasi Administrator
+                                @else Dikonfirmasi Administrator
                                 @endif
                             </div>
                             <div class="timeline-date">
@@ -689,7 +734,7 @@
                     <div class="timeline-item">
                         <div class="timeline-dot done">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                                <rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>
                             </svg>
                         </div>
                         <div class="timeline-content">
@@ -721,7 +766,7 @@
                             </svg>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Refund Diproses</div>
+                            <div class="timeline-title">Dana Dikembalikan</div>
                             <div class="timeline-date">{{ $transaction->updated_at->format('d M Y, H:i') }} WIB</div>
                             @if($transaction->notes)
                                 <div class="timeline-note">{{ $transaction->notes }}</div>
@@ -736,7 +781,7 @@
                             </svg>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-title" style="color:var(--text-3);">Menunggu Keputusan Admin</div>
+                            <div class="timeline-title" style="color:var(--text-3);">Menunggu Keputusan Administrator</div>
                             <div class="timeline-date">—</div>
                         </div>
                     </div>
@@ -781,8 +826,8 @@
                             </td>
                             <td style="color:var(--text-3);">
                                 @if($transaction->status === 'paid') Dana diterima &amp; pesanan diperbarui
-                                @elseif($transaction->status === 'failed') Pembayaran ditolak oleh admin
-                                @elseif($transaction->status === 'refund') Proses refund dikonfirmasi
+                                @elseif($transaction->status === 'failed') Pembayaran ditolak oleh administrator
+                                @elseif($transaction->status === 'refund') Dana dikembalikan
                                 @endif
                             </td>
                         </tr>
@@ -801,7 +846,7 @@
                         @if(!$transaction->payment_date && $transaction->status === 'pending')
                         <tr>
                             <td colspan="3" style="padding: 30px; text-align:center; color:var(--text-4); font-style:italic;">
-                                Belum ada konfirmasi admin.
+                                Belum ada konfirmasi administrator.
                             </td>
                         </tr>
                         @endif
@@ -816,71 +861,13 @@
     {{-- ══════════════ RIGHT SIDEBAR ══════════════ --}}
     <div class="detail-side">
 
-        {{-- ── Card: Aksi Konfirmasi ── --}}
-        <div class="detail-card sidebar-priority">
-            <div class="card-header">
-                <span class="card-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                        style="color: {{ $transaction->status === 'pending' ? 'var(--amber)' : 'var(--green)' }};">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                    Aksi Konfirmasi
-                </span>
-            </div>
-            <div class="card-body">
-                <div class="action-panel">
-                    @if($transaction->status === 'pending')
-                        <div class="action-section-title">Konfirmasi Pembayaran</div>
-                        <button class="action-btn primary"
-                            onclick="openAction('paid', {{ $transaction->id }}, '{{ $transaction->transaction_code }}')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            Tandai Lunas
-                        </button>
-                        <div class="action-divider"></div>
-                        <div class="action-section-title">Tolak Pembayaran</div>
-                        <button class="action-btn danger"
-                            onclick="openAction('failed', {{ $transaction->id }}, '{{ $transaction->transaction_code }}')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                            Tolak Pembayaran
-                        </button>
-
-                    @elseif($transaction->status === 'paid' && $transaction->order && !in_array($transaction->order->status, ['shipping', 'completed']))
-                        <div class="action-section-title">Proses Refund</div>
-                        <button class="action-btn danger"
-                            onclick="openAction('refund', {{ $transaction->id }}, '{{ $transaction->transaction_code }}')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/>
-                            </svg>
-                            Proses Refund
-                        </button>
-
-                    @else
-                        <div class="processed-state">
-                            <div class="processed-state-emoji">
-                                @if($transaction->status === 'paid') ✅
-                                @elseif($transaction->status === 'failed') ❌
-                                @else 🔄
-                                @endif
-                            </div>
-                            <div class="processed-state-title">Transaksi Telah Diproses</div>
-                            <div class="processed-state-sub">Status: <strong>{{ \App\Services\StatusService::getTransactionLabel($transaction->status) }}</strong></div>
-                        </div>
-                    @endif
-
-                </div>
-            </div>
-        </div>
 
         {{-- ── Card: Ringkasan Pembayaran ── --}}
         <div class="detail-card">
             <div class="card-header">
                 <span class="card-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        <rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>
                     </svg>
                     Ringkasan Pembayaran
                 </span>
@@ -910,7 +897,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
                     </svg>
-                    Informasi Pelanggan
+                    Informasi Customer
                 </span>
             </div>
             <div class="card-body">
@@ -977,47 +964,7 @@
 
 </div>
 
-{{-- ─────────────────────────────────────────────
-     Action Confirmation Modal
-────────────────────────────────────────────── --}}
-<div class="modal-overlay" id="actionModal">
-    <div class="modal-box">
-        <div class="modal-header">
-            <div class="modal-icon" id="modalIcon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-            </div>
-            <div class="modal-title" id="actionTitle">Konfirmasi Transaksi</div>
-            <div class="modal-desc" id="actionDesc"></div>
-            <div class="modal-alert" id="modalAlert" style="display:none;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <span id="modalAlertText"></span>
-            </div>
-        </div>
 
-        <form id="actionForm" method="POST" action="">
-            @csrf
-            @method('PATCH')
-            <input type="hidden" name="status" id="actionStatus">
-            <input type="hidden" name="redirect" value="show">
-
-            <div id="notesContainer" class="modal-body" style="display:none; padding-top:16px;">
-                <div style="height:1px; background:var(--border); margin-bottom:16px;"></div>
-                <label class="form-label">Catatan (Opsional)</label>
-                <textarea name="notes" class="form-textarea"
-                    placeholder="Tulis alasan penolakan atau catatan refund...">{{ old('notes') }}</textarea>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" class="btn-modal outline" onclick="closeActionModal()">Batalkan</button>
-                <button type="submit" class="btn-modal primary" id="actionSubmitBtn">Lanjutkan</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 @endsection
 
@@ -1033,64 +980,6 @@
         }
     }, 4500);
 
-    function openAction(type, trxId, trxCode) {
-        const form      = document.getElementById('actionForm');
-        const icon      = document.getElementById('modalIcon');
-        const title     = document.getElementById('actionTitle');
-        const desc      = document.getElementById('actionDesc');
-        const alert     = document.getElementById('modalAlert');
-        const alertText = document.getElementById('modalAlertText');
-        const notes     = document.getElementById('notesContainer');
-        const btn       = document.getElementById('actionSubmitBtn');
 
-        form.action = `/transactions/${trxId}/status`;
-        document.getElementById('actionStatus').value = type;
-        notes.style.display = (type === 'failed' || type === 'refund') ? 'block' : 'none';
-
-        if (type === 'paid') {
-            icon.className      = 'modal-icon success';
-            title.innerText     = 'Konfirmasi Pembayaran Lunas';
-            desc.innerHTML      = `ID Transaksi: <strong>${trxCode}</strong><br>Tandai pembayaran ini sebagai <strong>lunas</strong>.`;
-            alert.className     = 'modal-alert info';
-            alert.style.display = 'flex';
-            alertText.innerHTML = 'Auto-Sync: Status pesanan terkait akan diperbarui otomatis menjadi <strong>Dalam Pengemasan (Processing)</strong>.';
-            btn.className       = 'btn-modal primary';
-            btn.innerHTML       = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> Tandai Lunas`;
-        } else if (type === 'failed') {
-            icon.className      = 'modal-icon danger';
-            title.innerText     = 'Tolak Transaksi';
-            desc.innerHTML      = `ID Transaksi: <strong>${trxCode}</strong><br>Tandai pembayaran ini sebagai <strong>gagal/tidak valid</strong>.`;
-            alert.className     = 'modal-alert warn';
-            alert.style.display = 'flex';
-            alertText.innerHTML = 'Auto-Sync: Pesanan terkait akan otomatis <strong>dibatalkan (Cancelled)</strong>.';
-            btn.className       = 'btn-modal danger-btn';
-            btn.innerHTML       = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Tolak Pembayaran`;
-        } else if (type === 'refund') {
-            icon.className      = 'modal-icon warning';
-            title.innerText     = 'Proses Refund';
-            desc.innerHTML      = `ID Transaksi: <strong>${trxCode}</strong><br>Ubah status menjadi <strong>Refund</strong>. Aksi ini tidak melakukan transfer dana secara nyata.`;
-            alert.className     = 'modal-alert warn';
-            alert.style.display = 'flex';
-            alertText.innerHTML = 'Auto-Sync: Pesanan terkait akan otomatis <strong>dibatalkan</strong>.';
-            btn.className       = 'btn-modal danger-btn';
-            btn.innerHTML       = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg> Konfirmasi Refund`;
-        }
-
-        document.getElementById('actionModal').classList.add('open');
-    }
-
-    function closeActionModal() {
-        document.getElementById('actionModal').classList.remove('open');
-    }
-
-    document.getElementById('actionModal').addEventListener('click', function(e) {
-        if (e.target === this) closeActionModal();
-    });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeActionModal(); });
-
-    // Auto-reopen modal on validation error
-    @if(session('open_modal') === 'actionModal')
-        openAction('{{ old("status") }}', {{ $transaction->id }}, '{{ $transaction->transaction_code }}');
-    @endif
 </script>
 @endpush

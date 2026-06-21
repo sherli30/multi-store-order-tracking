@@ -6,7 +6,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Store;
-use App\Models\Transaction;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -15,230 +15,249 @@ class ReportController extends Controller
 {
     /**
      * Unified Sales Reports Page
-     * Loads data for all sections: Dashboard, Per-Store, Consolidated, Export
      */
-    public function index(Request $request)
+    public function index(\App\Http\Requests\ReportFilterRequest $request)
     {
-        // ── Section 1: Dashboard KPIs ──────────────────────────────────
-        $days      = (int) $request->input('days', 30);
-        $dashStart = Carbon::now()->subDays($days)->startOfDay();
+        // ── Section 1: Advanced Report Filters ──────────────────────────────────
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date', Carbon::now()->toDateString());
+        $storeId = $request->input('store_id');
+        $customerId = $request->input('customer_id');
+        $orderStatus = $request->input('order_status');
+        $paymentStatus = $request->input('payment_status');
+        $invoiceNumber = $request->input('invoice_number');
+        $productId = $request->input('product_id');
 
-        // Monthly revenue (last 12 months)
-        $monthlyRevenue = Order::whereIn('payment_status', ['settlement', 'capture', 'paid'])
-            ->where('created_at', '>=', Carbon::now()->subMonths(12)->startOfMonth())
-            ->select(
-                DB::raw("DATE_FORMAT(created_at, '%Y-%m') as month"),
-                DB::raw('SUM(total_amount) as revenue'),
-                DB::raw('COUNT(*) as count')
-            )
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
+        // Base Order Query
+        $query = Order::with(['store', 'invoice.user', 'orderItems.product'])
+            ->whereBetween('orders.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
+        if ($storeId) $query->where('orders.store_id', $storeId);
+        if ($orderStatus) $query->where('orders.status', $orderStatus);
+        if ($paymentStatus) $query->where('orders.payment_status', $paymentStatus);
 
-
-        // ── Section 2: Per-Store ───────────────────────────────────────
-        $storeDefaultStart = Carbon::now()->startOfMonth()->toDateString();
-        $storeDefaultEnd   = Carbon::now()->toDateString();
-        $storeStartDate    = $request->input('store_start_date', $storeDefaultStart);
-        $storeEndDate      = $request->input('store_end_date',   $storeDefaultEnd);
-        $storeId           = $request->input('store_id');
-
-        $storeBaseQuery = Store::query();
-        if ($storeId) {
-            $storeBaseQuery->where('id', $storeId);
+        if ($invoiceNumber || $customerId) {
+            $query->whereHas('invoice', function ($q) use ($invoiceNumber, $customerId) {
+                if ($invoiceNumber) {
+                    $q->where(function($sub) use ($invoiceNumber) {
+                        $sub->where('invoice_number', 'like', "%{$invoiceNumber}%")
+                            ->orWhere('midtrans_order_id', 'like', "%{$invoiceNumber}%");
+                    });
+                }
+                if ($customerId) {
+                    $q->where('user_id', $customerId);
+                }
+            });
         }
 
-        $storesList = $storeBaseQuery->get();
-        $storesList = $storeBaseQuery->get();
-        $storeStats = Order::whereIn('store_id', $storesList->pluck('id'))
-            ->whereBetween('created_at', [
-                $storeStartDate . ' 00:00:00',
-                $storeEndDate   . ' 23:59:59',
-            ])
-            ->select(
-                'store_id',
-                DB::raw('COUNT(*) as total_orders'),
-                DB::raw("SUM(CASE WHEN payment_status IN ('settlement', 'capture', 'paid') THEN total_amount ELSE 0 END) as total_revenue"),
-                DB::raw("SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as total_cancelled")
-            )
-            ->groupBy('store_id')
-            ->get()
-            ->keyBy('store_id');
+        if ($productId) {
+            $query->whereHas('orderItems', function ($q) use ($productId) {
+                $q->where('product_id', $productId);
+            });
+        }
 
-        $stores = $storesList->map(function ($store) use ($storeStats) {
+        // Section 3: Main Sales Transaction Report (Paginated)
+        $orders = clone $query;
+        $orders = $orders->latest('orders.created_at')->paginate(25)->withQueryString();
+
+        // ── Section 2: Executive Summary ──────────────────────────────────
+        $baseQueryForAggregates = clone $query;
+
+        $totalTransactions = (clone $baseQueryForAggregates)->count();
+
+        // Total revenue (only completed/paid orders)
+        $totalRevenue = (clone $baseQueryForAggregates)
+            ->whereIn('orders.payment_status', ['settlement', 'capture', 'paid'])
+            ->sum('orders.total_amount');
+
+        $averageOrderValue = $totalTransactions > 0 ? $totalRevenue / $totalTransactions : 0;
+
+        $totalProductsSold = OrderItem::whereIn('order_id', (clone $baseQueryForAggregates)->pluck('orders.id'))
+            ->sum('quantity');
+
+        $totalCustomers = DB::table('orders')
+            ->join('invoices', 'orders.invoice_id', '=', 'invoices.id')
+            ->whereIn('orders.id', (clone $baseQueryForAggregates)->pluck('orders.id'))
+            ->distinct('invoices.user_id')
+            ->count('invoices.user_id');
+
+        // ── Section 4: Product Sales Detail Report ────────────────────────
+        $orderItems = OrderItem::with(['order.invoice', 'order.store', 'product'])
+            ->whereIn('order_id', (clone $baseQueryForAggregates)->pluck('orders.id'))
+            ->latest('created_at')
+            ->paginate(25, ['*'], 'product_page')
+            ->withQueryString();
+
+        // ── Section 5 & 6: Store Performance & Consolidated Report ─────────
+        $storesList = Store::where('is_active', true)->get();
+        $storeStats = (clone $baseQueryForAggregates)->reorder()->select(
+            'orders.store_id',
+            DB::raw('COUNT(*) as total_orders'),
+            DB::raw("SUM(CASE WHEN orders.status = 'completed' THEN 1 ELSE 0 END) as completed_orders"),
+            DB::raw("SUM(CASE WHEN orders.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders"),
+            DB::raw("SUM(CASE WHEN orders.status = 'refunded' THEN 1 ELSE 0 END) as refunded_orders"),
+            DB::raw("SUM(CASE WHEN orders.payment_status IN ('settlement', 'capture', 'paid') THEN orders.total_amount ELSE 0 END) as total_revenue"),
+            DB::raw("SUM(orders.shipping_cost) as shipping_revenue")
+        )->groupBy('orders.store_id')->get()->keyBy('store_id');
+
+        $consolidatedReport = $storesList->map(function ($store) use ($storeStats, $baseQueryForAggregates) {
             $stats = $storeStats->get($store->id);
 
-            $store->orders_count    = $stats ? $stats->total_orders : 0;
-            $store->cancelled_count = $stats ? $stats->total_cancelled : 0;
-            $store->revenue         = $stats ? $stats->total_revenue : 0;
-            return $store;
-        });
+            $productsSold = OrderItem::whereIn('order_id', (clone $baseQueryForAggregates)->where('orders.store_id', $store->id)->pluck('orders.id'))->sum('quantity');
 
-        // ── Section 3: Consolidated ────────────────────────────────────
-        $consolidatedDefaultStart = Carbon::now()->startOfMonth()->toDateString();
-        $consolidatedDefaultEnd   = Carbon::now()->toDateString();
-        $consolidatedStartDate    = $request->input('cons_start_date', $consolidatedDefaultStart);
-        $consolidatedEndDate      = $request->input('cons_end_date',   $consolidatedDefaultEnd);
+            $uniqueCustomers = DB::table('orders')
+                ->join('invoices', 'orders.invoice_id', '=', 'invoices.id')
+                ->whereIn('orders.id', (clone $baseQueryForAggregates)->where('orders.store_id', $store->id)->pluck('orders.id'))
+                ->distinct('invoices.user_id')
+                ->count('invoices.user_id');
 
-        $allConsolidatedStores = Store::all();
-        $allConsolidatedStores = Store::all();
-        $consStats = Order::whereIn('store_id', $allConsolidatedStores->pluck('id'))
-            ->whereBetween('created_at', [
-                $consolidatedStartDate . ' 00:00:00',
-                $consolidatedEndDate   . ' 23:59:59',
-            ])
-            ->select(
-                'store_id',
-                DB::raw('COUNT(*) as total_orders'),
-                DB::raw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_orders"),
-                DB::raw("SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders"),
-                DB::raw("SUM(CASE WHEN payment_status IN ('settlement', 'capture', 'paid') THEN total_amount ELSE 0 END) as total_revenue")
-            )
-            ->groupBy('store_id')
-            ->get()
-            ->keyBy('store_id');
-
-        $report = $allConsolidatedStores->map(function ($store) use ($consStats) {
-            $stats = $consStats->get($store->id);
-            return [
-                'store_name'       => $store->name,
-                'total_orders'     => $stats ? $stats->total_orders : 0,
+            return (object) [
+                'store_id' => $store->id,
+                'store_name' => $store->name,
+                'total_orders' => $stats ? $stats->total_orders : 0,
                 'completed_orders' => $stats ? $stats->completed_orders : 0,
                 'cancelled_orders' => $stats ? $stats->cancelled_orders : 0,
-                'total_revenue'    => $stats ? $stats->total_revenue : 0,
+                'refunded_orders' => $stats ? $stats->refunded_orders : 0,
+                'total_revenue' => $stats ? $stats->total_revenue : 0,
+                'shipping_revenue' => $stats ? $stats->shipping_revenue : 0,
+                'products_sold' => $productsSold,
+                'unique_customers' => $uniqueCustomers,
+                'success_rate' => ($stats && $stats->total_orders > 0) ? round(($stats->completed_orders / $stats->total_orders) * 100, 1) : 0
             ];
         });
 
-        $totals = [
-            'orders'  => $report->sum('total_orders'),
-            'revenue' => $report->sum('total_revenue'),
-        ];
-
-        // ── Section 4: Detailed Product Performance ────────────────────
-        $productStats = OrderItem::whereHas('order', function ($q) use ($dashStart) {
-            $q->whereIn('payment_status', ['settlement', 'capture', 'paid'])->where('created_at', '>=', $dashStart);
-        })
-            ->select('product_id', DB::raw('SUM(quantity) as total_sold'), DB::raw('SUM(quantity * price) as total_revenue'))
-            ->groupBy('product_id')
-            ->get()
-            ->keyBy('product_id');
-
-        // FIX: eager-load store on each product so the blade can safely access
-        // $p->store->name and $p->image without any further queries or null crashes.
-        // The 'image' column is a plain DB field — no accessor required.
-        // Only include products from active stores to match report filter statement.
-        $allProductsPerformance = Product::whereHas('store', function ($q) {
-            $q->where('is_active', true);
-        })->with('store')->get()->map(function ($product) use ($productStats) {
-            $stat = $productStats->get($product->id);
-            $product->total_sold    = $stat ? $stat->total_sold    : 0;
-            $product->total_revenue = $stat ? $stat->total_revenue : 0;
-            return $product;
-        })->sortByDesc('total_sold')->values();
-
-        // ── Section 5: Pending Payments / Transaksi Tertunda ───────────
-        $pendingPayments = Transaction::with('order.store')
-            ->whereIn('status', ['pending', 'failed'])
-            ->orderBy('created_at', 'desc')
-            ->take(100)
-            ->get();
-
-        // ── Section 6: Cancellation Analysis ───────────────────────────
-        $cancellationAnalysis = Order::where('status', 'cancelled')
-            ->where('created_at', '>=', $dashStart)
-            ->select('cancel_reason', DB::raw('COUNT(*) as count'))
-            ->groupBy('cancel_reason')
-            ->orderByDesc('count')
-            ->get();
-
-        // ── Section 7: Export defaults ─────────────────────────────────
-        $exportDefaultStart = Carbon::now()->startOfMonth()->toDateString();
-        $exportDefaultEnd   = Carbon::now()->toDateString();
-
-        // Only active stores are surfaced in filter dropdowns and the export selector
-        $allStores = Store::where('is_active', true)->get();
+        // Filter dropdown data
+        $customers = User::where('role', 'customer')->orderBy('name')->get();
+        $products = Product::whereHas('store', function($q) { $q->where('is_active', true); })->orderBy('name')->get();
 
         return view('reports.index', compact(
-            // Dashboard
-            'monthlyRevenue',
-            'days',
-            // Per-Store
-            'stores',
-            'allStores',
-            'storeStartDate',
-            'storeEndDate',
-            'storeDefaultStart',
-            'storeDefaultEnd',
-            // Consolidated
-            'report',
-            'totals',
-            'consolidatedStartDate',
-            'consolidatedEndDate',
-            'consolidatedDefaultStart',
-            'consolidatedDefaultEnd',
-            // New Features
-            'allProductsPerformance',
-            'pendingPayments',
-            'cancellationAnalysis',
-            // Export
-            'exportDefaultStart',
-            'exportDefaultEnd'
+            'startDate', 'endDate', 'storeId', 'customerId', 'orderStatus', 'paymentStatus', 'invoiceNumber', 'productId',
+            'storesList', 'customers', 'products',
+            'orders', 'orderItems',
+            'totalTransactions', 'totalRevenue', 'totalProductsSold', 'totalCustomers', 'averageOrderValue',
+            'consolidatedReport'
         ));
     }
 
-
     /**
-     * Export — print-friendly PDF view (unchanged logic)
+     * PDF Export
      */
-    public function export(Request $request)
+    public function export(\App\Http\Requests\ReportExportRequest $request)
     {
-        $type      = $request->input('type');
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate   = $request->input('end_date',   Carbon::now()->toDateString());
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
-        if (!$type) {
-            return redirect()->route('reports.index')->withFragment('ekspor');
-        }
+        $storeId = $request->input('store_id');
+        $customerId = $request->input('customer_id');
+        $orderStatus = $request->input('order_status');
+        $paymentStatus = $request->input('payment_status');
+        $invoiceNumber = $request->input('invoice_number');
+        $productId = $request->input('product_id');
 
-        if ($type === 'consolidated') {
-            $stores = Store::where('is_active', true)->get();
-            $exportStats = Order::whereIn('store_id', $stores->pluck('id'))
-                ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-                ->whereIn('payment_status', ['settlement', 'capture', 'paid'])
-                ->select(
-                    'store_id',
-                    DB::raw('COUNT(*) as count'),
-                    DB::raw('SUM(total_amount) as revenue')
-                )
-                ->groupBy('store_id')
-                ->get()
-                ->keyBy('store_id');
+        $query = Order::with(['store', 'invoice.user', 'orderItems.product'])
+            ->whereBetween('orders.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
-            $data = $stores->map(function ($store) use ($exportStats) {
-                $stats = $exportStats->get($store->id);
-                return [
-                    'name'    => $store->name,
-                    'count'   => $stats ? $stats->count : 0,
-                    'revenue' => $stats ? $stats->revenue : 0,
-                ];
+        if ($storeId) $query->where('orders.store_id', $storeId);
+        if ($orderStatus) $query->where('orders.status', $orderStatus);
+        if ($paymentStatus) $query->where('orders.payment_status', $paymentStatus);
+        if ($invoiceNumber || $customerId) {
+            $query->whereHas('invoice', function ($q) use ($invoiceNumber, $customerId) {
+                if ($invoiceNumber) {
+                    $q->where(function($sub) use ($invoiceNumber) {
+                        $sub->where('invoice_number', 'like', "%{$invoiceNumber}%")
+                            ->orWhere('midtrans_order_id', 'like', "%{$invoiceNumber}%");
+                    });
+                }
+                if ($customerId) {
+                    $q->where('user_id', $customerId);
+                }
             });
-            $title = 'Laporan Konsolidasi Penjualan';
-        } else {
-            $store  = Store::findOrFail($request->store_id);
-            $orders = Order::where('store_id', $store->id)
-                ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-                ->whereIn('payment_status', ['settlement', 'capture', 'paid'])
-                ->with('orderItems.product')
-                ->get();
-            $data  = [
-                'store'   => $store,
-                'orders'  => $orders,
-                'revenue' => $orders->sum('total_amount'),
-            ];
-            $title = 'Laporan Penjualan - ' . $store->name;
+        }
+        if ($productId) {
+            $query->whereHas('orderItems', function ($q) use ($productId) {
+                $q->where('product_id', $productId);
+            });
         }
 
-        return view('reports.export', compact('data', 'type', 'title', 'startDate', 'endDate'));
+        $baseQuery = clone $query;
+        $orders = (clone $baseQuery)->latest('orders.created_at')->get();
+        $orderItems = OrderItem::with(['order.invoice', 'order.store', 'product'])
+            ->whereIn('order_id', $orders->pluck('id'))->get();
+
+        $totalTransactions = $orders->count();
+        $totalRevenue = $orders->whereIn('payment_status', ['settlement', 'capture', 'paid'])->sum('total_amount');
+        $totalProductsSold = $orderItems->sum('quantity');
+
+        // FIX: $storesList sebelumnya selalu mengambil SEMUA toko aktif tanpa
+        // memperhatikan filter $storeId dari request. Akibatnya, PDF yang
+        // di-generate dari tombol "Download PDF" per toko (section Performa
+        // Toko) selalu menampilkan konsolidasi SEMUA toko, identik dengan
+        // hasil "Generate & Cetak PDF Laporan" di section Ekspor — padahal
+        // seharusnya cuma berisi data toko yang dipilih.
+        $storesList = Store::where('is_active', true)
+            ->when($storeId, function ($q) use ($storeId) {
+                $q->where('id', $storeId);
+            })
+            ->get();
+
+        $storeStats = (clone $baseQuery)->reorder()->select(
+            'orders.store_id',
+            DB::raw('COUNT(*) as total_orders'),
+            DB::raw("SUM(CASE WHEN orders.status = 'completed' THEN 1 ELSE 0 END) as completed_orders"),
+            DB::raw("SUM(CASE WHEN orders.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_orders"),
+            DB::raw("SUM(CASE WHEN orders.status = 'refunded' THEN 1 ELSE 0 END) as refunded_orders"),
+            DB::raw("SUM(CASE WHEN orders.payment_status IN ('settlement', 'capture', 'paid') THEN orders.total_amount ELSE 0 END) as total_revenue"),
+            DB::raw("SUM(orders.shipping_cost) as shipping_revenue")
+        )->groupBy('orders.store_id')->get()->keyBy('store_id');
+
+        $consolidatedReport = $storesList->map(function ($store) use ($storeStats, $orders, $orderItems) {
+            $stats = $storeStats->get($store->id);
+            $storeOrders = $orders->where('store_id', $store->id);
+            $storeOrderIds = $storeOrders->pluck('id');
+            $productsSold = $orderItems->whereIn('order_id', $storeOrderIds)->sum('quantity');
+
+            $uniqueCustomers = $storeOrders->pluck('invoice.user_id')->filter()->unique()->count();
+
+            return (object) [
+                'store_name' => $store->name,
+                'total_orders' => $stats ? $stats->total_orders : 0,
+                'completed_orders' => $stats ? $stats->completed_orders : 0,
+                'cancelled_orders' => $stats ? $stats->cancelled_orders : 0,
+                'refunded_orders' => $stats ? $stats->refunded_orders : 0,
+                'total_revenue' => $stats ? $stats->total_revenue : 0,
+                'shipping_revenue' => $stats ? $stats->shipping_revenue : 0,
+                'products_sold' => $productsSold,
+                'unique_customers' => $uniqueCustomers,
+                'success_rate' => ($stats && $stats->total_orders > 0) ? round(($stats->completed_orders / $stats->total_orders) * 100, 1) : 0
+            ];
+        });
+
+        // Judul laporan otomatis menyesuaikan: kalau di-filter ke 1 toko
+        // spesifik, judul PDF menunjukkan nama toko itu supaya jelas beda
+        // dengan laporan konsolidasi semua toko.
+        $month = Carbon::parse($startDate)->format('Y-m');
+        $fileName = "Report_{$month}.pdf";
+        $title = 'Laporan Penjualan Eksekutif';
+        
+        if ($storeId) {
+            $storeName = $storesList->first()->name ?? null;
+            if ($storeName) {
+                $cleanStoreName = preg_replace('/[^A-Za-z0-9]/', '', $storeName);
+                $fileName = "Store_{$cleanStoreName}_{$month}.pdf";
+                $title = 'Laporan Penjualan Toko: ' . $storeName;
+            }
+        }
+
+        try {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('reports.export', compact(
+                'title', 'startDate', 'endDate', 'storeId',
+                'orders', 'orderItems', 'totalTransactions', 'totalRevenue', 'totalProductsSold',
+                'consolidatedReport'
+            ))->setPaper('a4', 'landscape');
+
+            return $pdf->download($fileName);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal menghasilkan file PDF. Terjadi kesalahan saat memproses laporan.');
+        }
     }
 }

@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Courier;
 use App\Models\Order;
 use App\Models\TrackingHistory;
+use App\Http\Requests\ScanTrackingRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class DeliveryController extends Controller
 {
@@ -54,6 +54,7 @@ class DeliveryController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('midtrans_order_id', 'like', "%{$search}%")
+                ->orWhere('order_number', 'like', "%{$search}%")
                 ->orWhere('tracking_number', 'like', "%{$search}%")
                 ->orWhere('customer_name', 'like', "%{$search}%");
             });
@@ -89,7 +90,10 @@ class DeliveryController extends Controller
 
         // ── AJAX: return only table rows ──────────────────────────────────────
         if ($request->ajax()) {
-            return view('deliveries._table_rows', compact('orders'))->render();
+            return response()->json([
+                'html' => view('deliveries._table_rows', compact('orders'))->render(),
+                'counts' => $tabCounts
+            ]);
         }
 
         return view('deliveries.index', compact('orders', 'stores', 'couriers', 'tab', 'tabCounts'));
@@ -98,19 +102,37 @@ class DeliveryController extends Controller
     /**
      * Halaman UI Scanner Barcode untuk pencarian resi/pesanan.
      */
-    public function scan(Request $request)
+    public function scan(ScanTrackingRequest $request)
     {
         $order = null;
-        if ($request->filled('identifier')) {
+        if ($request->has('identifier') && $request->filled('identifier')) {
             $order = Order::with(['trackingHistories.admin', 'store', 'orderItems.product', 'transaction'])
                 ->where(function ($q) use ($request) {
                     $q->where('midtrans_order_id', $request->identifier)
+                      ->orWhere('order_number', $request->identifier)
                       ->orWhere('tracking_number', $request->identifier);
                 })
                 ->first();
 
-            if (!$order) {
-                return back()->with('error', "Pesanan atau resi '{$request->identifier}' tidak ditemukan.");
+            if ($order) {
+                // Success message in session
+                session()->now('success', [
+                    'title' => 'Pencarian Berhasil',
+                    'list' => [
+                        'Data pengiriman berhasil dimuat.',
+                        'Riwayat pengiriman berhasil dimuat.'
+                    ]
+                ]);
+            } else {
+                return back()->with('error', [
+                    'title' => 'Pencarian Gagal',
+                    'list' => [
+                        'Gagal memuat data pengiriman.',
+                        'Data pengiriman tidak ditemukan.',
+                        'Riwayat pengiriman tidak tersedia.',
+                        'Terjadi kesalahan saat memproses pengiriman.'
+                    ]
+                ]);
             }
         }
         return view('deliveries.scan', compact('order'));
@@ -123,8 +145,13 @@ class DeliveryController extends Controller
      */
     public function printLabel(Order $order)
     {
-        if (in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CANCELLED])) {
-            return back()->with('error', 'Label pengiriman hanya dapat dicetak untuk pesanan yang sudah dibayar (minimal status Perlu Diproses).');
+        if (in_array($order->status, [Order::STATUS_PENDING, Order::STATUS_CANCELLED, Order::STATUS_REFUNDED])) {
+            return back()->with('error', [
+                'title' => 'Label Gagal Dicetak',
+                'list' => [
+                    'Label pengiriman hanya dapat dicetak untuk pesanan aktif (minimal status Perlu Diproses).'
+                ]
+            ]);
         }
 
         $order->load('store', 'orderItems.product');
@@ -142,6 +169,7 @@ class DeliveryController extends Controller
             $search = $request->search;
             $query->whereHas('order', function ($q) use ($search) {
                 $q->where('midtrans_order_id', 'like', "%{$search}%")
+                  ->orWhere('order_number', 'like', "%{$search}%")
                   ->orWhere('tracking_number', 'like', "%{$search}%")
                   ->orWhere('customer_name', 'like', "%{$search}%");
             });

@@ -18,7 +18,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AuditLogController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'role:administrator,logistics', 'prevent.back.history'])->group(function () {
     // Profile
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -28,15 +28,21 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::get('/notifications/stream', [NotificationController::class, 'stream'])->name('notifications.stream');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::get('/notifications/{id}', [NotificationController::class, 'show'])->name('notifications.show');
+    Route::get('/notifications/{id}/redirect', [NotificationController::class, 'redirect'])->name('notifications.redirect');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
     // Toko & Produk
     Route::resource('stores', StoreController::class);
+    Route::patch('stores/{store}/status', [StoreController::class, 'updateStatus'])->name('stores.update-status');
     Route::delete('stores/{store}/logo', [StoreController::class, 'destroyLogo'])->name('stores.destroyLogo');
     Route::resource('products', ProductController::class);
+    Route::patch('products/{product}/status', [ProductController::class, 'updateStatus'])->name('products.update-status');
     Route::delete('products/images/{image}', [ProductController::class, 'destroyImage'])->name('products.destroyImage');
     Route::resource('product-categories', ProductCategoryController::class);
+    Route::patch('product-categories/{product_category}/status', [ProductCategoryController::class, 'updateStatus'])->name('product-categories.update-status');
 
     // Returns active categories for a specific store as JSON.
     // Used by the product create/edit forms to populate the category dropdown
@@ -58,10 +64,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('orders.show');
     Route::get('orders/{order}/print', [OrderController::class, 'printShippingLabel'])->name('orders.print');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
-    Route::post('orders/{order}/check-payment-status', [OrderController::class, 'checkPaymentStatus'])->name('orders.check-payment-status');
+
     Route::patch('orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
     Route::patch('orders/{order}/shipping', [OrderController::class, 'updateShipping'])->name('orders.update-shipping');
     Route::patch('orders/{order}/tracking', [OrderController::class, 'updateTrackingNumber'])->name('orders.update-tracking-number');
+    Route::post('orders/{order}/generate-resi', [OrderController::class, 'generateResi'])->name('orders.generate-resi');
+    Route::patch('orders/{order}/handle-return', [OrderController::class, 'handleReturn'])->name('orders.handle-return');
 
     /// Daftar semua transaksi (dengan filter & tab)
     Route::get('/transactions', [TransactionController::class, 'index'])
@@ -71,9 +79,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/transactions/{transaction}', [TransactionController::class, 'show'])
         ->name('transactions.show');
 
-    // Update status (konfirmasi / tolak / refund)
-    Route::patch('/transactions/{transaction}/status', [TransactionController::class, 'updateStatus'])
-        ->name('transactions.updateStatus');
 
     // Deliveries & Tracking
     Route::get('/deliveries', [App\Http\Controllers\DeliveryController::class, 'index'])->name('deliveries.index');
@@ -92,12 +97,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
     // Manajemen Kurir
     Route::resource('couriers', App\Http\Controllers\CourierController::class);
+    Route::patch('couriers/{courier}/status', [App\Http\Controllers\CourierController::class, 'updateStatus'])->name('couriers.update-status');
     Route::resource('shipping-services', ShippingServiceController::class);
+    Route::patch('shipping-services/{shipping_service}/status', [ShippingServiceController::class, 'updateStatus'])->name('shipping-services.update-status');
+    Route::patch('shipping-rates/{shipping_rate}/status', [ShippingRateController::class, 'updateStatus'])->name('shipping-rates.update-status');
     Route::resource('shipping-rates', ShippingRateController::class);
 
     // Manajemen Wilayah
     Route::resource('provinces', ProvinceController::class);
+    Route::patch('provinces/{province}/status', [ProvinceController::class, 'updateStatus'])->name('provinces.update-status');
+    
     Route::resource('cities', CityController::class);
+    Route::patch('cities/{city}/status', [CityController::class, 'updateStatus'])->name('cities.update-status');
 
     // Audit Trails & Logging
     Route::prefix('audit')->name('audit.')->group(function () {

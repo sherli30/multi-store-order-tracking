@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Master Layanan Pengiriman')
+@section('title', 'Kelola Layanan Pengiriman')
 
 @section('styles')
     /* ── Page Header ─────────────────────────────── */
@@ -295,7 +295,7 @@
                     <line x1="12" y1="22.08" x2="12" y2="12"></line>
                 </svg>
             </span>
-            Master Layanan
+            Kelola Layanan
         </h1>
         <p>Atur tipe layanan (Reguler, Cargo, dll) untuk setiap kurir.</p>
     </div>
@@ -329,7 +329,7 @@
             </svg>
         </div>
         <div>
-            <div class="stat-value">{{ $services->where('min_weight', '>=', 10000)->count() }}</div>
+            <div class="stat-value">{{ $services->where('min_weight', '>=', 10)->count() }}</div>
             <div class="stat-label">Cargo (≥10kg)</div>
         </div>
     </div>
@@ -473,16 +473,37 @@
                         </option>
                     @endforeach
                 </select>
+                @error('courier_id') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
             </div>
 
             <div class="form-modal-field">
                 <label class="form-modal-label" for="serviceName">Nama Layanan <span>*</span></label>
                 <input type="text" name="service_name" id="serviceName" class="form-modal-input @error('service_name') is-invalid @enderror" required placeholder="Contoh: Reguler, Cargo, OKE" value="{{ old('service_name') }}">
+                @error('service_name') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
             </div>
 
             <div class="form-modal-field">
-                <label class="form-modal-label" for="minWeight">Minimal Berat (Gram) <span>*</span></label>
-                <input type="number" name="min_weight" id="minWeight" class="form-modal-input @error('min_weight') is-invalid @enderror" required placeholder="Contoh: 0 (Reguler), 10000 (Cargo)" value="{{ old('min_weight') }}">
+                <label class="form-modal-label" for="serviceCode">Kode Layanan <span>*</span></label>
+                <input type="text" name="service_code" id="serviceCode" class="form-modal-input @error('service_code') is-invalid @enderror" required placeholder="Contoh: REG, CARGO" value="{{ old('service_code') }}">
+                @error('service_code') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-modal-field">
+                <label class="form-modal-label" for="minWeight">Minimal Berat (kg) <span>*</span></label>
+                <input type="number" step="0.1" name="min_weight" id="minWeight" class="form-modal-input @error('min_weight') is-invalid @enderror" required placeholder="Contoh: 0 (Reguler), 10 (Cargo)" value="{{ old('min_weight') }}">
+                @error('min_weight') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-modal-field">
+                <label class="form-modal-label" for="estimatedDelivery">Estimasi Pengiriman <span>*</span></label>
+                <input type="text" name="estimated_delivery" id="estimatedDelivery" class="form-modal-input @error('estimated_delivery') is-invalid @enderror" required placeholder="Contoh: 1-2 Hari" value="{{ old('estimated_delivery') }}">
+                @error('estimated_delivery') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
+            </div>
+
+            <div class="form-modal-field">
+                <label class="form-modal-label" for="description">Deskripsi</label>
+                <textarea name="description" id="description" class="form-modal-input @error('description') is-invalid @enderror" placeholder="Deskripsi layanan (opsional)">{{ old('description') }}</textarea>
+                @error('description') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
             </div>
 
             <div class="toggle-card" id="activeToggleCard">
@@ -496,8 +517,8 @@
             <div id="courierInactiveWarning" style="display:none; align-items:flex-start; gap:10px; margin-top:6px; margin-bottom:18px; font-size:12px; line-height:1.5; color:var(--red); background:color-mix(in srgb, var(--red) 8%, var(--panel)); border:1.5px solid color-mix(in srgb, var(--red) 20%, transparent); border-radius:10px; padding:12px 14px; text-align:left;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px; height:16px; margin-top:2px; flex-shrink:0; color:var(--red);"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                 <div>
-                    <span style="font-weight:800; display:block; margin-bottom:3px; font-size:12.5px;">Kurir Induk Non-Aktif</span>
-                    Status operasional layanan ini dikunci karena ekspedisi kurir utama sedang dinonaktifkan di Master Kurir. Silakan aktifkan kurir terlebih dahulu jika ingin mengaktifkan layanan ini.
+                    <span style="font-weight: 800; display: block; margin-bottom: 3px; font-size: 12.5px;">Kurir Utama Non-Aktif</span>
+                    Status operasional layanan ini dikunci karena ekspedisi kurir utama sedang dinonaktifkan di Data Kurir. Silakan aktifkan kurir terlebih dahulu jika ingin mengaktifkan layanan ini.
                 </div>
             </div>
 
@@ -638,7 +659,7 @@
             });
         });
 
-        function openModal(id = null, name = '', courierId = '', minWeight = 0, isActive = 1, isValidationError = false) {
+        function openModal(id = null, name = '', serviceCode = '', courierId = '', minWeight = 0, estimatedDelivery = '', description = '', isActive = 1, isValidationError = false) {
             const modal        = document.getElementById('serviceModal');
             const form         = document.getElementById('serviceForm');
             const title        = document.getElementById('serviceModalTitle');
@@ -683,8 +704,11 @@
 
                 document.getElementById('serviceIdInput').value = id;
                 document.getElementById('serviceName').value   = name;
+                document.getElementById('serviceCode').value   = serviceCode;
                 document.getElementById('courierId').value     = courierId;
                 document.getElementById('minWeight').value     = minWeight;
+                document.getElementById('estimatedDelivery').value = estimatedDelivery;
+                document.getElementById('description').value   = description;
                 document.getElementById('isActive').checked    = (isActive == '1' || isActive === 'true');
             } else {
                 title.textContent      = 'Tambah Layanan Baru';
@@ -697,8 +721,11 @@
 
                 document.getElementById('serviceIdInput').value = '';
                 document.getElementById('serviceName').value   = '';
+                document.getElementById('serviceCode').value   = '';
                 document.getElementById('courierId').value     = '';
                 document.getElementById('minWeight').value     = '';
+                document.getElementById('estimatedDelivery').value = '';
+                document.getElementById('description').value   = '';
                 document.getElementById('isActive').checked    = (isActive == '1' || isActive === 'true' || isActive === true);
             }
 
@@ -742,9 +769,9 @@
             $(document).ready(function() {
                 const oldId = '{{ old('id') }}';
                 if (oldId) {
-                    openModal(oldId, `{!! addslashes(old('service_name')) !!}`, '{{ old('courier_id') }}', '{{ old('min_weight') }}', '{{ old('is_active') }}', true);
+                    openModal(oldId, `{!! addslashes(old('service_name')) !!}`, '{{ old('service_code') }}', '{{ old('courier_id') }}', '{{ old('min_weight') }}', '{{ old('estimated_delivery') }}', `{!! addslashes(old('description')) !!}`, '{{ old('is_active') }}', true);
                 } else {
-                    openModal(null, `{!! addslashes(old('service_name')) !!}`, '{{ old('courier_id') }}', '{{ old('min_weight') }}', '{{ old('is_active') }}', true);
+                    openModal(null, `{!! addslashes(old('service_name')) !!}`, '{{ old('service_code') }}', '{{ old('courier_id') }}', '{{ old('min_weight') }}', '{{ old('estimated_delivery') }}', `{!! addslashes(old('description')) !!}`, '{{ old('is_active') }}', true);
                 }
             });
         @endif

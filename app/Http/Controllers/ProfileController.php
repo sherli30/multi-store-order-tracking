@@ -40,7 +40,12 @@ class ProfileController extends Controller
         // ── Tidak ada perubahan sama sekali ──────────────────────────────────
         if (!$avatarChanged && !$nameChanged && !$emailChanged && !$phoneChanged) {
             return Redirect::route('profile.edit')
-                ->with('info', 'Data Anda sudah sesuai. Tidak ada perubahan yang dilakukan.');
+                ->with('info', [
+                    'title' => 'Data Sudah Sesuai',
+                    'list' => [
+                        'Data Anda sudah sesuai. Tidak ada perubahan yang dilakukan.'
+                    ]
+                ]);
         }
 
         // ── Proses unggah foto baru ───────────────────────────────────────────
@@ -53,14 +58,31 @@ class ProfileController extends Controller
 
             if (!$path) {
                 return Redirect::route('profile.edit')
-                    ->with('error', 'Gagal mengunggah foto profil. Silakan coba lagi atau gunakan file lain.');
+                    ->with('error', [
+                        'title' => 'Gagal Mengunggah Foto',
+                        'list' => [
+                            'Gagal mengunggah foto profil.',
+                            'Silakan coba lagi atau gunakan file lain.'
+                        ]
+                    ]);
             }
 
             $validated['avatar'] = $path;
         }
-        // Terapkan semua perubahan sekaligus
-        $user->fill($validated);
-        $user->save();
+        try {
+            // Terapkan semua perubahan sekaligus
+            $user->fill($validated);
+            $user->save();
+        } catch (\Exception $e) {
+            return Redirect::route('profile.edit')
+                ->with('error', [
+                    'title' => 'Gagal Memperbarui Profil',
+                    'list' => [
+                        'Terjadi kesalahan pada sistem saat menyimpan data.',
+                        'Silakan coba beberapa saat lagi.'
+                    ]
+                ]);
+        }
 
         // ── MULTI NOTIFICATION (TOAST) ───────────────────────────────────────
         $messages = [];

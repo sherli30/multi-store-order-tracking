@@ -29,6 +29,12 @@ class ProductRequest extends FormRequest
             'name'        => ['required', 'string', 'max:255'],
             'is_active'   => $this->isMethod('post') ? ['accepted'] : ['required', 'boolean'],
             'is_featured' => ['nullable', 'boolean'],
+            'sku'         => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('products', 'sku')->ignore($this->route('product'))
+            ],
 
             // Price, Stock & Weight
             'price'  => ['required', 'numeric', 'min:0', 'max:999999999'],
@@ -72,31 +78,34 @@ class ProductRequest extends FormRequest
             'store_id.exists'      => 'Toko yang dipilih tidak ditemukan. Muat ulang halaman dan coba lagi.',
             'category_id.required' => 'Kategori produk wajib dipilih. Pastikan toko sudah dipilih terlebih dahulu.',
             'category_id.exists'   => 'Kategori tidak valid atau tidak termasuk dalam toko yang dipilih.',
-            'name.required'        => 'Nama produk tidak boleh kosong. Masukkan nama yang jelas dan mudah dikenali.',
+            'name.required'        => 'Nama produk wajib diisi.',
             'name.max'             => 'Nama produk terlalu panjang. Maksimal 255 karakter.',
+            'sku.required'         => 'SKU wajib diisi.',
+            'sku.unique'           => 'SKU sudah digunakan.',
+            'sku.max'              => 'SKU terlalu panjang. Maksimal 255 karakter.',
 
             // ── Harga, Stok & Berat (Single Variant) ─────────────────────────
-            'price.required'       => 'Harga produk wajib diisi.',
+            'price.required'       => 'Harga wajib diisi.',
             'price.numeric'        => 'Harga harus berupa angka. Jangan sertakan tanda titik atau koma.',
-            'price.min'            => 'Harga tidak boleh bernilai negatif.',
+            'price.min'            => 'Harga harus lebih besar dari 0.',
             'price.max'            => 'Harga yang dimasukkan terlalu besar. Maksimal Rp 999.999.999.',
-            'stock.required'       => 'Jumlah stok awal wajib diisi. Masukkan 0 jika produk belum tersedia.',
+            'stock.required'       => 'Stok wajib diisi.',
             'stock.integer'        => 'Stok harus berupa bilangan bulat, bukan desimal.',
-            'stock.min'            => 'Stok tidak boleh bernilai negatif.',
+            'stock.min'            => 'Stok tidak boleh negatif.',
             'stock.max'            => 'Jumlah stok terlalu besar. Maksimal 999.999 unit.',
-            'weight.required'      => 'Berat produk wajib diisi. Berat digunakan untuk kalkulasi ongkos kirim.',
-            'weight.numeric'       => 'Berat harus berupa angka (contoh: 500 untuk 500 gram).',
-            'weight.min'           => 'Berat tidak boleh bernilai negatif.',
-            'weight.max'           => 'Berat yang dimasukkan terlalu besar. Maksimal 999.999 gram.',
+            'weight.required'      => 'Berat produk wajib diisi.',
+            'weight.numeric'       => 'Berat harus berupa angka (contoh: 0.5 kg atau 1 kg).',
+            'weight.min'           => 'Berat harus lebih besar dari 0.',
+            'weight.max'           => 'Berat yang dimasukkan terlalu besar. Maksimal 9999 kg.',
 
             // ── Foto Produk ───────────────────────────────────────────────────
-            'images.required'      => 'Foto produk wajib diunggah. Tambahkan minimal 1 foto agar produk terlihat menarik.',
+            'images.required'      => 'Gambar produk wajib diunggah.',
             'images.*.image'       => 'File yang diunggah bukan gambar. Pastikan file bertipe gambar.',
-            'images.*.mimes'       => 'Format gambar tidak didukung. Gunakan file .jpg, .jpeg, .png, atau .webp.',
-            'images.*.max'         => 'Ukuran foto terlalu besar. Maksimal 2 MB per file.',
+            'images.*.mimes'       => 'Format gambar tidak valid. Gunakan file .jpg, .jpeg, .png, atau .webp.',
+            'images.*.max'         => 'Ukuran gambar melebihi batas maksimum.',
             'replace_images.*.image' => 'File pengganti bukan gambar. Pastikan file bertipe gambar.',
             'replace_images.*.mimes' => 'Format gambar pengganti tidak didukung. Gunakan .jpg, .jpeg, .png, atau .webp.',
-            'replace_images.*.max'   => 'Ukuran foto pengganti terlalu besar. Maksimal 2 MB per file.',
+            'replace_images.*.max'   => 'Ukuran gambar melebihi batas maksimum.',
             'deleted_images.*.exists'  => 'Foto yang ingin dihapus tidak ditemukan. Muat ulang halaman dan coba lagi.',
             'primary_image_id.exists'  => 'Foto utama yang dipilih tidak ditemukan. Pilih ulang foto utama produk.',
 
@@ -112,9 +121,9 @@ class ProductRequest extends FormRequest
             'specifications.*.value.max'      => 'Nilai spesifikasi terlalu panjang. Maksimal 255 karakter.',
 
             // Status
-            'is_active.accepted' => 'Status aktif produk wajib diaktifkan saat pendaftaran baru.',
-            'is_active.required' => 'Status aktif produk wajib diisi.',
-            'is_active.boolean' => 'Format status operasional produk tidak valid.',
+            'is_active.accepted' => 'Status produk wajib dipilih.',
+            'is_active.required' => 'Status produk wajib dipilih.',
+            'is_active.boolean' => 'Status produk tidak valid.',
         ];
     }
 

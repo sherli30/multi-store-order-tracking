@@ -23,7 +23,7 @@ class StoreOrderRequest extends FormRequest
             'province'               => 'nullable|string|max:100',
             'city'                   => 'nullable|string|max:100',
             'postal_code'            => 'nullable|string|max:10',
-            'shipping_type'          => 'nullable|in:reguler,cargo',
+            'shipping_type'          => 'nullable|string|max:255',
             'items'                  => 'required|array|min:1',
             'items.*.product_id'     => 'required|exists:products,id',
             'items.*.quantity'       => 'required|integer|min:1',
@@ -44,8 +44,7 @@ class StoreOrderRequest extends FormRequest
 
             // Pengiriman
             'shipping_address.required' => 'Alamat pengiriman wajib diisi agar pesanan dapat dikirim.',
-            'shipping_type.required'    => 'Jenis pengiriman wajib dipilih (reguler atau cargo).',
-            'shipping_type.in'          => 'Jenis pengiriman tidak valid. Pilih antara "reguler" atau "cargo".',
+            'shipping_type.required'    => 'Layanan pengiriman wajib dipilih.',
 
             // Wilayah
             'province.max'   => 'Nama provinsi terlalu panjang.',

@@ -110,8 +110,22 @@ class ProductCategoryController extends Controller
                     'list' => $messages
                 ]);
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.');
+            return back()->withInput()->with('error', [
+                'title' => 'Gagal Menyimpan Kategori',
+                'list' => [
+                    'Gagal menyimpan kategori baru.',
+                    'Pastikan nama kategori tidak duplikat di toko yang sama, atau muat ulang halaman.'
+                ]
+            ]);
         }
+    }
+
+    public function show(ProductCategory $productCategory): View
+    {
+        $productCategory->load('store');
+        $productCategory->loadCount('products');
+        
+        return view('product-categories.show', compact('productCategory'));
     }
 
     public function edit(ProductCategory $productCategory): View
@@ -165,9 +179,9 @@ class ProductCategoryController extends Controller
                 $messages[] = "Status kategori berhasil diubah menjadi <strong>{$statusLabel}</strong>.";
                 
                 if (!$data['is_active']) {
-                    $messages[] = "Semua produk dalam kategori ini akan tidak tersedia bagi pelanggan.";
+                    $messages[] = "Semua produk dalam kategori ini akan tidak tersedia bagi customer.";
                 } else {
-                    $messages[] = "Semua produk aktif dalam kategori ini kembali tersedia bagi pelanggan.";
+                    $messages[] = "Semua produk aktif dalam kategori ini kembali tersedia bagi customer.";
                 }
             }
 
@@ -175,7 +189,12 @@ class ProductCategoryController extends Controller
             if (empty($messages)) {
                 return redirect()
                     ->route('product-categories.index')
-                    ->with('info', 'Data kategori sudah sesuai. Tidak ada perubahan yang dilakukan.');
+                    ->with('info', [
+                        'title' => 'Data Sudah Sesuai',
+                        'list' => [
+                            'Data kategori sudah sesuai. Tidak ada perubahan yang dilakukan.'
+                        ]
+                    ]);
             }
 
             return redirect()
@@ -186,7 +205,13 @@ class ProductCategoryController extends Controller
                 ]);
 
         } catch (\Exception $e) {
-            return back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan perubahan data kategori. Silakan coba lagi.');
+            return back()->withInput()->with('error', [
+                'title' => 'Gagal Menyimpan Perubahan',
+                'list' => [
+                    'Gagal menyimpan perubahan kategori.',
+                    'Pastikan nama tidak bentrok dengan kategori lain, atau muat ulang halaman.'
+                ]
+            ]);
         }
     }
 
@@ -194,24 +219,53 @@ class ProductCategoryController extends Controller
      * Delete a category.
      * Refuses deletion when products are still linked.
      */
-    public function destroy(ProductCategory $productCategory): RedirectResponse
+    public function destroy(\App\Http\Requests\CategoryDeleteRequest $request, ProductCategory $productCategory): RedirectResponse
     {
-        // Cek relasi produk (termasuk yang ada di tong sampah / soft deleted)
-        $productCount = $productCategory->products()->withTrashed()->count();
-
-        if ($productCount > 0) {
-            return back()->with('error', "Kategori \"{$productCategory->name}\" masih memiliki {$productCount} produk. Hapus atau pindahkan produk tersebut sebelum menghapus kategori ini.");
-        }
-
         try {
             $name = $productCategory->name;
             $productCategory->delete();
 
             return redirect()
                 ->route('product-categories.index')
-                ->with('success', "Kategori \"{$name}\" telah dihapus secara permanen dari sistem.");
+                ->with('success', [
+                    'title' => 'Kategori Dihapus',
+                    'list' => [
+                        "Kategori produk berhasil dihapus."
+                    ]
+                ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus data kategori karena masalah teknis.');
+            return back()->with('error', [
+                'title' => 'Kategori Gagal Dihapus',
+                'list' => [
+                    'Gagal menghapus kategori produk.'
+                ]
+            ]);
+        }
+    }
+
+    /**
+     * Update the category status.
+     */
+    public function updateStatus(\App\Http\Requests\CategoryStatusRequest $request, ProductCategory $productCategory): RedirectResponse
+    {
+        try {
+            $productCategory->update(['is_active' => $request->is_active]);
+
+            $message = $request->is_active ? 'Kategori berhasil diaktifkan.' : 'Kategori berhasil dinonaktifkan.';
+
+            return back()->with('success', [
+                'title' => 'Status Berhasil Diubah',
+                'list' => [
+                    $message
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('error', [
+                'title' => 'Gagal mengubah status kategori',
+                'list' => [
+                    'Terjadi kesalahan saat memperbarui status kategori.'
+                ]
+            ]);
         }
     }
 

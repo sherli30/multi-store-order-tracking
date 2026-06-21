@@ -198,11 +198,15 @@
         border-radius: 50%; background: currentColor;
     }
     .status-pending       { background: var(--amber-dim);             color: var(--amber); }
+    .status-menunggu_konfirmasi_admin { background: rgba(100,116,139,0.1); color: #475569; }
     .status-perlu_diproses{ background: rgba(59,130,246,0.1);         color: #3b82f6; }
     .status-processing    { background: rgba(139,92,246,0.1);         color: #8b5cf6; }
+    .status-ready_to_ship { background: rgba(14,165,233,0.1);        color: #0ea5e9; }
     .status-shipping      { background: var(--accent-dim);            color: var(--accent); }
+    .status-delivered      { background: rgba(34,197,94,0.1);         color: #16a34a; }
     .status-completed     { background: var(--green-dim);             color: var(--green); }
     .status-cancelled     { background: var(--red-dim);               color: var(--red); }
+    .status-refunded      { background: #ffe4e6;                      color: #e11d48; }
 
     /* ── Product List ── */
     .product-list { display: flex; flex-direction: column; gap: 12px; }
@@ -292,6 +296,35 @@
     }
     .notes-box-text { font-size: 12.5px; color: var(--text-2); line-height: 1.5; font-style: italic; }
 
+    /* ── Timeline ── */
+    .timeline { display: flex; flex-direction: column; }
+    .timeline-item { display: flex; gap: 14px; position: relative; }
+    .timeline-item:not(:last-child)::after {
+        content: ''; position: absolute;
+        left: 15px; top: 32px; bottom: -8px;
+        width: 2px; background: var(--border);
+    }
+    .timeline-dot {
+        width: 32px; height: 32px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; margin-top: 2px; z-index: 1;
+    }
+    .timeline-dot svg { width: 14px; height: 14px; }
+    .timeline-dot.done   { background: var(--green-dim); color: var(--green); border: 2px solid rgba(22,163,74,0.2); }
+    .timeline-dot.active { background: var(--amber-dim); color: var(--amber); border: 2px solid rgba(245,158,11,0.25); }
+    .timeline-dot.wait   { background: var(--surface-2); color: var(--text-4); border: 2px solid var(--border); }
+    .timeline-dot.fail   { background: var(--red-dim);   color: var(--red);   border: 2px solid rgba(220,38,38,0.2); }
+    .timeline-content { flex: 1; padding-bottom: 22px; }
+    .timeline-item:last-child .timeline-content { padding-bottom: 0; }
+    .timeline-title { font-size: 13px; font-weight: 700; color: var(--text-1); margin-bottom: 3px; }
+    .timeline-date  { font-size: 11.5px; color: var(--text-3); margin-bottom: 4px; }
+    .timeline-note  {
+        font-size: 12px; color: var(--text-2); line-height: 1.55;
+        background: var(--surface-2); border-radius: 8px;
+        padding: 8px 11px; margin-top: 6px;
+        border-left: 3px solid var(--border-2);
+    }
+
     /* ── Activity Log Table ── */
     .log-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 560px; }
     .log-table thead tr { background: var(--surface); }
@@ -377,43 +410,46 @@
     .modal-icon svg { width: 22px; height: 22px; }
     .modal-icon.red    { background: var(--red-dim);              color: var(--red); }
     .modal-icon.purple { background: rgba(139,92,246,0.1);        color: #8b5cf6; }
+    .modal-icon.green  { background: rgba(22,163,74,0.1);         color: var(--green); }
+    .modal-icon.blue   { background: rgba(59,130,246,0.1);        color: #3b82f6; }
     .modal-title { font-size: 16px; font-weight: 900; color: var(--text-1); margin-bottom: 6px; }
     .modal-desc  { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 20px; }
-    .modal-form-group { margin-bottom: 14px; }
-    .modal-label {
+    
+    .form-group { margin-bottom: 14px; }
+    .form-label {
         display: block; font-size: 11.5px; font-weight: 800;
         color: var(--text-3); margin-bottom: 6px; text-transform: uppercase;
     }
-    .modal-input {
+    .form-input {
         width: 100%; padding: 9px 13px;
         border: 1.5px solid var(--border); border-radius: 9px;
         background: var(--surface); color: var(--text-1);
         font-family: var(--font); font-size: 13px; font-weight: 600;
         box-sizing: border-box; transition: border-color 0.2s;
     }
-    .modal-input:focus { outline: none; border-color: var(--accent); }
+    .form-input:focus { outline: none; border-color: var(--accent); }
     .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
-    .btn-modal-cancel {
+    .btn-cancel {
         padding: 9px 18px; border: 1px solid var(--border); border-radius: 8px;
         font-family: var(--font); font-size: 13px; font-weight: 700;
         background: var(--surface); color: var(--text-2); cursor: pointer;
         transition: all 0.15s;
     }
-    .btn-modal-cancel:hover { color: var(--text-1); border-color: var(--border-2); }
-    .btn-modal-confirm {
+    .btn-cancel:hover { color: var(--text-1); border-color: var(--border-2); }
+    .btn-confirm {
         padding: 9px 20px; border: none; border-radius: 8px;
         font-family: var(--font); font-size: 13px; font-weight: 800;
         background: var(--accent); color: #fff; cursor: pointer;
         transition: all 0.15s; box-shadow: 0 2px 8px rgba(79,70,229,0.25);
     }
-    .btn-modal-confirm:hover { filter: brightness(1.08); transform: translateY(-1px); }
-    .btn-modal-danger {
+    .btn-confirm:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .btn-danger {
         padding: 9px 20px; border: none; border-radius: 8px;
         font-family: var(--font); font-size: 13px; font-weight: 800;
         background: var(--red); color: #fff; cursor: pointer;
         transition: all 0.15s; box-shadow: 0 2px 8px rgba(220,38,38,0.25);
     }
-    .btn-modal-danger:hover { background: #b91c1c; transform: translateY(-1px); }
+    .btn-danger:hover { background: #b91c1c; transform: translateY(-1px); }
     .field-error { font-size: 11.5px; color: var(--red); font-weight: 600; margin-top: 5px; }
 
     /* ── Responsive ── */
@@ -442,7 +478,7 @@
 
 <div class="breadcrumb" style="margin-bottom: 20px;">
     <a href="{{ route('dashboard') }}" style="color: var(--text-3); text-decoration: none;">Dashboard</a> &raquo;
-    <a href="{{ route('orders.index') }}" style="color: var(--text-3); text-decoration: none;">Manajemen Pesanan</a> &raquo;
+    <a href="{{ route('orders.index') }}" style="color: var(--text-3); text-decoration: none;">Kelola Pesanan</a> &raquo;
     <span style="color: var(--text-1); font-weight: 600;">{{ $order->order_number }}</span>
 </div>
 
@@ -468,26 +504,37 @@
     </div>
 
     <div class="header-actions">
-        {{-- Print Resi --}}
-        @if(!in_array($order->status, ['pending', 'cancelled']))
+        {{-- Print Label --}}
+        @if(!in_array($order->status, ['pending', 'cancelled', 'refunded']))
             <a href="{{ route('orders.print', $order) }}" target="_blank" class="btn-print">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="6 9 6 2 18 2 18 9"/>
                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                     <rect x="6" y="14" width="12" height="8"/>
                 </svg>
-                Cetak Resi
+                Cetak Label
             </a>
         @endif
 
-        {{-- Cancel --}}
-        @if(in_array($order->status, ['pending', 'perlu_diproses']))
-            <button type="button" class="btn-secondary danger" onclick="document.getElementById('cancelModal').classList.add('open')">
+        {{-- Konfirmasi Pesanan --}}
+        @if($order->status === 'menunggu_konfirmasi_admin')
+            <button type="button" class="btn-secondary" style="color:var(--green); border-color:var(--green);" onclick="document.getElementById('confirmOrderModal').classList.add('open')">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;">
-                    <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                    <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
-                Batalkan
+                Konfirmasi Pesanan
             </button>
+        @endif
+
+        {{-- Generate Resi --}}
+        @if(in_array($order->status, ['processing', 'ready_to_ship']) && !$order->tracking_number)
+            <form action="{{ route('orders.generate-resi', $order) }}" method="POST" style="display:inline;">
+                @csrf
+                <button type="submit" class="btn-secondary" style="color:var(--accent); border-color:var(--accent);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    Generate Resi
+                </button>
+            </form>
         @endif
 
         <a href="{{ route('orders.index') }}" class="btn-back">
@@ -502,12 +549,7 @@
 {{-- ─────────────────────────────────────────────
      Alert Banners
 ────────────────────────────────────────────── --}}
-@if(session('success'))
-    <div class="alert-banner alert-success">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-        {{ session('success') }}
-    </div>
-@endif
+
 @if($errors->has('stock'))
     <div class="alert-banner alert-error">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -556,9 +598,12 @@
 @php
     $steps = [
         'pending'        => ['label' => 'Pesanan Dibuat',    'icon' => 'credit-card'],
-        'perlu_diproses' => ['label' => 'Perlu Diproses',    'icon' => 'check-circle'],
+        'menunggu_konfirmasi_admin' => ['label' => 'Menunggu Konfirmasi',  'icon' => 'check-circle'],
+        'perlu_diproses' => ['label' => 'Perlu Diproses',    'icon' => 'package'],
         'processing'     => ['label' => 'Dikemas',           'icon' => 'package'],
+        'ready_to_ship'  => ['label' => 'Siap Dikirim',      'icon' => 'package'],
         'shipping'       => ['label' => 'Dalam Pengiriman',  'icon' => 'truck'],
+        'delivered'      => ['label' => 'Pesanan Tiba',      'icon' => 'check-circle'],
         'completed'      => ['label' => 'Selesai',           'icon' => 'flag'],
     ];
     $stepKeys = array_keys($steps);
@@ -582,6 +627,18 @@
                 @endif
             </div>
         </div>
+    @elseif($order->status === 'refunded')
+        <div class="cancelled-banner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <div>
+                <div class="cancelled-banner-text">Pesanan ini telah dikembalikan (Refund)</div>
+                @if($order->cancel_reason)
+                    <div class="cancelled-banner-reason">Alasan: {{ $order->cancel_reason }}</div>
+                @endif
+            </div>
+        </div>
     @else
         <div class="progress-line-track">
             <div class="progress-line-fill" style="width: {{ $fillWidth }}%;"></div>
@@ -596,6 +653,8 @@
                     <div class="step-circle">
                         @if($s['icon'] === 'credit-card')
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        @elseif($s['icon'] === 'clock')
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         @elseif($s['icon'] === 'check-circle')
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                         @elseif($s['icon'] === 'package')
@@ -612,83 +671,6 @@
         </div>
     @endif
 </div>
-
-{{-- ─────────────────────────────────────────────
-     Action Box (Next Step Required Action)
-────────────────────────────────────────────── --}}
-@if(!in_array($order->status, ['completed', 'cancelled']))
-    <div class="action-box">
-        @if($order->status === 'pending')
-            <div class="action-text">
-                <h4>Konfirmasi Pembayaran</h4>
-                <p>Gunakan tombol ini jika pelanggan sudah membayar secara manual atau notifikasi otomatis tertunda.</p>
-            </div>
-            <div class="action-controls">
-                <form action="{{ route('orders.update-status', $order) }}" method="POST" style="display:inline;">
-                    @csrf @method('PATCH')
-                    <input type="hidden" name="status" value="perlu_diproses">
-                    <button type="submit" class="btn-action solid">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        Tandai Sudah Bayar
-                    </button>
-                </form>
-                <form action="{{ route('orders.check-payment-status', $order) }}" method="POST" style="display:inline;">
-                    @csrf
-                    <button type="submit" class="btn-action">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-                        Cek Status Midtrans
-                    </button>
-                </form>
-            </div>
-
-        @elseif($order->status === 'perlu_diproses')
-            <div class="action-text">
-                <h4>Mulai Proses Pengemasan</h4>
-                <p>Pesanan ini telah dibayar. Klik konfirmasi untuk mulai menyiapkan dan mengemas barang.</p>
-            </div>
-            <div class="action-controls">
-                <form action="{{ route('orders.update-status', $order) }}" method="POST">
-                    @csrf @method('PATCH')
-                    <input type="hidden" name="status" value="processing">
-                    <button type="submit" class="btn-action solid">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><polyline points="20 6 9 17 4 12"/></svg>
-                        Konfirmasi & Mulai Kemas
-                    </button>
-                </form>
-            </div>
-
-        @elseif($order->status === 'processing')
-            <div class="action-text">
-                <h4>Kirim Pesanan</h4>
-                <p>Masukkan kurir dan nomor resi untuk mengubah status menjadi Dikirim.</p>
-            </div>
-            <div class="action-controls" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-                <div style="display: flex; gap: 10px; flex-wrap: wrap; width: 100%;">
-                    <button type="button" class="btn-action solid" onclick="document.getElementById('shipModal').classList.add('open')">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                        Input Resi & Kirim
-                    </button>
-                </div>
-            </div>
-
-        @elseif($order->status === 'shipping')
-            <div class="action-text">
-                <h4>Selesaikan Pesanan</h4>
-                <p>Tandai pesanan ini sebagai selesai jika barang telah diterima oleh pelanggan.</p>
-            </div>
-            <div class="action-controls">
-                <form action="{{ route('orders.update-status', $order) }}" method="POST">
-                    @csrf @method('PATCH')
-                    <input type="hidden" name="status" value="completed">
-                    <button type="submit" class="btn-action green-solid">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><polyline points="20 6 9 17 4 12"/></svg>
-                        Tandai Selesai
-                    </button>
-                </form>
-            </div>
-        @endif
-    </div>
-@endif
 
 {{-- ─────────────────────────────────────────────
      Main Grid
@@ -716,9 +698,6 @@
                             <img src="{{ $item->product?->image ? asset('storage/' . $item->product->image) : asset('img/no-image.png') }}" class="product-img" alt="{{ $item->product?->name }}">
                             <div class="product-detail">
                                 <div class="product-name">{{ $item->product?->name ?? 'Produk Telah Dihapus' }}</div>
-                                @if($item->packing)
-                                    <div class="product-variant">Packing: {{ $item->packing }}</div>
-                                @endif
                                 <div class="product-qty">{{ $item->quantity }} x Rp {{ number_format($item->price, 0, ',', '.') }}</div>
                             </div>
                             <div class="product-price">Rp {{ number_format($item->quantity * $item->price, 0, ',', '.') }}</div>
@@ -732,12 +711,7 @@
                         <span>Subtotal Produk</span>
                         <span style="color:var(--text-1); font-weight:800;">Rp {{ number_format($order->orderItems->sum(fn($i) => $i->price * $i->quantity), 0, ',', '.') }}</span>
                     </div>
-                    @if(isset($order->packing_cost) && $order->packing_cost > 0)
-                        <div class="receipt-row divider">
-                            <span>Biaya Packing</span>
-                            <span style="color:var(--text-1); font-weight:800;">Rp {{ number_format($order->packing_cost, 0, ',', '.') }}</span>
-                        </div>
-                    @endif
+
                     <div class="receipt-row">
                         <span>Ongkos Kirim ({{ strtoupper($order->shipping_courier ?? 'Kurir') }} — {{ strtoupper($order->shipping_type ?? '') }})</span>
                         <span style="color:var(--text-1); font-weight:800;">Rp {{ number_format($order->shipping_cost, 0, ',', '.') }}</span>
@@ -779,12 +753,7 @@
                             @if($order->transaction && $order->transaction->transaction_id)
                                 <span class="mono" style="font-family:var(--mono); font-size:11px; color:var(--text-2); font-weight:700;">{{ $order->transaction->transaction_id }}</span>
                             @else
-                                <form action="{{ route('orders.check-payment-status', $order) }}" method="POST" style="display:flex; gap:6px; align-items:center;" novalidate>
-                                    @csrf
-                                    <input type="text" name="manual_id" placeholder="Masukkan ID..." required
-                                        style="flex:1; font-size:11px; padding:5px 9px; border:1.5px solid var(--border); border-radius:7px; background:var(--surface); color:var(--text-1); font-family:var(--mono);">
-                                    <button type="submit" style="background:var(--accent); color:#fff; border:none; padding:5px 12px; border-radius:7px; font-size:11px; font-weight:800; cursor:pointer; font-family:var(--font);">Sync</button>
-                                </form>
+                                <span style="color:var(--text-4); font-style:italic;">—</span>
                             @endif
                         </div>
                     </div>
@@ -837,6 +806,120 @@
             </div>
         </div>
 
+        @php
+            $orderEvents = [];
+
+            // 1. Order Created
+            $orderEvents[] = [
+                'date' => $order->created_at,
+                'title' => 'Pesanan Dibuat',
+                'status' => 'pending',
+                'actor' => $order->customer_name ?? 'Customer',
+                'notes' => 'Pesanan telah dibuat dan menunggu pembayaran',
+                'icon' => 'credit-card',
+                'is_history' => false,
+            ];
+
+            // 2. Transaction / Payment Events
+            if ($order->transaction) {
+                $tStatus = strtolower($order->transaction->status);
+                if (in_array($tStatus, ['settlement', 'capture', 'paid', 'success'])) {
+                    $orderEvents[] = [
+                        'date' => $order->transaction->payment_date ?? $order->transaction->updated_at,
+                        'title' => 'Pembayaran Berhasil',
+                        'status' => 'paid',
+                        'actor' => 'Midtrans',
+                        'notes' => 'Pembayaran dikonfirmasi menggunakan ' . strtoupper($order->transaction->payment_method ?? $order->payment_type ?? 'Sistem'),
+                        'icon' => 'check-circle',
+                        'is_history' => false,
+                    ];
+                } elseif (in_array($tStatus, ['cancel', 'deny', 'expire', 'failure', 'failed'])) {
+                    $stepOrder = ['pending', 'menunggu_konfirmasi_admin', 'perlu_diproses', 'processing', 'shipping', 'completed'];
+                    $orderEvents[] = [
+                        'date' => $order->transaction->updated_at,
+                        'title' => 'Pembayaran Gagal',
+                        'status' => 'failed',
+                        'actor' => 'Midtrans / Sistem',
+                        'notes' => 'Pembayaran ditolak atau batas waktu habis',
+                        'icon' => 'x-circle',
+                        'is_history' => false,
+                    ];
+                }
+            }
+
+            // 3. Tracking Histories
+            // (Using the eager-loaded relation)
+            foreach ($order->trackingHistories as $history) {
+                $orderEvents[] = [
+                    'date' => $history->created_at,
+                    'title' => \App\Services\StatusService::getOrderLabel($history->status),
+                    'status' => $history->status,
+                    'actor' => $history->admin ? $history->admin->name : 'Sistem',
+                    'notes' => $history->notes,
+                    'icon' => 'package',
+                    'is_history' => true,
+                ];
+            }
+
+            // 4. Return Requests
+            if ($order->return_status) {
+                $orderEvents[] = [
+                    'date' => $order->updated_at,
+                    'title' => 'Pengajuan Pengembalian (' . ucfirst($order->return_status) . ')',
+                    'status' => 'refunded',
+                    'actor' => 'Customer / Administrator',
+                    'notes' => $order->return_reason ?? $order->admin_return_notes ?? 'Pengajuan pengembalian barang/dana',
+                    'icon' => 'refresh-ccw',
+                    'is_history' => false,
+                ];
+            }
+
+            // Sort Events: Newest First
+            usort($orderEvents, function($a, $b) {
+                return \Carbon\Carbon::parse($b['date']) <=> \Carbon\Carbon::parse($a['date']);
+            });
+        @endphp
+
+        {{-- Riwayat & Timeline --}}
+        <div class="detail-card">
+            <div class="card-header">
+                <span class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Riwayat &amp; Timeline
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    @forelse($orderEvents as $index => $event)
+                        <div class="timeline-item">
+                            <div class="timeline-dot {{ $index === 0 ? 'active' : 'done' }}">
+                                @if(in_array($event['status'], ['cancelled', 'refunded', 'failed']))
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                @elseif(in_array($event['status'], ['completed', 'paid']))
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                @else
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                @endif
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">{{ $event['title'] }}</div>
+                                <div class="timeline-date">{{ \Carbon\Carbon::parse($event['date'])->translatedFormat('d M Y, H:i') }} WIB</div>
+                                @if($event['notes'])
+                                    <div class="timeline-note">
+                                        <strong style="color:var(--text-1);">{{ $event['actor'] }}:</strong> {{ $event['notes'] }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div style="text-align:center; color:var(--text-4); font-style:italic; font-size:13px; padding:20px;">
+                            Belum ada riwayat aktivitas.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
         {{-- Activity Log --}}
         <div class="detail-card">
             <div class="card-header">
@@ -850,30 +933,30 @@
                     <thead>
                         <tr>
                             <th>Waktu</th>
-                            <th>Status</th>
-                            <th>Admin / Sistem</th>
+                            <th>Aktivitas</th>
+                            <th>Aktor</th>
                             <th>Catatan</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($order->trackingHistories()->latest()->get() as $history)
+                        @forelse($orderEvents as $event)
                             <tr>
                                 <td style="font-size:12px; white-space:nowrap;">
-                                    {{ $history->created_at->translatedFormat('d M Y') }}<br>
-                                    <span style="color:var(--text-4);">{{ $history->created_at->format('H:i') }} WIB</span>
+                                    {{ \Carbon\Carbon::parse($event['date'])->translatedFormat('d M Y') }}<br>
+                                    <span style="color:var(--text-4);">{{ \Carbon\Carbon::parse($event['date'])->format('H:i') }} WIB</span>
                                 </td>
                                 <td>
-                                    <span class="status-badge status-{{ $history->status }}" style="font-size:10px;">
-                                        {{ strtoupper(\App\Services\StatusService::getOrderLabel($history->status)) }}
+                                    <span class="status-badge status-{{ $event['status'] }}" style="font-size:10px;">
+                                        {{ strtoupper($event['title']) }}
                                     </span>
                                 </td>
                                 <td>
                                     <div class="admin-cell">
-                                        <span class="admin-avatar">{{ substr($history->admin->name ?? 'S', 0, 1) }}</span>
-                                        {{ $history->admin->name ?? 'System' }}
+                                        <span class="admin-avatar">{{ substr($event['actor'], 0, 1) }}</span>
+                                        {{ $event['actor'] }}
                                     </div>
                                 </td>
-                                <td style="color:var(--text-3);">{{ $history->notes ?? '—' }}</td>
+                                <td style="color:var(--text-3);">{{ $event['notes'] ?? '—' }}</td>
                             </tr>
                         @empty
                             <tr>
@@ -897,7 +980,7 @@
             <div class="card-header">
                 <span class="card-title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    Informasi Pelanggan
+                    Informasi Customer
                 </span>
             </div>
             <div class="card-body">
@@ -938,16 +1021,16 @@
             <div class="card-body">
                 <div class="info-row">
                     <span class="info-label">Kurir</span>
-                    <span class="info-value">{{ strtoupper($order->shipping_courier ?? 'Manual') }}</span>
+                    <span class="info-value">{{ strtoupper($order->courier_name ?? $order->shipping_courier ?? 'Manual') }}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Layanan</span>
-                    <span class="info-value">{{ strtoupper($order->shipping_type ?? '—') }}</span>
+                    <span class="info-value">{{ strtoupper($order->courier_service ?? $order->shipping_type ?? '—') }}</span>
                 </div>
                 @if(isset($order->total_weight) && $order->total_weight)
                     <div class="info-row">
                         <span class="info-label">Berat Total</span>
-                        <span class="info-value">{{ number_format($order->total_weight / 1000, 2, ',', '.') }} kg</span>
+                        <span class="info-value">{{ (float)$order->total_weight }} kg</span>
                     </div>
                 @endif
                 <div class="info-row">
@@ -963,6 +1046,18 @@
                         @endif
                     </span>
                 </div>
+                @if($order->shipment_id)
+                <div class="info-row">
+                    <span class="info-label">ID Pengiriman Biteship</span>
+                    <span class="info-value" style="font-family: var(--mono); font-size: 11px; color: var(--text-2);">{{ $order->shipment_id }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Status Kurir</span>
+                    <span class="info-value">
+                        <span class="status-badge status-shipping">{{ strtoupper($order->shipment_status ?? 'UNKNOWN') }}</span>
+                    </span>
+                </div>
+                @endif
 
                 @if($order->notes)
                     <div class="notes-box">
@@ -999,8 +1094,42 @@
             </div>
         </div>
 
+        {{-- Biteship Tracking Timeline --}}
+        @if($order->tracking_number && isset($biteshipHistory) && is_array($biteshipHistory) && count($biteshipHistory) > 0)
+        <div class="detail-card">
+            <div class="card-header">
+                <span class="card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                    Lacak Pengiriman
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    @foreach($biteshipHistory as $index => $history)
+                        <div class="timeline-item">
+                            <div class="timeline-dot {{ $index === 0 ? 'active' : 'done' }}">
+                                @if($history['status'] === 'delivered')
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                @else
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg>
+                                @endif
+                            </div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">{{ strtoupper($history['status']) }}</div>
+                                <div class="timeline-date">{{ \Carbon\Carbon::parse($history['updated_at'])->translatedFormat('d M Y, H:i') }} WIB</div>
+                                @if($history['note'])
+                                    <div class="timeline-note">{{ $history['note'] }}</div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- Cancellation Reason (sidebar detail when cancelled) --}}
-        @if($order->status === 'cancelled' && $order->cancel_reason)
+        @if(in_array($order->status, ['cancelled', 'refunded']) && $order->cancel_reason)
             <div class="detail-card" style="border-color: var(--red);">
                 <div class="card-header" style="background: var(--red-dim);">
                     <span class="card-title" style="color: var(--red);">
@@ -1016,126 +1145,95 @@
             </div>
         @endif
 
+        {{-- Return Information --}}
+        @if($order->return_status)
+        <div class="detail-card" style="border-color: var(--amber);">
+            <div class="card-header" style="background: var(--amber-dim);">
+                <span class="card-title" style="color: var(--amber);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--amber);"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>
+                    Informasi Pengembalian
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">Status Retur</span>
+                    <span class="info-value">
+                        @if($order->return_status === 'requested')
+                            <span style="color: var(--amber); font-weight: bold;">Menunggu Persetujuan</span>
+                        @elseif($order->return_status === 'approved')
+                            <span style="color: var(--green); font-weight: bold;">Disetujui</span>
+                        @elseif($order->return_status === 'rejected')
+                            <span style="color: var(--red); font-weight: bold;">Ditolak</span>
+                        @endif
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Alasan Pelanggan</span>
+                    <span class="info-value" style="font-size:12px; font-weight:600; line-height:1.6;">{{ $order->return_reason ?? '-' }}</span>
+                </div>
+            </div>
+        </div>
+        @endif
+
     </div>{{-- /detail-side --}}
 
 </div>{{-- /detail-grid --}}
 
+@include('orders.partials._cancel_modal', ['cancelOrder' => $order])
 
-{{-- ─────────────────────────────────────────────
-     Modal: Kirim Pesanan (Ship)
-────────────────────────────────────────────── --}}
-<div id="shipModal" class="modal-overlay">
+{{-- Modal Konfirmasi Pesanan (identical to index page confirm modal) --}}
+@if($order->status === 'menunggu_konfirmasi_admin')
+<div id="confirmOrderModal" class="modal-overlay">
     <div class="modal-box">
-        <div class="modal-icon purple">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        <div class="modal-icon green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12" />
+            </svg>
         </div>
-        <div class="modal-title">Konfirmasi Pengiriman</div>
-        <div class="modal-desc">Masukkan informasi kurir dan nomor resi untuk pesanan <strong>{{ $order->order_number }}</strong>.</div>
+        <h3 class="modal-title">Konfirmasi Pesanan</h3>
+        <p class="modal-desc">Terima pesanan dan teruskan ke toko untuk diproses?</p>
+        <div style="margin: 15px 0; padding: 10px; background: var(--surface); border-radius: 10px; border: 1px solid var(--border); text-align: center;">
+            <strong style="color: var(--accent); font-size: 15px;">#{{ $order->order_number }}</strong>
+        </div>
 
-        <form action="{{ route('orders.update-tracking-number', $order) }}" method="POST" novalidate>
-            @csrf @method('PATCH')
-            <input type="hidden" name="source" value="show">
-
-            <div class="modal-form-group">
-                <label class="modal-label">Pilih Kurir <span style="color:var(--red);">*</span></label>
-                <select name="shipping_courier" class="modal-input" required>
-                    <option value="">— Pilih Kurir —</option>
-                    @php
-                        $courierNames    = $couriers->pluck('name')->toArray();
-                        $currentCourier  = $order->shipping_courier;
-                    @endphp
-                    @if($currentCourier && !in_array($currentCourier, $courierNames))
-                        <option value="{{ $currentCourier }}" selected>{{ $currentCourier }} (Tidak Aktif)</option>
-                    @endif
-                    @foreach($couriers as $courier)
-                        <option value="{{ $courier->name }}" {{ $currentCourier == $courier->name ? 'selected' : '' }}>
-                            {{ $courier->name }}
-                        </option>
-                    @endforeach
-                </select>
-                @error('shipping_courier')
-                    <div class="field-error">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <div class="modal-form-group">
-                <label class="modal-label">Nomor Resi <span style="color:var(--red);">*</span></label>
-                <input type="text" name="tracking_number" class="modal-input"
-                    placeholder="Contoh: JT123456789" required
-                    value="{{ old('tracking_number', $order->tracking_number) }}"
-                    style="font-family:var(--mono);">
-                @error('tracking_number')
-                    <div class="field-error">{{ $message }}</div>
-                @enderror
-            </div>
+        <form method="POST" action="{{ route('orders.update-status', $order) }}" novalidate>
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="status" value="perlu_diproses">
 
             <div class="modal-actions">
-                <button type="button" class="btn-modal-cancel" onclick="document.getElementById('shipModal').classList.remove('open')">Batal</button>
-                <button type="submit" class="btn-modal-confirm">Konfirmasi & Kirim</button>
+                <button type="button" class="btn-cancel" onclick="closeModals()">Batal</button>
+                <button type="submit" class="btn-confirm" style="background: var(--green); box-shadow: 0 4px 10px rgba(22,163,74,0.25);">Ya, Konfirmasi</button>
             </div>
         </form>
     </div>
 </div>
-
-{{-- ─────────────────────────────────────────────
-     Modal: Batalkan Pesanan (Cancel)
-────────────────────────────────────────────── --}}
-<div id="cancelModal" class="modal-overlay">
-    <div class="modal-box">
-        <div class="modal-icon red">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-        </div>
-        <div class="modal-title">Batalkan Pesanan</div>
-        <div class="modal-desc">Apakah Anda yakin ingin membatalkan pesanan <strong>{{ $order->order_number }}</strong>? Stok produk akan dikembalikan otomatis.</div>
-
-        <form action="{{ route('orders.cancel', $order) }}" method="POST" novalidate>
-            @csrf @method('PATCH')
-            <div class="modal-form-group">
-                <label class="modal-label">Alasan Pembatalan <span style="color:var(--red);">*</span></label>
-                <textarea name="cancel_reason" class="modal-input" rows="3"
-                    placeholder="Masukkan alasan pembatalan...">{{ old('cancel_reason') }}</textarea>
-                @error('cancel_reason')
-                    <div class="field-error">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn-modal-cancel" onclick="document.getElementById('cancelModal').classList.remove('open')">Batal</button>
-                <button type="submit" class="btn-modal-danger">Ya, Batalkan Pesanan</button>
-            </div>
-        </form>
-    </div>
-</div>
+@endif
 
 @endsection
 
 @push('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        // Close modals on Escape key
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.modal-overlay.open')
-                    .forEach(function (m) { m.classList.remove('open'); });
-            }
+    function closeModals() {
+        document.querySelectorAll('.modal-overlay').forEach(function(modal) {
+            modal.classList.remove('open');
         });
+    }
 
-        // Close modals on backdrop click
-        document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
-            overlay.addEventListener('click', function (e) {
-                if (e.target === overlay) overlay.classList.remove('open');
-            });
-        });
-
-        // Auto-open ship modal if there were validation errors on tracking fields
-        @if($errors->has('shipping_courier') || $errors->has('tracking_number'))
-            document.getElementById('shipModal').classList.add('open');
-        @endif
-
-        // Auto-open cancel modal if there were validation errors on cancel_reason
+    document.addEventListener('DOMContentLoaded', function() {
         @if($errors->has('cancel_reason'))
             document.getElementById('cancelModal').classList.add('open');
         @endif
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModals();
+        });
+
+        document.querySelectorAll('.modal-overlay').forEach(function(modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) closeModals();
+            });
+        });
     });
 </script>
 @endpush

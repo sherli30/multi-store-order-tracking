@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen Data Pelanggan')
+@section('title', 'Kelola Data Customer')
 
 @section('styles')
     /* =============================================
@@ -297,9 +297,9 @@
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
                 </span>
-                Manajemen Pelanggan
+                Kelola Customer
             </h1>
-            <p>Kelola data pelanggan, pantau aktivitas pembelian, dan kontrol akses akun.</p>
+            <p>Kelola data customer, pantau aktivitas pembelian, dan kontrol akses akun.</p>
         </div>
     </div>
 
@@ -317,7 +317,7 @@
             </div>
             <div>
                 <div class="stat-value">{{ number_format($stats['total'] ?? 0) }}</div>
-                <div class="stat-label">Total Pelanggan</div>
+                <div class="stat-label">Total Customer</div>
             </div>
         </div>
         <div class="stat-card">
@@ -342,8 +342,8 @@
                 </svg>
             </div>
             <div>
-                <div class="stat-value">{{ number_format($stats['blocked'] ?? 0) }}</div>
-                <div class="stat-label">Akun Diblokir</div>
+                <div class="stat-value">{{ number_format($stats['inactive'] ?? 0) }}</div>
+                <div class="stat-label">Akun Nonaktif</div>
             </div>
         </div>
         <div class="stat-card">
@@ -364,17 +364,7 @@
         </div>
     </div>
 
-    {{-- Flash Alert --}}
-    @if(session('success'))
-        <div class="alert-success" id="flash-alert">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                <polyline points="22 4 12 14.01 9 11.01" />
-            </svg>
-            {{ session('success') }}
-        </div>
-    @endif
+
 
     {{-- Filter Card --}}
     <div class="filter-card">
@@ -383,7 +373,7 @@
                 stroke-linejoin="round" style="width:15px;height:15px;color:var(--text-3);">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
             </svg>
-            <span class="filter-card-title">Filter Pelanggan</span>
+            <span class="filter-card-title">Filter Customer</span>
         </div>
 
         {{--
@@ -398,7 +388,7 @@
                 <select id="dtFilterStatus" class="form-input">
                     <option value="">Semua Status</option>
                     <option value="active">Aktif</option>
-                    <option value="blocked">Diblokir</option>
+                    <option value="inactive">Nonaktif</option>
                 </select>
             </div>
 
@@ -465,7 +455,7 @@
                 <thead>
                     <tr>
                         <th class="center" style="width:50px;">No</th>
-                        <th>Nama Pelanggan</th>
+                        <th>Nama Customer</th>
                         <th>Kontak</th>
                         <th>Total Pesanan</th>
                         <th>Status Akun</th>
@@ -520,8 +510,8 @@
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                 </svg>
                             </div>
-                            <div style="margin-bottom: 6px; font-size: 18px; font-weight: 800; color: var(--text-1); letter-spacing: -0.02em;">Tidak Ada Pelanggan Ditemukan</div>
-                            <div style="font-size: 13px; color: var(--text-3);">Tidak ada pelanggan yang cocok dengan pencarian atau filter yang dipilih.</div>
+                            <div style="margin-bottom: 6px; font-size: 18px; font-weight: 800; color: var(--text-1); letter-spacing: -0.02em;">Tidak Ada Customer Ditemukan</div>
+                            <div style="font-size: 13px; color: var(--text-3);">Tidak ada customer yang cocok dengan pencarian atau filter yang dipilih.</div>
                         </div>`,
                     emptyTable: `
                         <div class="empty-state" style="padding: 40px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto; width: 100%; border-bottom: none;">
@@ -530,8 +520,8 @@
                                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
                                 </svg>
                             </div>
-                            <div style="margin-bottom: 6px; font-size: 18px; font-weight: 800; color: var(--text-1); letter-spacing: -0.02em;">Belum Ada Pelanggan</div>
-                            <div style="font-size: 13px; color: var(--text-3);">Belum ada pelanggan yang mendaftar.</div>
+                            <div style="margin-bottom: 6px; font-size: 18px; font-weight: 800; color: var(--text-1); letter-spacing: -0.02em;">Belum Ada Customer</div>
+                            <div style="font-size: 13px; color: var(--text-3);">Belum ada customer yang mendaftar.</div>
                         </div>`,
                     paginate: { first: "«", last: "»", next: "›", previous: "‹" }
                 },

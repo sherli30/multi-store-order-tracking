@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen Data Produk')
+@section('title', 'Kelola Data Produk')
 
 @section('styles')
     /* ── Page Header ─────────────────────────────── */
@@ -327,7 +327,7 @@
                         <path d="M16 10a4 4 0 0 1-8 0" />
                     </svg>
                 </span>
-                Manajemen Produk
+                Kelola Produk
             </h1>
             <p>Kelola semua katalog produk dari seluruh toko Anda.</p>
         </div>

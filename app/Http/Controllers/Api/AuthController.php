@@ -196,7 +196,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Simulation of Forgot Password
+     * Mobile Application Forgot Password API
      */
     public function forgotPassword(Request $request)
     {
@@ -209,21 +209,43 @@ class AuthController extends Controller
         ]);
 
         try {
-            $user = User::where('email', $request->email)->first();
-            
-            // Simulation: Reset password to 12345678
-            $user->password = Hash::make('12345678');
-            $user->save();
+            $status = \Illuminate\Support\Facades\Password::sendResetLink(
+                $request->only('email')
+            );
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Password Anda telah berhasil direset menjadi "12345678" demi kemudahan demonstrasi. Silakan login kembali.',
-            ], 200);
+            if ($status == \Illuminate\Support\Facades\Password::RESET_LINK_SENT) {
+                return response()->json([
+                    'status'  => 'success',
+                    'message' => 'Tautan reset password telah dikirim ke alamat email Anda. Silakan periksa kotak masuk atau folder spam.',
+                ], 200);
+            }
 
-        } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Gagal mereset password. Silakan coba beberapa saat lagi.',
+                'message' => __($status) === 'passwords.throttled' ? 'Permintaan reset password terlalu sering. Silakan tunggu beberapa menit.' : 'Gagal mengirim email reset password.',
+            ], 400);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('[Forgot Password] Exception: ' . $e->getMessage());
+            
+            $errorMessage = 'Terjadi kesalahan pada server saat memproses permintaan reset password.';
+            
+            // SMTP Authentication Failure (e.g. Bad App Password)
+            if (str_contains($e->getMessage(), 'Failed to authenticate on SMTP server') || str_contains($e->getMessage(), '535-5.7.8')) {
+                $errorMessage = 'Autentikasi SMTP gagal. Pastikan Email dan App Password di pengaturan server (.env) sudah benar.';
+            } 
+            // SMTP Connection/Network Failure
+            elseif (str_contains($e->getMessage(), 'Connection could not be established') || str_contains($e->getMessage(), 'getaddrinfo failed')) {
+                $errorMessage = 'Gagal terhubung ke server email. Pastikan host SMTP dan koneksi jaringan server (MAIL_HOST) valid.';
+            }
+            // Other SMTP Rejections
+            elseif (str_contains($e->getMessage(), 'Expected response code')) {
+                $errorMessage = 'Server email menolak pengiriman. Pastikan alamat email pengirim dan penerima valid.';
+            }
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => $errorMessage,
             ], 500);
         }
     }

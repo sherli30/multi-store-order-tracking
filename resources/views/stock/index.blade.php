@@ -212,7 +212,7 @@
                 </button>
             @else
                 <span style="font-size:12px;color:var(--amber);background:var(--amber-dim);padding:8px 14px;border-radius:8px;font-weight:600;">
-                    ⚠ Manajemen stok dinonaktifkan (produk/kategori/toko nonaktif)
+                    ⚠ Kelola stok dinonaktifkan (produk/kategori/toko nonaktif)
                 </span>
             @endif
             <a href="{{ route('products.index') }}" class="btn-back">

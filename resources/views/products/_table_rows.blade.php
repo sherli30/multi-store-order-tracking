@@ -89,14 +89,14 @@
                 @endif
             </div>
 
-            {{-- Quick Stock Buttons removed. Stok dikelola via halaman Manajemen Stok --}}
+            {{-- Quick Stock Buttons removed. Stok dikelola via halaman Kelola Stok --}}
         </div>
     </td>
 
     {{-- Status — multi-level badge --}}
     <td>
         @if(!$storeActive)
-            <span class="badge badge-inactive" style="background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15);" title="Toko ini sedang dinonaktifkan di Manajemen Toko">Non-aktif (Toko Non-aktif)</span>
+            <span class="badge badge-inactive" style="background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15);" title="Toko ini sedang dinonaktifkan di Kelola Toko">Non-aktif (Toko Non-aktif)</span>
         @elseif(!$categoryActive)
             <span class="badge badge-inactive" style="background: rgba(239, 68, 68, 0.08); color: var(--red); border: 1px solid rgba(239, 68, 68, 0.15);" title="Kategori produk ini sedang dinonaktifkan">Non-aktif (Kat. Non-aktif)</span>
         @elseif($product->is_active)
@@ -109,13 +109,19 @@
     {{-- Aksi --}}
     <td>
         <div class="actions-cell">
+            <a href="{{ route('products.show', $product) }}" class="btn-sm" title="Lihat Produk">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+            </a>
             <a href="{{ route('products.edit', $product) }}" class="btn-sm" title="Edit Produk">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                 </svg>
             </a>
-            <a href="{{ route('products.stock.index', $product) }}" class="btn-sm" title="Manajemen Stok">
+            <a href="{{ route('products.stock.index', $product) }}" class="btn-sm" title="Kelola Stok">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>

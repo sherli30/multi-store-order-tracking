@@ -41,6 +41,12 @@ class Handler extends ExceptionHandler
             }
         });
 
+        $this->renderable(function (\Illuminate\Session\TokenMismatchException $e, $request) {
+            if (!$request->is('api/*')) {
+                return redirect()->route('login')->with('status', 'Sesi Anda telah berakhir. Silakan login kembali.');
+            }
+        });
+
         $this->reportable(function (Throwable $e) {
             //
         });

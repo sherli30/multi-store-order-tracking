@@ -23,7 +23,7 @@
 /* ── Stats Bar ───────────────────────────────── */
 .stats-bar {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 14px;
     margin-bottom: 24px;
 }
@@ -39,9 +39,11 @@
 .stat-icon.green  { background: var(--green-dim); color: var(--green); }
 .stat-icon.purple { background: rgba(139,92,246,0.1); color: #8b5cf6; }
 .stat-icon.accent { background: var(--accent-dim); color: var(--accent); }
+.stat-icon.rose   { background: #ffe4e6; color: #e11d48; }
 .stat-value { font-size: 20px; font-weight: 800; color: var(--text-1); letter-spacing: -0.03em; }
 .stat-label { font-size: 11.5px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
-@media (max-width: 1024px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1200px) { .stats-bar { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 900px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px)  { .stats-bar { grid-template-columns: 1fr; } }
 
 /* ── Status Tabs ─────────────────────────────── */
@@ -173,6 +175,8 @@
 .badge-shipping::before { background: var(--accent); }
 .badge-completed  { background: var(--green-dim); color: var(--green); border: 1px solid rgba(22,163,74,0.2); }
 .badge-completed::before { background: var(--green); }
+.badge-refunded { background: #ffe4e6; color: #e11d48; border: 1px solid rgba(225,29,72,0.2); }
+.badge-refunded::before { background: #e11d48; }
 
 /* ── Actions ─────────────────────────────────── */
 .actions-cell { display: flex; gap: 6px; justify-content: center; }
@@ -525,20 +529,46 @@
                 url:  "{{ route('deliveries.index') }}",
                 type: 'GET',
                 data: params,
-                success: function(html) {
+                success: function(res) {
                     if ($.fn.DataTable.isDataTable('#deliveryTable')) {
                         table.destroy();
                     }
-                    $('#deliveryTable tbody').html(html);
+                    $('#deliveryTable tbody').html(res.html || res);
                     $('#deliveryTable tbody tr').addClass('fade-in-animated');
                     table = initDataTable();
                     $('#deliveryTable tbody').css('opacity', '1');
+
+                    // Update Tab Counts
+                    if(res.counts) {
+                        $('.tab-btn').each(function() {
+                            const href = $(this).attr('href');
+                            const match = href.match(/tab=([^&]+)/);
+                            const tabName = match ? match[1] : 'all';
+                            const countVal = res.counts[tabName] !== undefined ? res.counts[tabName] : 0;
+                            $(this).find('.tab-count').text(countVal.toLocaleString('id-ID'));
+                        });
+
+                        // Update Stat Bar Counts
+                        const statVals = $('.stat-value');
+                        if(statVals.length >= 4) {
+                            $(statVals[0]).text((res.counts['perlu_diproses'] || 0).toLocaleString('id-ID'));
+                            $(statVals[1]).text((res.counts['processing'] || 0).toLocaleString('id-ID'));
+                            $(statVals[2]).text((res.counts['shipping'] || 0).toLocaleString('id-ID'));
+                            $(statVals[3]).text((res.counts['completed'] || 0).toLocaleString('id-ID'));
+                        }
+                    }
+
                     checkResetVisibility();
                 },
                 error: function() {
                     $('#deliveryTable tbody').css('opacity', '1');
                 }
             });
+        });
+
+        // ── Realtime Notification Listener ──
+        document.addEventListener('realtime-notification', function(e) {
+            $('#btnApplyFilter').trigger('click');
         });
 
         // ── Reset Filter ──────────────────────────────────────────────────

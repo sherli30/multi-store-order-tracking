@@ -80,9 +80,16 @@ class OrderService
      */
     public function restoreOrderStock(Order $order, string $source = 'cancellation'): void
     {
+        // Standardize source terminology for inventory ledger consistency
+        $normalizedSource = match ($source) {
+            'expire', 'deny', 'failure', 'cancel', 'cancellation' => 'cancellation',
+            'refund' => 'refund',
+            default  => 'cancellation', // Fallback to cancellation for any unknown failed status
+        };
+
         $order->loadMissing('orderItems.product');
 
-        DB::transaction(function () use ($order, $source) {
+        DB::transaction(function () use ($order, $normalizedSource) {
             // Re-fetch with lock FIRST, then check is_stock_deducted atomically
             $lockedOrder = Order::lockForUpdate()->find($order->id);
 
@@ -104,12 +111,80 @@ class OrderService
                     'product_id'   => $lockedProduct->id,
                     'type'         => 'in',
                     'quantity'     => $item->quantity,
-                    'source'       => $source,
+                    'source'       => $normalizedSource,
                     'reference_id' => $lockedOrder->id,
                 ]);
             }
 
             $lockedOrder->update(['is_stock_deducted' => false]);
+        });
+    }
+
+    /**
+     * Atomically cancel an order, update transaction, restore stock, and add history.
+     * Centralized logic for both Web Admin and Mobile App.
+     */
+    public function cancelOrder(Order $order, string $reason, ?int $adminId = null): Order
+    {
+        return DB::transaction(function () use ($order, $reason, $adminId) {
+            // 1. Lock the order row first to prevent race conditions
+            $lockedOrder = Order::lockForUpdate()->find($order->id);
+
+            // Guard: check status under lock
+            if (in_array($lockedOrder->status, [Order::STATUS_CANCELLED, Order::STATUS_REFUNDED])) {
+                throw new \Exception("Pesanan {$lockedOrder->order_number} sudah dibatalkan atau dikembalikan sebelumnya.");
+            }
+            if ($lockedOrder->status === Order::STATUS_COMPLETED) {
+                throw new \Exception("Pesanan {$lockedOrder->order_number} sudah selesai dan tidak dapat dibatalkan.");
+            }
+
+            // 2. Update Order Status & sync payment_status for revenue exclusion
+            $orderUpdate = [
+                'status'        => Order::STATUS_CANCELLED,
+                'cancel_reason' => $reason,
+            ];
+
+            // If the order was already paid, update payment_status so it is
+            // immediately excluded from all revenue queries (Dashboard KPIs,
+            // Reports, Charts, Exports) which filter by payment_status IN
+            // ('settlement', 'capture', 'paid').
+            if (in_array($lockedOrder->payment_status, ['settlement', 'capture', 'paid'])) {
+                $orderUpdate['payment_status'] = 'cancelled';
+            }
+
+            $lockedOrder->update($orderUpdate);
+
+            // 3. Sync with Transaction table
+            $transaction = $lockedOrder->transaction()->lockForUpdate()->first();
+            if ($transaction) {
+                if ($transaction->status === 'pending') {
+                    $transaction->update([
+                        'status' => 'failed',
+                        'notes'  => "Dibatalkan manual. Alasan: " . $reason,
+                    ]);
+                } elseif ($transaction->status === 'paid') {
+                    $transaction->update([
+                        'status' => 'refund',
+                        'refunded_at' => now(),
+                        'notes'  => "Dibatalkan manual setelah dibayar. Alasan: " . $reason,
+                    ]);
+                }
+            }
+
+            // 4. Add History
+            \App\Models\TrackingHistory::create([
+                'order_id' => $lockedOrder->id,
+                'admin_id' => $adminId,
+                'status'   => Order::STATUS_CANCELLED,
+                'notes'    => "Pesanan dibatalkan. Alasan: " . $reason,
+            ]);
+
+            // 5. Restore stock using the centralized method
+            if ($lockedOrder->is_stock_deducted) {
+                $this->restoreOrderStock($lockedOrder, 'cancellation');
+            }
+
+            return $lockedOrder;
         });
     }
 }

@@ -6,7 +6,7 @@ return [
     | Shipping Rates Configuration (Versi Ekonomis)
     |--------------------------------------------------------------------------
     |
-    | Tarif pengiriman per kilogram (Rp) yang sudah dimurahkan
+    | Tarif pengiriman per kg (Rp) yang sudah dimurahkan
     |
     */
 

@@ -19,12 +19,16 @@ class ProductCategorySeeder extends Seeder
         $categoryMap = [
             'ayambebek.com' => [
                 [
-                    'name' => 'Ayam Segar',
-                    'description' => 'Daging ayam pilihan yang diproses secara higienis dan dijamin kesegarannya.'
+                    'name' => 'Ayam Petelur',
+                    'description' => 'Pakan dan kebutuhan khusus untuk ayam petelur.'
                 ],
                 [
-                    'name' => 'Bebek Segar',
-                    'description' => 'Daging bebek berkualitas tinggi dengan tekstur empuk dan rendah lemak.'
+                    'name' => 'Ayam Pedaging',
+                    'description' => 'Pakan dan kebutuhan untuk ayam pedaging atau broiler.'
+                ],
+                [
+                    'name' => 'Bebek & Itik',
+                    'description' => 'Pakan dan kebutuhan ternak bebek serta itik.'
                 ],
             ],
             'pakanayam.com' => [
@@ -33,18 +37,22 @@ class ProductCategorySeeder extends Seeder
                     'description' => 'Pakan harian bernutrisi lengkap untuk mendukung pertumbuhan ternak yang sehat.'
                 ],
                 [
-                    'name' => 'Suplemen Ternak',
-                    'description' => 'Produk pelengkap untuk meningkatkan daya tahan tubuh dan kesehatan hewan ternak.'
+                    'name' => 'Bahan Campuran',
+                    'description' => 'Bahan baku campuran pakan ternak.'
+                ],
+                [
+                    'name' => 'Suplemen',
+                    'description' => 'Vitamin dan suplemen pendukung kesehatan ternak.'
                 ],
             ],
             'pakankucing.com' => [
                 [
                     'name' => 'Makanan Kering',
-                    'description' => 'Nutrisi harian praktis untuk mendukung kesehatan gigi dan pencernaan kucing kesayangan.'
+                    'description' => 'Dry food untuk kebutuhan harian kucing.'
                 ],
                 [
                     'name' => 'Makanan Basah',
-                    'description' => 'Makanan lezat dengan kadar air tinggi untuk menjaga hidrasi dan nafsu makan kucing.'
+                    'description' => 'Dry food untuk kebutuhan harian kucing.'
                 ],
             ],
         ];

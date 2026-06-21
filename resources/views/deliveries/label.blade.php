@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetak Resi: {{ $order->order_number }}</title>
+    <title>Label Pengiriman: {{ $order->order_number }}</title>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -146,13 +146,13 @@
         <span class="toolbar-label">PRATINJAU LABEL — 100 × 150mm</span>
         <button onclick="window.print()" class="btn-print">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Cetak Resi
+            Cetak Label
         </button>
         <a href="javascript:window.close()" class="btn-close">Tutup</a>
     </div>
 
     @php
-        $barcodeId   = $order->tracking_number ?: $order->order_number;
+        $barcodeId   = $order->tracking_number;
         $totalWeight = $order->orderItems->sum(fn($i) => ($i->product->weight ?? 0) * $i->quantity);
     @endphp
 
@@ -166,8 +166,15 @@
 
         {{-- Barcode --}}
         <div class="lbl-barcode">
-            <svg id="barcode"></svg>
-            <div class="lbl-barcode-text">{{ $barcodeId }}</div>
+            @if($barcodeId)
+                <div style="font-size: 7.5pt; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">AWB / Resi</div>
+                <svg id="barcode"></svg>
+                <div class="lbl-barcode-text">{{ $barcodeId }}</div>
+            @else
+                <div style="padding: 10mm 0; border: 2px dashed #cbd5e1; background: #f8fafc; border-radius: 4px;">
+                    <div style="font-size: 11pt; font-weight: 900; color: #94a3b8; letter-spacing: 0.05em;">RESI BELUM DIINPUT</div>
+                </div>
+            @endif
         </div>
 
         {{-- Recipient --}}
@@ -205,7 +212,7 @@
 
         <div class="lbl-summary-row">
             <span>Total Berat (Est.)</span>
-            <span>{{ number_format($totalWeight, 0, ',', '.') }} g</span>
+            <span>{{ (float)$totalWeight }} kg</span>
         </div>
         <div class="lbl-summary-row">
             <span>Total Invoice</span>
@@ -220,6 +227,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            @if($barcodeId)
             JsBarcode('#barcode', '{{ $barcodeId }}', {
                 format:       'CODE128',
                 lineColor:    '#0f172a',
@@ -228,6 +236,7 @@
                 displayValue: false,
                 margin:       0,
             });
+            @endif
         });
     </script>
 </body>

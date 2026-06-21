@@ -61,6 +61,7 @@ class DashboardController extends Controller
             'pending' => Transaction::where('status', 'pending')->count(),
             'success' => Transaction::where('status', 'paid')->count(),
             'failed'  => Transaction::where('status', 'failed')->count(),
+            'refund'  => Transaction::where('status', 'refund')->count(),
         ];
 
         // 6. Top Couriers
@@ -114,7 +115,7 @@ class DashboardController extends Controller
 
         // 11. Delivery Summary (berdasarkan status order)
         $deliverySummary = [
-            'pending'   => Order::whereIn('status', ['perlu_diproses', 'processing'])->count(),
+            'pending'   => Order::whereIn('status', ['menunggu_konfirmasi_admin', 'perlu_diproses', 'processing'])->count(),
             'shipping'  => Order::where('status', 'shipping')->count(),
             'delivered' => Order::where('status', 'completed')->count(),
         ];
@@ -127,10 +128,13 @@ class DashboardController extends Controller
             'completed'  => Order::where('status', 'completed')
                                 ->whereBetween('created_at', [$monthStart, $monthEnd])
                                 ->count(),
-            'processing' => Order::whereIn('status', ['perlu_diproses', 'processing', 'shipping'])
+            'processing' => Order::whereIn('status', ['menunggu_konfirmasi_admin', 'perlu_diproses', 'processing', 'shipping'])
                                 ->whereBetween('created_at', [$monthStart, $monthEnd])
                                 ->count(),
             'cancelled'  => Order::where('status', 'cancelled')
+                                ->whereBetween('created_at', [$monthStart, $monthEnd])
+                                ->count(),
+            'refunded'   => Order::where('status', 'refunded')
                                 ->whereBetween('created_at', [$monthStart, $monthEnd])
                                 ->count(),
             'revenue'    => Order::whereIn('payment_status', ['settlement', 'capture', 'paid'])

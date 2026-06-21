@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Manajemen Toko')
+@section('title', 'Kelola Toko')
 
 @section('styles')
 /* =============================================
@@ -417,7 +417,7 @@ box-shadow: 0 2px 8px rgba(220,38,38,0.25);
                         d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h2.25m-2.25 0v-13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75V21m12 0V15m-12 6V15m12 0a.75.75 0 00-.75-.75H7.5a.75.75 0 00-.75.75V15m12 0h-12" />
                 </svg>
             </div>
-            Manajemen Toko
+            Kelola Toko
         </h1>
         <p>Kelola daftar toko Anda.</p>
     </div>

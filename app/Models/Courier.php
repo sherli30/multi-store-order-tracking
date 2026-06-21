@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Courier extends Model
 {
-    protected $fillable = ['name', 'code', 'logo', 'is_active'];
+    protected $fillable = ['name', 'code', 'logo', 'description', 'contact_person', 'phone_number', 'email', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',

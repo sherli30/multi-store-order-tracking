@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Master Data Kota / Kabupaten')
+@section('title', 'Data Kota / Kabupaten')
 
 @section('styles')
     /* ── Page Header ─────────────────────────────── */
@@ -232,6 +232,29 @@
     .form-modal-input.is-invalid { border-color: var(--red); background: color-mix(in srgb, var(--red) 2%, var(--panel)); }
     .form-field-error { font-size: 11.5px; color: var(--red); font-weight: 600; margin-top: 6px; display: none; text-align: left; }
 
+    .toggle-card {
+        background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+        padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 24px; transition: all 0.2s; cursor: pointer; user-select: none;
+    }
+    .toggle-card.active { border-color: color-mix(in srgb, var(--accent) 30%, transparent); background: color-mix(in srgb, var(--accent) 3%, var(--surface)); }
+    .toggle-info { display: flex; flex-direction: column; gap: 4px; }
+    .toggle-title { font-size: 13px; font-weight: 700; color: var(--text-1); }
+    .toggle-desc { font-size: 11.5px; color: var(--text-3); font-weight: 500; }
+    .custom-switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+    .custom-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute; cursor: pointer; inset: 0; background-color: var(--border-2);
+        transition: .3s; border-radius: 24px;
+    }
+    .slider:before {
+        position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px;
+        background-color: white; transition: .3s; border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .custom-switch input:checked + .slider { background-color: var(--accent); }
+    .custom-switch input:checked + .slider:before { transform: translateX(20px); }
+
     .modal-icon-blue  { background: rgba(59, 130, 246, 0.1) !important; }
     .modal-icon-blue svg { color: #3b82f6 !important; }
     .modal-icon-amber { background: rgba(245, 158, 11, 0.1) !important; }
@@ -252,9 +275,9 @@
                         <circle cx="12" cy="10" r="3"></circle>
                     </svg>
                 </span>
-                Master Kota / Kabupaten
+                Data Kota / Kabupaten
             </h1>
-            <p>Kelola daftar kota untuk wilayah origin/tujuan pengiriman.</p>
+            <p>Kelola data kota dan kabupaten untuk pemetaan rute pengiriman.</p>
         </div>
         <button type="button" class="btn-primary" onclick="openCityModal()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -369,6 +392,7 @@
                         <th>Provinsi</th>
                         <th>Tipe</th>
                         <th>Kodepos</th>
+                        <th>Status</th>
                         <th class="center" style="width:150px;">Aksi</th>
                     </tr>
                 </thead>
@@ -427,11 +451,12 @@
                     <select name="province_id" id="provinceId" class="form-modal-input @error('province_id') is-invalid @enderror" required>
                         <option value="">-- Pilih Provinsi --</option>
                         @foreach($provinces as $province)
-                            <option value="{{ $province->id }}" {{ old('province_id') == $province->id ? 'selected' : '' }}>
-                                {{ $province->name }}
+                            <option value="{{ $province->id }}" data-active="{{ $province->is_active ? '1' : '0' }}" {{ old('province_id') == $province->id ? 'selected' : '' }}>
+                                {{ $province->name }} {{ !$province->is_active ? '(Nonaktif)' : '' }}
                             </option>
                         @endforeach
                     </select>
+                    @error('province_id') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
                 </div>
 
                 <div class="form-modal-field">
@@ -439,6 +464,15 @@
                     <input type="text" name="name" id="cityNameInput"
                         class="form-modal-input @error('name') is-invalid @enderror"
                         required placeholder="Contoh: Kota Bandung" value="{{ old('name') }}">
+                    @error('name') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
+                </div>
+
+                <div class="form-modal-field">
+                    <label class="form-modal-label" for="cityCodeInput">Kode Kota <span>*</span></label>
+                    <input type="text" name="code" id="cityCodeInput"
+                        class="form-modal-input @error('code') is-invalid @enderror"
+                        required placeholder="Contoh: BDG" value="{{ old('code') }}">
+                    @error('code') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
@@ -448,14 +482,28 @@
                             <option value="Kota"      {{ old('type') == 'Kota'      ? 'selected' : '' }}>Kota</option>
                             <option value="Kabupaten" {{ old('type') == 'Kabupaten' ? 'selected' : '' }}>Kabupaten</option>
                         </select>
+                        @error('type') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
                     </div>
                     <div class="form-modal-field" style="margin-bottom:0;">
                         <label class="form-modal-label" for="postalCodeInput">Kodepos <span>*</span></label>
                         <input type="text" name="postal_code" id="postalCodeInput"
                             class="form-modal-input @error('postal_code') is-invalid @enderror"
                             required placeholder="40xxx" value="{{ old('postal_code') }}">
+                        @error('postal_code') <div class="form-field-error" style="display:block;">{{ $message }}</div> @enderror
                     </div>
                 </div>
+
+                <div class="toggle-card" id="activeToggleCard" onclick="document.getElementById('isActive').click()">
+                    <div class="toggle-info">
+                        <div class="toggle-title">Status Kota Aktif</div>
+                        <div class="toggle-desc" id="activeToggleDesc">Wilayah ini dapat dipilih oleh pengguna.</div>
+                    </div>
+                    <label class="custom-switch" onclick="event.stopPropagation()">
+                        <input type="checkbox" name="is_active" id="isActive" value="1" {{ old('is_active', '1') == '1' ? 'checked' : '' }}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                @error('is_active') <div class="form-field-error" style="display:block; margin-top:-14px; margin-bottom:20px;">{{ $message }}</div> @enderror
 
                 <div class="modal-actions">
                     <button type="button" class="btn-cancel" onclick="closeCityModal()">Batal</button>
@@ -593,7 +641,19 @@
             });
         });
 
-        function openCityModal(id = null, name = '', provinceId = '', type = 'Kota', postalCode = '', isValidationError = false) {
+        document.getElementById('isActive').addEventListener('change', function() {
+            const card = document.getElementById('activeToggleCard');
+            const desc = document.getElementById('activeToggleDesc');
+            if(this.checked) {
+                card.classList.add('active');
+                desc.textContent = 'Wilayah ini dapat dipilih oleh pengguna.';
+            } else {
+                card.classList.remove('active');
+                desc.textContent = 'Disembunyikan dari pilihan pengguna (Nonaktif).';
+            }
+        });
+
+        function openCityModal(id = null, name = '', code = '', provinceId = '', type = 'Kota', postalCode = '', isActive = 1, isValidationError = false) {
             const modal        = document.getElementById('cityModal');
             const form         = document.getElementById('cityForm');
             const title        = document.getElementById('cityModalTitle');
@@ -619,9 +679,11 @@
 
                 document.getElementById('cityIdInput').value    = id;
                 document.getElementById('cityNameInput').value  = name;
+                document.getElementById('cityCodeInput').value  = code;
                 document.getElementById('provinceId').value     = provinceId;
                 document.getElementById('cityTypeInput').value  = type;
                 document.getElementById('postalCodeInput').value = postalCode;
+                document.getElementById('isActive').checked = (isActive == '1' || isActive === 'true');
             } else {
                 title.textContent      = 'Tambah Kota';
                 subtitle.textContent   = 'Isi detail data kota / kabupaten di bawah ini.';
@@ -633,10 +695,14 @@
 
                 document.getElementById('cityIdInput').value    = '';
                 document.getElementById('cityNameInput').value  = '';
+                document.getElementById('cityCodeInput').value  = '';
                 document.getElementById('provinceId').value     = '';
                 document.getElementById('cityTypeInput').value  = 'Kota';
                 document.getElementById('postalCodeInput').value = '';
+                document.getElementById('isActive').checked = (isActive == '1' || isActive === 'true' || isActive === true);
             }
+
+            document.getElementById('isActive').dispatchEvent(new Event('change'));
 
             modal.classList.add('open');
             setTimeout(() => document.getElementById('cityNameInput').focus(), 200);
@@ -654,11 +720,11 @@
             $(document).ready(function() {
                 const oldId = '{{ old('id') }}';
                 if (oldId) {
-                    openCityModal(oldId, `{!! addslashes(old('name')) !!}`, '{{ old('province_id') }}',
-                        '{{ old('type') }}', '{{ old('postal_code') }}', true);
+                    openCityModal(oldId, `{!! addslashes(old('name')) !!}`, '{{ old('code') }}', '{{ old('province_id') }}',
+                        '{{ old('type') }}', '{{ old('postal_code') }}', '{{ old('is_active') }}', true);
                 } else {
-                    openCityModal(null, `{!! addslashes(old('name')) !!}`, '{{ old('province_id') }}',
-                        '{{ old('type') }}', '{{ old('postal_code') }}', true);
+                    openCityModal(null, `{!! addslashes(old('name')) !!}`, '{{ old('code') }}', '{{ old('province_id') }}',
+                        '{{ old('type') }}', '{{ old('postal_code') }}', '{{ old('is_active') }}', true);
                 }
             });
         @endif

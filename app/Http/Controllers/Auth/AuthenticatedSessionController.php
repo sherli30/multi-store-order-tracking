@@ -13,7 +13,7 @@ use Illuminate\View\View;
 class AuthenticatedSessionController extends Controller
 {
     /**
-     * Menampilkan halaman login khusus Admin.
+     * Menampilkan halaman login khusus Administrator.
      */
     public function create(): View
     {
@@ -21,11 +21,11 @@ class AuthenticatedSessionController extends Controller
     }
 
     /**
-     * Menangani proses masuk (login) Admin.
+     * Menangani proses masuk (login) Administrator.
      */
     public function store(LoginRequest $request): RedirectResponse
     {
-        // Jalankan validasi, cek password, dan cek role 'admin'
+        // Jalankan validasi, cek password, dan cek role 'administrator'
         // Semua logika ini sudah ada di dalam LoginRequest yang kita buat tadi.
         $request->authenticate();
 
@@ -38,11 +38,22 @@ class AuthenticatedSessionController extends Controller
 
             // Redirect langsung ke dashboard admin dengan pesan sukses yang profesional
             return redirect()->route('dashboard')
-                ->with('success', 'Akses Berhasil. Selamat datang kembali, ' . $user->name . '. Panel administrasi telah siap.');
+                ->with('success', [
+                    'title' => 'Login Berhasil',
+                    'list' => [
+                        'Selamat datang kembali, <strong>' . $user->name . '</strong>. Panel administrasi telah siap digunakan.'
+                    ]
+                ]);
         } catch (\Exception $e) {
             Auth::logout();
             return redirect()->route('login')
-                ->with('error', 'Terjadi kesalahan saat memproses sesi login. Silakan coba masuk kembali.');
+                ->with('error', [
+                    'title' => 'Kesalahan Login',
+                    'list' => [
+                        'Terjadi kesalahan saat memproses sesi login.',
+                        'Silakan coba masuk kembali.'
+                    ]
+                ]);
         }
     }
 
@@ -58,6 +69,11 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         // Redirect kembali ke login dengan pesan yang ramah
-        return redirect('/')->with('success', 'Anda telah berhasil keluar dari sistem. Terima kasih atas dedikasi Anda.');
+        return redirect('/')->with('success', [
+            'title' => 'Logout Berhasil',
+            'list' => [
+                'Anda telah berhasil keluar dari sistem. Terima kasih atas dedikasi Anda.'
+            ]
+        ]);
     }
 }

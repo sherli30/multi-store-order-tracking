@@ -39,7 +39,22 @@ class CityRequest extends FormRequest
                 'string',
                 'max:10'
             ],
+            'code' => [
+                'required',
+                'string',
+                'regex:/^[A-Z0-9\-]+$/',
+                'max:50',
+                $this->route('city') ? 'unique:cities,code,' . $this->route('city')->id : 'unique:cities,code'
+            ],
         ];
+
+        if ($this->isMethod('POST')) {
+            $rules['is_active'] = ['accepted'];
+        } else {
+            $rules['is_active'] = ['required', 'boolean'];
+        }
+
+        return $rules;
     }
 
     /**
@@ -59,7 +74,22 @@ class CityRequest extends FormRequest
             'postal_code.required' => 'Kode pos wajib diisi. Silakan masukkan kode pos yang valid.',
             'postal_code.string' => 'Kode pos harus berupa teks atau angka.',
             'postal_code.max' => 'Kode pos terlalu panjang. Maksimal adalah 10 karakter.',
+            'code.required' => 'Kode kota wajib diisi.',
+            'code.string' => 'Format kode kota tidak valid.',
+            'code.regex' => 'Format kode kota tidak valid. Hanya gunakan huruf kapital, angka, dan strip (contoh: BDG, JKT).',
+            'code.max' => 'Kode kota maksimal 50 karakter.',
+            'code.unique' => 'Kode kota sudah digunakan. Silakan gunakan kode lain yang unik.',
+            'is_active.accepted' => 'Status kota wajib diaktifkan saat penambahan baru.',
+            'is_active.required' => 'Status kota wajib dipilih. Silakan tentukan apakah kota ini aktif atau tidak.',
+            'is_active.boolean' => 'Status kota tidak valid. Harap pilih aktif atau nonaktif.',
         ];
+    }
+
+    protected function prepareForValidation()
+    {
+        $this->merge([
+            'is_active' => $this->boolean('is_active'),
+        ]);
     }
 
     protected function failedValidation(\Illuminate\Contracts\Validation\Validator $validator)

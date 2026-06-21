@@ -26,7 +26,8 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        return redirect()->route('products.index');
+        $product->load(['store', 'category', 'images', 'descriptions', 'specifications']);
+        return view('products.show', compact('product'));
     }
 
     public function index(Request $request)
@@ -132,6 +133,7 @@ class ProductController extends Controller
                 'price' => $data['price'],
                 'stock' => 0,
                 'weight' => $data['weight'],
+                'sku' => $data['sku'],
             ]);
 
             if ($data['stock'] > 0) {
@@ -221,7 +223,13 @@ class ProductController extends Controller
                 ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Terjadi kesalahan teknis saat menyimpan data produk: ' . $e->getMessage());
+            return back()->withInput()->with('error', [
+                'title' => 'Gagal Menyimpan Produk',
+                'list' => [
+                    'Gagal menyimpan data produk baru.',
+                    'Pastikan koneksi stabil dan ukuran file tidak melebihi batas, atau hubungi administrator.'
+                ]
+            ]);
         }
     }
 
@@ -255,6 +263,7 @@ class ProductController extends Controller
             $nameChanged       = $product->name !== $data['name'];
             $storeChanged      = (int) $product->store_id !== (int) $data['store_id'];
             $categoryChanged   = (int) $product->category_id !== (int) $data['category_id'];
+            $skuChanged        = $product->sku !== $data['sku'];
             $statusChanged     = (bool) $product->is_active !== (bool) $data['is_active'];
             $featuredChanged   = (bool) $product->is_featured !== (bool) $data['is_featured'];
             $imagesDeleted     = !empty($data['deleted_images']);
@@ -288,6 +297,7 @@ class ProductController extends Controller
                 'is_featured' => $data['is_featured'] ?? false,
                 'price' => $data['price'],
                 'weight' => $data['weight'],
+                'sku' => $data['sku'],
             ]);
 
             // Sync Images: Delete requested images
@@ -364,6 +374,10 @@ class ProductController extends Controller
                 $oldValues['name'] = $product->getOriginal('name');
                 $newValues['name'] = $data['name'];
             }
+            if ($skuChanged) {
+                $oldValues['sku'] = $product->getOriginal('sku');
+                $newValues['sku'] = $data['sku'];
+            }
             if ($singlePriceChanged) {
                 $oldValues['price'] = $product->getOriginal('price');
                 $newValues['price'] = $data['price'];
@@ -432,7 +446,7 @@ class ProductController extends Controller
             }
 
             if ($singleWeightChanged) {
-                $messages[] = "Berat produk berhasil diperbarui menjadi <strong>{$data['weight']} gram</strong>.";
+                $messages[] = "Berat produk berhasil diperbarui menjadi <strong>{$data['weight']} kg</strong>.";
             }
 
 
@@ -468,7 +482,12 @@ class ProductController extends Controller
             if (empty($messages)) {
                 return redirect()
                     ->route('products.index')
-                    ->with('info', 'Data produk sudah sesuai. Tidak ada perubahan yang dilakukan.');
+                    ->with('info', [
+                        'title' => 'Data Sudah Sesuai',
+                        'list' => [
+                            'Data produk sudah sesuai. Tidak ada perubahan yang dilakukan.'
+                        ]
+                    ]);
             }
 
             return redirect()
@@ -479,7 +498,13 @@ class ProductController extends Controller
                 ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Terjadi kesalahan saat update data: ' . $e->getMessage());
+            return back()->withInput()->with('error', [
+                'title' => 'Gagal Memperbarui Produk',
+                'list' => [
+                    'Gagal memperbarui data produk.',
+                    'Muat ulang halaman dan coba kembali, atau hubungi administrator.'
+                ]
+            ]);
         }
     }
 
@@ -487,7 +512,7 @@ class ProductController extends Controller
      * Soft-delete a product (leaves it in DB, never hard-deletes).
      * Image files are also cleaned up.
      */
-    public function destroy(Product $product): RedirectResponse
+    public function destroy(\App\Http\Requests\ProductDeleteRequest $request, Product $product): RedirectResponse
     {
         $name = $product->name;
 
@@ -513,9 +538,20 @@ class ProductController extends Controller
 
             return redirect()
                 ->route('products.index')
-                ->with('success', "Produk \"{$name}\" berhasil dihapus secara permanen dari sistem.");
+                ->with('success', [
+                    'title' => 'Produk Dihapus',
+                    'list' => [
+                        "Produk \"<strong>{$name}</strong>\" berhasil dihapus secara permanen dari sistem."
+                    ]
+                ]);
         } catch (\Exception $e) {
-            return back()->with('error', "Gagal menghapus produk \"{$name}\". Terjadi kesalahan pada sistem, silakan coba lagi.");
+            return back()->with('error', [
+                'title' => 'Produk Gagal Dihapus',
+                'list' => [
+                    "Gagal menghapus produk <strong>{$name}</strong>.",
+                    'Data sedang terikat dengan sistem lain (contoh: pesanan aktif).'
+                ]
+            ]);
         }
     }
 
@@ -539,9 +575,46 @@ class ProductController extends Controller
                 Storage::disk('public')->delete($image->image_path);
             }
             $image->delete();
-            return back()->with('success', 'Foto produk berhasil dihapus dari sistem.');
+            return back()->with('success', [
+                'title' => 'Foto Dihapus',
+                'list' => [
+                    'Foto produk berhasil dihapus dari sistem.'
+                ]
+            ]);
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menghapus foto produk. Silakan coba lagi.');
+            return back()->with('error', [
+                'title' => 'Gagal Menghapus Foto',
+                'list' => [
+                    'Gagal menghapus foto produk.',
+                    'File mungkin sudah tidak tersedia di server atau sedang digunakan.'
+                ]
+            ]);
+        }
+    }
+
+    /**
+     * Update the product's active status.
+     */
+    public function updateStatus(\App\Http\Requests\ProductStatusRequest $request, Product $product): RedirectResponse
+    {
+        try {
+            $product->update(['is_active' => $request->is_active]);
+
+            $message = $request->is_active ? 'Produk berhasil diaktifkan.' : 'Produk berhasil dinonaktifkan.';
+
+            return back()->with('success', [
+                'title' => 'Status Berhasil Diubah',
+                'list' => [
+                    $message
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return back()->with('error', [
+                'title' => 'Gagal mengubah status produk',
+                'list' => [
+                    'Terjadi kesalahan saat memperbarui status produk.'
+                ]
+            ]);
         }
     }
 }

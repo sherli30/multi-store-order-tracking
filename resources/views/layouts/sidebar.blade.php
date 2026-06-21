@@ -82,7 +82,7 @@
                     <path d="M8 11h.01"></path>
                     <path d="M8 16h.01"></path>
                 </svg>
-                Manajemen Pesanan
+                Kelola Pesanan
             </a>
             <a href="{{ route('transactions.index') }}" class="nav-item {{ request()->routeIs('transactions.*') ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -117,9 +117,9 @@
             </a>
         </div>
 
-        <!-- MASTER LOGISTIK -->
+        <!-- DATA LOGISTIK -->
         <div class="nav-section">
-            <div class="nav-section-label">Master Logistik</div>
+            <div class="nav-section-label">Data Logistik</div>
             <a href="{{ route('couriers.index') }}" class="nav-item {{ request()->routeIs('couriers.*') ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="1" y="3" width="15" height="13"></rect>
@@ -127,7 +127,7 @@
                     <circle cx="5.5" cy="18.5" r="2.5"></circle>
                     <circle cx="18.5" cy="18.5" r="2.5"></circle>
                 </svg>
-                Master Kurir
+                Kelola Kurir
             </a>
             <a href="{{ route('shipping-services.index') }}" class="nav-item {{ request()->routeIs('shipping-services.*') ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -137,11 +137,11 @@
                     <polygon points="12 2 3 6.92 12 12 21 6.92 12 2"></polygon>
                     <line x1="12" y1="22.08" x2="12" y2="12"></line>
                 </svg>
-                Master Layanan
+                Kelola Layanan
             </a>
             <div class="nav-item nav-item-has-submenu {{ request()->routeIs('provinces.*') || request()->routeIs('cities.*') ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                Master Wilayah
+                Kelola Wilayah
                 <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </div>
             <div class="nav-submenu" style="display: {{ request()->routeIs('provinces.*') || request()->routeIs('cities.*') ? 'flex' : 'none' }};">
@@ -153,7 +153,7 @@
                     <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
                     <line x1="7" y1="7" x2="7.01" y2="7"></line>
                 </svg>
-                Master Ongkir
+                Kelola Ongkir
             </a>
         </div>
 
@@ -166,7 +166,7 @@
                     <line x1="3" y1="6" x2="21" y2="6"></line>
                     <path d="M16 10a4 4 0 0 1-8 0"></path>
                 </svg>
-                Manajemen Produk
+                Kelola Produk
             </a>
             <a href="{{ route('product-categories.index') }}" class="nav-item {{ request()->routeIs('product-categories.*') ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -180,7 +180,7 @@
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h2.25m-2.25 0v-13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75V21m12 0V15m-12 6V15m12 0a.75.75 0 00-.75-.75H7.5a.75.75 0 00-.75.75V15m12 0h-12" />
                 </svg>
-                Manajemen Toko
+                Kelola Toko
             </a>
         </div>
 
@@ -201,7 +201,7 @@
         <div class="nav-section">
             <div class="nav-section-label">Lainnya</div>
 
-            {{-- Pelanggan --}}
+            {{-- Customer --}}
             <a href="{{ route('customers.index') }}" class="nav-item {{ request()->routeIs('customers.*') ? 'active' : '' }}">
                 <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -209,7 +209,7 @@
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
-                Pelanggan
+                Kelola Customer
             </a>
 
         </div>

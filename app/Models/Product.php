@@ -30,7 +30,7 @@ class Product extends Model
         'is_featured' => 'boolean',
         'price' => 'decimal:2',
         'stock' => 'integer',
-        'weight' => 'integer',
+        'weight' => 'decimal:2',
     ];
 
     /**
@@ -48,7 +48,11 @@ class Product extends Model
         if (array_key_exists('order_items_sum_quantity', $this->attributes)) {
             return (int) $this->attributes['order_items_sum_quantity'];
         }
-        return (int) \App\Models\OrderItem::where('product_id', $this->id)->sum('quantity');
+        return (int) \App\Models\OrderItem::where('product_id', $this->id)
+            ->whereHas('order', function ($query) {
+                $query->whereIn('payment_status', ['settlement', 'capture', 'paid']);
+            })
+            ->sum('quantity');
     }
 
     // ─────────────────────────────────────────────

@@ -24,7 +24,7 @@ class TransactionStatusRequest extends FormRequest
         return [
             'status.required' => 'Status transaksi wajib dipilih.',
             'status.string'   => 'Status transaksi harus berupa teks.',
-            'status.in'       => 'Pilihan status tidak valid. Hanya bisa memilih Paid, Failed, atau Refund.',
+            'status.in'       => 'Pilihan status tidak valid. Hanya bisa memilih Paid, Failed, atau Dana Dikembalikan.',
             
             'notes.string'    => 'Catatan transaksi harus berupa teks.',
             'notes.max'       => 'Catatan terlalu panjang. Maksimal 1000 karakter.',

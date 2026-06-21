@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resi Pengiriman — {{ $order->order_number }}</title>
+    <title>Label Pengiriman — {{ $order->order_number }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -350,7 +350,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             Kembali ke Detail
         </a>
-        <div class="topbar-title">Preview Resi Pengiriman</div>
+        <div class="topbar-title">Preview Label Pengiriman</div>
         <div class="topbar-meta">{{ $order->order_number }} &bull; {{ $order->created_at->format('d M Y') }}</div>
     </div>
     <div class="topbar-actions">
@@ -367,7 +367,7 @@
 <div class="workspace">
     @php
         /* ── Computed values ── */
-        $barcodeText  = $order->tracking_number ?? $order->order_number;
+        $barcodeText  = $order->tracking_number;
         $storeName    = $order->store->name ?? config('app.name', 'TOKO PUSAT');
         $storePhone   = $order->store->phone ?? null;
         $storeAddress = $order->store->address ?? '-';
@@ -417,12 +417,19 @@
 
         <!-- ── Row 2: Barcode ── -->
         <div class="lrow row-barcode">
-            <img
-                class="barcode-img"
-                src="https://bwipjs-api.metafloor.com/?bcid=code128&text={{ urlencode($barcodeText) }}&scale=3&height=10&includetext=false"
-                alt="Barcode {{ $barcodeText }}"
-            >
-            <div class="barcode-num">{{ $barcodeText }}</div>
+            @if($barcodeText)
+                <div style="font-size: 8.5px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">AWB / Resi</div>
+                <img
+                    class="barcode-img"
+                    src="https://bwipjs-api.metafloor.com/?bcid=code128&text={{ urlencode($barcodeText) }}&scale=3&height=10&includetext=false"
+                    alt="Barcode {{ $barcodeText }}"
+                >
+                <div class="barcode-num">{{ $barcodeText }}</div>
+            @else
+                <div style="padding: 15px 0; margin-top: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed #cbd5e1; width: 100%; max-width: 240px; border-radius: 6px; background: #f8fafc;">
+                    <div style="font-size: 13px; font-weight: 900; color: #94a3b8; letter-spacing: 1px;">RESI BELUM DIINPUT</div>
+                </div>
+            @endif
         </div>
 
         <!-- ── Row 3: Routing Code ── -->
@@ -465,11 +472,7 @@
             <div class="col-stat br">
                 <div class="stat-lbl">Berat</div>
                 <div class="stat-val">
-                    @if($totalWeight >= 1000)
-                        {{ number_format($totalWeight / 1000, 2, ',', '.') }} kg
-                    @else
-                        {{ number_format($totalWeight, 0, ',', '.') }} g
-                    @endif
+                    {{ (float)$totalWeight }} kg
                 </div>
             </div>
             <div class="col-stat br">
@@ -499,7 +502,7 @@
         <div class="lrow row-cod">
             <div class="cod-label">⚠ Tagih COD</div>
             <div class="cod-amount">Rp {{ number_format($totalAmount, 0, ',', '.') }}</div>
-            <div class="cod-note">Kurir wajib<br>menagih pelanggan</div>
+            <div class="cod-note">Kurir wajib<br>menagih customer</div>
         </div>
         @endif
 

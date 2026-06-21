@@ -25,7 +25,7 @@ class CustomerController extends Controller
             });
         }
 
-        // 🔘 Filter status (active / blocked)
+        // 🔘 Filter status (active / inactive)
         if ($status = $request->get('status')) {
             $query->where('is_active', $status === 'active' ? 1 : 0);
         }
@@ -74,7 +74,7 @@ class CustomerController extends Controller
         $stats = [
             'total'       => User::where('role', 'customer')->count(),
             'active'      => User::where('role', 'customer')->where('is_active', 1)->count(),
-            'blocked'     => User::where('role', 'customer')->where('is_active', 0)->count(),
+            'inactive'    => User::where('role', 'customer')->where('is_active', 0)->count(),
             'total_spent' => \App\Models\Order::whereIn('payment_status', ['settlement', 'capture', 'paid'])->sum('total_amount'),
         ];
 
@@ -113,7 +113,7 @@ class CustomerController extends Controller
     public function updateStatus(\App\Http\Requests\CustomerStatusRequest $request, $id)
     {
         try {
-            $customer = User::where('role', 'customer')->findOrFail($id);
+            $customer = User::where('role', 'customer')->find($id);
 
             $customer->update([
                 'is_active' => $request->is_active
@@ -123,27 +123,19 @@ class CustomerController extends Controller
             if ($request->is_active == 1) {
                 return back()->with(
                     'success',
-                    "Akun pelanggan \"{$customer->name}\" berhasil diaktifkan kembali. Pelanggan kini dapat mengakses sistem seperti biasa."
+                    "Akun customer berhasil diaktifkan kembali. Customer kini dapat mengakses sistem seperti biasa."
                 );
             }
 
             return back()->with(
                 'success',
-                "Akun pelanggan \"{$customer->name}\" berhasil dinonaktifkan. Pelanggan tidak dapat login sampai diaktifkan kembali."
-            );
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-
-            return back()->with(
-                'error',
-                'Data pelanggan tidak ditemukan. Kemungkinan data sudah dihapus atau terjadi kesalahan sistem.'
+                "Akun customer berhasil dinonaktifkan. Customer tidak dapat login sampai diaktifkan kembali."
             );
 
         } catch (\Exception $e) {
-
             return back()->with(
                 'error',
-                'Terjadi kesalahan saat memperbarui status pelanggan. Silakan coba beberapa saat lagi atau hubungi administrator.'
+                'Terjadi kesalahan saat memperbarui status akun. Gagal menonaktifkan akun customer.'
             );
         }
     }
@@ -151,10 +143,10 @@ class CustomerController extends Controller
     /**
      * DESTROY — Hapus customer permanen
      */
-    public function destroy($id)
+    public function destroy(\App\Http\Requests\CustomerDeleteRequest $request, $id)
     {
         try {
-            $customer = User::where('role', 'customer')->findOrFail($id);
+            $customer = User::where('role', 'customer')->find($id);
             $name = $customer->name;
 
             $customer->delete();
@@ -163,21 +155,14 @@ class CustomerController extends Controller
                 ->route('customers.index')
                 ->with(
                     'success',
-                    "Data pelanggan \"{$name}\" berhasil dihapus secara permanen dari sistem. Tindakan ini tidak dapat dibatalkan."
+                    "Akun customer berhasil dihapus secara permanen dari sistem."
                 );
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-
-            return back()->with(
-                'error',
-                'Data pelanggan tidak ditemukan. Kemungkinan sudah dihapus sebelumnya.'
-            );
 
         } catch (\Exception $e) {
 
             return back()->with(
                 'error',
-                'Gagal menghapus pelanggan. Pastikan tidak ada data terkait seperti pesanan atau transaksi yang masih terhubung.'
+                'Gagal menghapus akun customer. Tidak dapat menghapus akun customer.'
             );
         }
     }

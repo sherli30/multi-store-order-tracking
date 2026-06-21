@@ -14,7 +14,7 @@ class StoreController extends Controller
     public function index()
     {
         try {
-            $stores = Store::where('is_active', true)->get();
+            $stores = Store::with(['city', 'province'])->where('is_active', true)->get();
 
             if ($stores->isEmpty()) {
                 return response()->json([
@@ -34,6 +34,36 @@ class StoreController extends Controller
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Terjadi kendala teknis saat mengambil data toko. Silakan coba beberapa saat lagi.',
+            ], 500);
+        }
+    }
+
+    /**
+     * Get detail of a specific store
+     */
+    public function show($id)
+    {
+        try {
+            $store = Store::with(['city', 'province'])->find($id);
+
+            if (!$store) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Toko tidak ditemukan.',
+                    'data'    => null
+                ], 404);
+            }
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Detail toko berhasil dimuat.',
+                'data'    => $store
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Terjadi kesalahan pada server saat mengambil detail toko.',
             ], 500);
         }
     }

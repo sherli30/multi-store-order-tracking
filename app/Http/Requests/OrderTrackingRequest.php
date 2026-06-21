@@ -8,14 +8,13 @@ class OrderTrackingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return auth()->check() && auth()->user()->role === 'admin';
+        return auth()->check() && auth()->user()->role === 'administrator';
     }
 
     public function rules(): array
     {
         return [
             'tracking_number' => ['required', 'string', 'max:100'],
-            'shipping_courier' => ['required', 'string'],
         ];
     }
 
@@ -25,8 +24,6 @@ class OrderTrackingRequest extends FormRequest
             'tracking_number.required' => 'Nomor resi wajib diisi.',
             'tracking_number.string'   => 'Nomor resi harus berupa teks.',
             'tracking_number.max'      => 'Nomor resi maksimal 100 karakter.',
-            'shipping_courier.required' => 'Kurir pengiriman wajib diisi.',
-            'shipping_courier.string'  => 'Kurir pengiriman harus berupa teks.',
         ];
     }
 

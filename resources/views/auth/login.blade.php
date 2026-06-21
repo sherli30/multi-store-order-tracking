@@ -657,7 +657,7 @@
                     Pantau Pengiriman
                 </h1>
                 <p class="left-sub">
-                    Sistem integrasi admin untuk efisiensi pemrosesan pesanan dan pelacakan <em>real-time</em>.
+                    Sistem integrasi administrator untuk efisiensi pemrosesan pesanan dan pelacakan <em>real-time</em>.
                 </p>
             </div>
 

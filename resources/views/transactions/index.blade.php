@@ -4,6 +4,7 @@
 
 @section('styles')
 /* ── Page Header ─────────────────────────────── */
+.main-wrap, .page { min-width: 0; } /* Fix flex blowout horizontal scroll */
 .page-header {
 display: flex; align-items: flex-start; justify-content: space-between;
 margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
@@ -23,7 +24,7 @@ border-radius: 10px; display: flex; align-items: center; justify-content: center
 /* ── Stats Bar ───────────────────────────────── */
 .stats-bar {
 display: grid;
-grid-template-columns: repeat(4, 1fr);
+grid-template-columns: repeat(5, 1fr);
 gap: 14px;
 margin-bottom: 24px;
 }
@@ -40,6 +41,7 @@ justify-content: center; flex-shrink: 0; }
 .stat-icon.green { background: var(--green-dim); color: var(--green); }
 .stat-icon.amber { background: var(--amber-dim); color: var(--amber); }
 .stat-icon.red { background: var(--red-dim); color: var(--red); }
+.stat-icon.rose { background: #ffe4e6; color: #e11d48; }
 
 .stat-value { font-size: 19px; font-weight: 800; color: var(--text-1); letter-spacing: -0.03em; }
 .stat-label { font-size: 11.5px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
@@ -57,6 +59,7 @@ margin-bottom: 20px;
 overflow-x: auto;
 scrollbar-width: none;
 border: 1px solid var(--border);
+max-width: 100%;
 }
 .tabs-wrap::-webkit-scrollbar { display: none; }
 .tab-btn {
@@ -283,8 +286,9 @@ border-color: var(--border) !important; cursor: default !important;
     <div class="stat-card">
         <div class="stat-icon blue">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="1" x2="12" y2="23" />
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                <rect width="20" height="12" x="2" y="6" rx="2" />
+                <circle cx="12" cy="12" r="2" />
+                <path d="M6 12h.01M18 12h.01" />
             </svg>
         </div>
         <div>
@@ -325,8 +329,20 @@ border-color: var(--border) !important; cursor: default !important;
             </svg>
         </div>
         <div>
-            <div class="stat-value">{{ number_format(($tabCounts['failed'] ?? 0) + ($tabCounts['refund'] ?? 0)) }}</div>
-            <div class="stat-label">Gagal & Refund</div>
+            <div class="stat-value">{{ number_format($tabCounts['failed'] ?? 0) }}</div>
+            <div class="stat-label">Gagal</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon rose">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 14 4 9 9 4"/>
+                <path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+            </svg>
+        </div>
+        <div>
+            <div class="stat-value">{{ number_format($tabCounts['refund'] ?? 0) }}</div>
+            <div class="stat-label">Dana Dikembalikan</div>
         </div>
     </div>
 </div>
@@ -346,7 +362,7 @@ border-color: var(--border) !important; cursor: default !important;
         Gagal <span class="tab-count">{{ $tabCounts['failed'] ?? 0 }}</span>
     </a>
     <a href="{{ request()->fullUrlWithQuery(['tab' => 'refund']) }}" class="tab-btn {{ $tab === 'refund' ? 'active' : '' }}">
-        Dikembalikan<span class="tab-count">{{ $tabCounts['refund'] ?? 0 }}</span>
+        Dana Dikembalikan <span class="tab-count">{{ $tabCounts['refund'] ?? 0 }}</span>
     </a>
 </div>
 
@@ -367,7 +383,7 @@ border-color: var(--border) !important; cursor: default !important;
 
         {{--
             Filter columns mapped 1-to-1 to visible table data:
-            1. Toko        → "Pelanggan & Toko" column
+            1. Toko        → "Customer & Toko" column
             2. Tanggal     → date shown inside "ID Transaksi" cell
             3. Urutan      → sorts by created_at (date), newest / oldest
             4. Total Bayar → sorts by amount, highest / lowest — replaces a
@@ -445,7 +461,7 @@ border-color: var(--border) !important; cursor: default !important;
                     <th class="center" style="width:50px;">No</th>
                     <th>ID Transaksi</th>
                     <th>Nomor Pesanan</th>
-                    <th>Pelanggan & Toko</th>
+                    <th>Customer & Toko</th>
                     <th>Total Bayar</th>
                     <th>Status</th>
                     <th class="center" style="width:120px;">Aksi</th>
@@ -458,34 +474,6 @@ border-color: var(--border) !important; cursor: default !important;
     </div>
 </div>
 
-{{-- Modal Konfirmasi --}}
-<div class="modal-overlay" id="actionModal">
-    <div class="modal-box">
-        <div class="modal-icon" id="modalIcon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <polyline points="20 6 9 17 4 12" />
-            </svg>
-        </div>
-        <h3 class="modal-title" id="actionTitle">Konfirmasi Transaksi</h3>
-        <p class="modal-desc" id="actionDesc">Pastikan dana telah masuk sebelum mengkonfirmasi.</p>
-
-        <form id="actionForm" method="POST" action="" novalidate>
-            @csrf
-            @method('PATCH')
-            <input type="hidden" name="status" id="actionStatus">
-
-            <div id="notesContainer" class="form-group" style="display:none; margin-bottom: 20px;">
-                <label class="form-label">Catatan (Opsional)</label>
-                <textarea name="notes" class="form-input" rows="3" placeholder="Alasan penolakan atau catatan refund...">{{ old('notes') }}</textarea>
-            </div>
-
-            <div class="modal-actions">
-                <button type="button" class="btn-cancel" onclick="closeModals()">Batal</button>
-                <button type="submit" class="btn-modal-primary" id="actionSubmitBtn">Konfirmasi</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 @endsection
 
@@ -495,47 +483,8 @@ border-color: var(--border) !important; cursor: default !important;
 <script src="https://cdn.datatables.net/2.3.7/js/dataTables.min.js"></script>
 
 <script>
-    // ── Global Modal Handlers ──
+    // ── Global Handlers ──
     const baseUrl = "{{ url('/') }}";
-
-    function openAction(type, trxId, trxCode) {
-        const form    = $('#actionForm');
-        const icon    = $('#modalIcon');
-        const title   = $('#actionTitle');
-        const desc    = $('#actionDesc');
-        const notes   = $('#notesContainer');
-        const btn     = $('#actionSubmitBtn');
-
-        form.attr('action', `${baseUrl}/transactions/${trxId}/status`);
-        $('#actionStatus').val(type);
-        notes.toggle(type === 'failed' || type === 'refund');
-
-        icon.removeClass('success danger warning');
-        btn.removeClass('btn-modal-primary btn-modal-danger');
-
-        if (type === 'paid') {
-            icon.addClass('success');
-            title.text('Konfirmasi Pembayaran Lunas');
-            desc.html(`ID Transaksi: <strong>${trxCode}</strong><br>Tandai pembayaran ini sebagai lunas?`);
-            btn.addClass('btn-modal-primary').text('Ya, Konfirmasi Lunas');
-        } else if (type === 'failed') {
-            icon.addClass('danger').html('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>');
-            title.text('Tolak Transaksi');
-            desc.html(`ID Transaksi: <strong>${trxCode}</strong><br>Tandai pembayaran ini sebagai gagal?`);
-            btn.addClass('btn-modal-danger').text('Ya, Tolak');
-        } else if (type === 'refund') {
-            icon.addClass('warning').html('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>');
-            title.text('Proses Refund');
-            desc.html(`ID Transaksi: <strong>${trxCode}</strong><br>Ubah status transaksi menjadi refund?`);
-            btn.addClass('btn-modal-danger').text('Konfirmasi Refund');
-        }
-
-        $('#actionModal').addClass('open');
-    }
-
-    function closeModals() {
-        $('.modal-overlay').removeClass('open');
-    }
 
     $(document).ready(function () {
         let table;
@@ -652,15 +601,6 @@ border-color: var(--border) !important; cursor: default !important;
             }
         }
 
-        // Close on Escape
-        $(document).on('keydown', function (e) {
-            if (e.key === 'Escape') closeModals();
-        });
-
-        // Close on backdrop click
-        $('.modal-overlay').on('click', function (e) {
-            if (e.target === this) closeModals();
-        });
     });
 </script>
 @endpush
